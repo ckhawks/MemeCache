@@ -3,5 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   const users = await getOnlineUsers();
-  return NextResponse.json({ onlineUsers: users });
+
+  const response = NextResponse.json({ onlineUsers: users });
+  return response;
 }
+
+export const revalidate = 0;
