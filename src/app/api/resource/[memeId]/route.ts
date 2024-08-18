@@ -14,8 +14,9 @@ export async function GET(
 
   try {
     const s3Client = getS3Client();
+    console.log('bucket: ', process.env.MC_AWS_S3_BUCKET);
     const getObjectCommand = new GetObjectCommand({
-      Bucket: process.env.AWS_S3_BUCKET,
+      Bucket: process.env.MC_AWS_S3_BUCKET,
       Key: params.memeId,
     } as GetObjectCommandInput);
 
