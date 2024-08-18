@@ -8,4 +8,4 @@ export async function GET(request: NextRequest) {
   return response;
 }
 
-export const revalidate = 0;
+export const revalidate = 60;
