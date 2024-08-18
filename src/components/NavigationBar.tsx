@@ -39,50 +39,60 @@ export default function NavigationBar(props: { username: string }) {
           >
             Explore
           </Link>
-          <Link
-            href={'/library'}
-            className={`
+          {props.username && (
+            <Link
+              href={'/library'}
+              className={`
               ${navStyles['navbar-link']}
               ${pathname === '/library' ? navStyles['active'] : ''}
             `}
-          >
-            Library
-          </Link>
-          <Link
-            href={'/upload'}
-            className={`
+            >
+              Library
+            </Link>
+          )}
+
+          {props.username && (
+            <Link
+              href={'/upload'}
+              className={`
               ${navStyles['navbar-link']}
               ${pathname === '/upload' ? navStyles['active'] : ''}
             `}
-          >
-            Upload
-          </Link>
-          <Link
-            href={'/me/' + props.username}
-            className={`
-              ${navStyles['navbar-link']}
-              ${pathname === '/me/' + props.username ? navStyles['active'] : ''}
-            `}
-          >
-            Profile
-          </Link>
-        </div>
-        <div className={navStyles['navbar-right']}>
-          <Link
-            href={'/logout'}
-            className={`${styles['button']} ${styles['button-small']}`}
-          >
-            Logout <LogOut size={14} />
-          </Link>
+            >
+              Upload
+            </Link>
+          )}
+
           {props.username && (
             <Link
               href={'/me/' + props.username}
-              style={{ textDecoration: 'none', color: 'unset' }}
-              className={navStyles['navbar-right-user']}
+              className={`
+              ${navStyles['navbar-link']}
+              ${pathname === '/me/' + props.username ? navStyles['active'] : ''}
+            `}
             >
-              <User size={14} />
-              {props.username}
+              Profile
             </Link>
+          )}
+        </div>
+        <div className={navStyles['navbar-right']}>
+          {props.username && (
+            <>
+              <Link
+                href={'/logout'}
+                className={`${styles['button']} ${styles['button-small']}`}
+              >
+                Logout <LogOut size={14} />
+              </Link>
+              <Link
+                href={'/me/' + props.username}
+                style={{ textDecoration: 'none', color: 'unset' }}
+                className={navStyles['navbar-right-user']}
+              >
+                <User size={14} />
+                {props.username}
+              </Link>
+            </>
           )}
           {!props.username && (
             <Link

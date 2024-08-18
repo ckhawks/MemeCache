@@ -4,10 +4,12 @@ import { db } from '@/db/db';
 import styles from '../../main.module.scss';
 import NavigationBar from '@/components/NavigationBar';
 import { getSession } from '@/auth/lib';
-import { redirect } from 'next/navigation';
 
 import { GalleryMasonry } from '../../../components/GalleryMasonry';
-import { Folder } from 'react-feather';
+import { Folder, Plus } from 'react-feather';
+import { Accordion, Button, Col, Row } from 'react-bootstrap';
+import CacheAccordion from './CacheAccordion';
+import FooterBar from '@/components/FooterBar';
 
 export default async function Profile({
   params,
@@ -97,23 +99,37 @@ export default async function Profile({
         <div className={styles.content}>
           <div className={styles.description}>
             {/* <h1>MemeCache</h1> */}
-            <h1>{user.username}</h1>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <h1>{user.username}</h1>
+
+              <Button
+                style={{ height: '40px' }}
+                className={`${styles['button']} ${styles['button-secondary']}`}
+              >
+                <Plus size={14} /> Cache
+              </Button>
+            </div>
+
             <p>{memes.length} total items</p>
           </div>
           {caches &&
             caches.map((cache) => (
-              <div key={cache.id}>
-                <h3>
-                  <Folder size={28} /> {cache.name}
-                </h3>{' '}
-                <p>{memesByCache[cache.id].length} items</p>
-                <div className={styles['memes-masonry']}>
-                  <GalleryMasonry memes={memesByCache[cache.id]} />
-                </div>
-              </div>
+              <CacheAccordion
+                cache={cache as any}
+                memes={memesByCache[cache.id]}
+                key={cache.id}
+              />
             ))}
         </div>
       </main>
+      <FooterBar />
     </>
   );
 }
