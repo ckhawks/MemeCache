@@ -5,7 +5,7 @@ export async function GetFileForMemeByS3Path(s3Path: string) {
   var client = getS3Client();
 
   const command = new GetObjectCommand({
-    Bucket: process.env.AWS_S3_BUCKET,
+    Bucket: process.env.MC_AWS_S3_BUCKET,
     Key: s3Path,
   });
 
