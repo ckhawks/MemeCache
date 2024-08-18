@@ -3,6 +3,8 @@ import styles from './main.module.scss';
 import NavigationBar from '@/components/NavigationBar';
 import { getUserFromAccessToken } from '@/auth/lib';
 import FooterBar from '@/components/FooterBar';
+import Link from 'next/link';
+import OnlineUsers from '@/components/OnlineUsers';
 
 export default async function Home() {
   const user = await getUserFromAccessToken();
@@ -36,11 +38,25 @@ export default async function Home() {
           <div>
             All users created:
             <ul>
-              {usersResponse.map((user) => {
-                return <li key={user.id}>{user.username}</li>;
+              {usersResponse.map((user2) => {
+                return (
+                  <li key={user2.id}>
+                    <Link
+                      href={'/me/' + user2.username}
+                      style={{
+                        textDecoration: 'none',
+                        color: 'unset',
+                        fontWeight: 500,
+                      }}
+                    >
+                      {user2.username}
+                    </Link>
+                  </li>
+                );
               })}
             </ul>
           </div>
+          <OnlineUsers />
           {/* <Button variant="primary">Primary</Button>{' '} */}
         </div>
       </main>

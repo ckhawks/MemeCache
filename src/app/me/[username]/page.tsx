@@ -91,6 +91,8 @@ export default async function Profile({
     return acc;
   }, {});
 
+  const isCurrentUser = user?.id === userFromDb.id;
+
   return (
     <>
       <NavigationBar username={(user && user.username) || ''} />
@@ -106,14 +108,16 @@ export default async function Profile({
                 alignItems: 'center',
               }}
             >
-              <h1>{user?.username}</h1>
+              <h1>{userFromDb?.username}</h1>
 
-              <Button
-                style={{ height: '40px' }}
-                className={`${styles['button']} ${styles['button-secondary']}`}
-              >
-                <Plus size={14} /> Cache
-              </Button>
+              {isCurrentUser && (
+                <Button
+                  style={{ height: '40px' }}
+                  className={`${styles['button']} ${styles['button-secondary']}`}
+                >
+                  <Plus size={14} /> Cache
+                </Button>
+              )}
             </div>
 
             <p>{memes?.length || 0} total items</p>
@@ -124,6 +128,7 @@ export default async function Profile({
                 cache={cache as any}
                 memes={memesByCache[cache.id] || []}
                 key={cache.id}
+                isCurrentUser
               />
             ))}
         </div>

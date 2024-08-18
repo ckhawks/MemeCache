@@ -20,8 +20,10 @@ export async function POST(request: Request) {
 
     let uuid = crypto.randomUUID();
 
+    console.log('Upload bucket', process.env.MC_AWS_S3_BUCKET);
+
     const uploadParams = {
-      Bucket: process.env.AWS_S3_BUCKET!,
+      Bucket: process.env.MC_AWS_S3_BUCKET,
       Key: uuid,
       // Key: file.name, // You can change this to whatever you like, e.g., a unique identifier
       Body: await file.arrayBuffer(),

@@ -70,6 +70,9 @@ export async function validateAccessToken(token: string) {
       return null; // Token is no longer valid
     }
 
+    // Update user's last activity
+    await updateUserActivity(payload?.id as string);
+
     return payload as unknown as UserPayload;
   } catch (error) {
     return null;
@@ -383,6 +386,11 @@ export async function getUserFromAccessToken() {
     return user;
   }
   return undefined;
+}
+
+export async function updateUserActivity(userId: string) {
+  const query = `UPDATE "User" SET "lastActive" = NOW() WHERE id = $1`;
+  await db(query, [userId]);
 }
 
 // export async function getSession() {
