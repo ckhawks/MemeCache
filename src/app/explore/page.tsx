@@ -4,7 +4,7 @@ import { db } from '@/db/db';
 import styles from '../main.module.scss';
 import NavigationBar from '@/components/NavigationBar';
 import { getUserFromAccessToken } from '@/auth/lib';
-import { redirect } from 'next/navigation';
+// import { redirect } from 'next/navigation';
 
 import { GalleryMasonry } from '../../components/GalleryMasonry';
 import FooterBar from '@/components/FooterBar';

@@ -116,13 +116,13 @@ export default async function Profile({
               </Button>
             </div>
 
-            <p>{memes.length} total items</p>
+            <p>{memes?.length || 0} total items</p>
           </div>
           {caches &&
             caches.map((cache) => (
               <CacheAccordion
                 cache={cache as any}
-                memes={memesByCache[cache.id]}
+                memes={memesByCache[cache.id] || []}
                 key={cache.id}
               />
             ))}

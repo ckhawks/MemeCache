@@ -35,11 +35,14 @@ export default async function Library() {
           <div className={styles.description}>
             {/* <h1>MemeCache</h1> */}
             <h1>Library of {user.username}</h1>
-            <p>{memes.length} items</p>
+            <p>{memes?.length || 0} items</p>
           </div>
-          <div className={styles['memes-masonry']}>
-            <GalleryMasonry memes={memes} />
-          </div>
+          {memes && (
+            <div className={styles['memes-masonry']}>
+              <GalleryMasonry memes={memes} />
+            </div>
+          )}
+          {memes?.length == 0 && <p>No memes found.</p>}
         </div>
       </main>
       <FooterBar />

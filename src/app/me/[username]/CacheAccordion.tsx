@@ -53,9 +53,12 @@ export default function CacheAccordion(props: {
             </div>
           </Accordion.Header>
           <Accordion.Body className={'cache'}>
-            <div className={styles['memes-masonry']}>
-              <GalleryMasonry memes={props.memes} />
-            </div>
+            {props.memes.length != 0 && (
+              <div className={styles['memes-masonry']}>
+                <GalleryMasonry memes={props.memes} />
+              </div>
+            )}
+            {props.memes.length == 0 && <p>No memes found.</p>}
           </Accordion.Body>
         </Accordion.Item>
       </Accordion>
