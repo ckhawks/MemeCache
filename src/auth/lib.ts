@@ -220,11 +220,12 @@ export async function register(prevState: any, formData: FormData) {
 
   // store user in DB
   const query3 =
-    'INSERT INTO "User" ("username", "email", "passwordHash") VALUES ($1, $2, $3)';
+    'INSERT INTO "User" ("username", "email", "passwordHash", "role") VALUES ($1, $2, $3, $4)';
   const params3 = [
     formData.get('username'),
     formData.get('email'),
     await hash_password(formData.get('password')?.toString() || ''),
+    'user',
   ];
   const userCreated = await db(query3, params3); // this returns nothing []
 

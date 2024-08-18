@@ -79,6 +79,7 @@ export default function NavigationBar(props: { username: string }) {
           {props.username && (
             <>
               <Link
+                prefetch={false}
                 href={'/api/logout'}
                 // className={`${styles['button']} ${styles['button-small']} ${styles['button-secondary']}`}
                 className={`${navStyles['navbar-link']}`}
