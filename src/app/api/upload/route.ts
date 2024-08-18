@@ -5,6 +5,8 @@ import getS3Client from '@/util/s3/GetS3Client';
 import crypto from 'crypto';
 import { db } from '@/db/db';
 
+// change this to be a server action
+
 export async function POST(request: Request) {
   const s3Client = getS3Client();
 
@@ -31,15 +33,17 @@ export async function POST(request: Request) {
 
     const uploadResponse = await db(
       `INSERT INTO "Meme" (id, "createdAt", "uploaderUserId", "s3Key") VALUES ($1, $2, $3, $4)`,
-      [
-        uuid,
-        new Date().toISOString(),
-        'b85ce070-5b57-11ef-ad9a-3ee4ea241581',
-        uuid,
-      ]
+      [uuid, new Date().toISOString(), formData.get('userId'), uuid]
     ); // todo change uploaderUserId to real
 
-    console.log(uploadResponse);
+    console.log('uploadResponse', uploadResponse);
+
+    const addToCacheResponse = await db(
+      `INSERT INTO "MemeCache" ("memeId", "cacheId") VALUES ($1, $2)`,
+      [uuid, formData.get('cacheId')]
+    );
+
+    console.log('addToCacheResponse', addToCacheResponse);
 
     // INSERT INTO public."Meme"
     // (id, "createdAt", "deletedAt", "uploaderUserId", s3key)

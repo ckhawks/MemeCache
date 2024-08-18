@@ -8,13 +8,9 @@ import { db } from '@/db/db';
 
 const bcrypt = require('bcrypt');
 
-// const query = 'SELECT * FROM "Tracker" WHERE userid = $1';
-//   const params = [userId];
-//   const { rows: trackers } = await sql.query(query, params);
-
 // THANKS TO https://github.com/balazsorban44/auth-poc-next/blob/main/lib.ts
 
-const secretKey = process.env.JWT_SECRET; // change to use env variable
+const secretKey = process.env.JWT_SECRET;
 const key = new TextEncoder().encode(secretKey);
 
 export async function encrypt(payload: any) {
@@ -120,12 +116,23 @@ export async function register(prevState: any, formData: FormData) {
   const user = usersFromCreated[0];
   delete user['password'];
 
+  // Create default memecache for the user
+  const query5 = `INSERT INTO "Cache" ("name", "ownerUserId") VALUES ($1, $2)`;
+  const params5 = [formData.get('username') + "'s Memes", user.id];
+  const cacheCreated = await db(query5, params5);
+
   // Create the session
   const expires = new Date(Date.now() + 2400 * 1000);
   const session = await encrypt({ user, expires });
 
   // Save the session in a cookie
-  cookies().set('session', session, { expires, httpOnly: true });
+  // Save the session in a cookie
+  cookies().set('session', session, {
+    expires,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+  });
   redirect('/');
 }
 
@@ -176,7 +183,12 @@ export async function login(prevState: any, formData: FormData) {
   const session = await encrypt({ user, expires });
 
   // Save the session in a cookie
-  cookies().set('session', session, { expires, httpOnly: true });
+  cookies().set('session', session, {
+    expires,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+  });
   redirect('/');
 }
 
@@ -205,6 +217,8 @@ export async function updateSession(request: NextRequest) {
     value: await encrypt(parsed),
     httpOnly: true,
     expires: parsed.expires,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
   });
   return res;
 }

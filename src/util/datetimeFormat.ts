@@ -1,9 +1,20 @@
+// datetimeFormat.ts
+
+// Add this new function
+export function getServerSideRelativeTime(date: Date): string {
+  const now = new Date();
+  return getRelativeTimeString(date, now);
+}
+
 /**
  * Convert a date to a relative time string, such as
  * "a minute ago", "in 2 hours", "yesterday", "3 months ago", etc.
  * using Intl.RelativeTimeFormat
  */
-export function getRelativeTimeString(date: Date): string {
+export function getRelativeTimeString(
+  date: Date,
+  now: Date = new Date()
+): string {
   // offset the date by 5 hours because CENTRAL TIME ZONE
   date.setTime(date.getTime() - 1000 * 60 * 60 * 5);
   // Allow dates or times to be passed
