@@ -1,16 +1,16 @@
 'use server';
 
 import styles from '../main.module.scss';
-import { getSession, logout } from '@/auth/lib';
+import { getUserFromAccessToken, logout } from '@/auth/lib';
 import LoginComponent from './LoginComponent';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 
 export default async function LoginPage() {
-  const session = await getSession();
+  const user = await getUserFromAccessToken();
   // console.log("session", session);
 
-  if (session) {
+  if (user) {
     redirect('/');
   }
 
@@ -34,7 +34,7 @@ export default async function LoginPage() {
 
         <section>
           <h4 style={{ marginBottom: '24px' }}>Login</h4>
-          {!session && <LoginComponent />}
+          {!user && <LoginComponent />}
 
           {/* {session && (
         <form action={logout}>

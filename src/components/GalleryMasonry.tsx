@@ -44,6 +44,7 @@ export function GalleryMasonry(props: { memes: any[] }) {
                 <Image
                   className={styles['meme-media']}
                   src={'/api/resource/' + meme.id}
+                  alt="visual meme :("
                 />
                 <div className={styles['meme-body']}>
                   <div className={styles['meme-body-title']}>

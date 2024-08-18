@@ -1,16 +1,16 @@
 'use server';
 
 import styles from '../main.module.scss';
-import { getSession } from '@/auth/lib';
+import { getUserFromAccessToken } from '@/auth/lib';
 import RegisterComponent from './RegisterComponent';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 
 export default async function RegisterPage() {
-  const session = await getSession();
+  const user = await getUserFromAccessToken();
   // console.log("session", session);
 
-  if (session) {
+  if (user) {
     redirect('/');
   }
 
@@ -35,7 +35,7 @@ export default async function RegisterPage() {
 
         <section>
           <h4 style={{ marginBottom: '24px' }}>Register</h4>
-          {!session && <RegisterComponent />}
+          {!user && <RegisterComponent />}
 
           {/* {session && (
         <form action={logout}>

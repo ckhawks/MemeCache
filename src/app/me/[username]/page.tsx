@@ -3,11 +3,10 @@
 import { db } from '@/db/db';
 import styles from '../../main.module.scss';
 import NavigationBar from '@/components/NavigationBar';
-import { getSession } from '@/auth/lib';
+import { getUserFromAccessToken } from '@/auth/lib';
 
-import { GalleryMasonry } from '../../../components/GalleryMasonry';
-import { Folder, Plus } from 'react-feather';
-import { Accordion, Button, Col, Row } from 'react-bootstrap';
+import { Plus } from 'react-feather';
+import { Button } from 'react-bootstrap';
 import CacheAccordion from './CacheAccordion';
 import FooterBar from '@/components/FooterBar';
 
@@ -16,7 +15,7 @@ export default async function Profile({
 }: {
   params: { username: string };
 }) {
-  const session = await getSession();
+  const user = await getUserFromAccessToken();
   // console.log("session", session);
 
   // if (!session) {
@@ -26,7 +25,7 @@ export default async function Profile({
   if (params.username === null) {
     return (
       <>
-        <NavigationBar username={session && session.user.username} />
+        <NavigationBar username={(user && user.username) || ''} />
         <main className={styles.main}>
           <div className={styles.content}>
             <div className={styles.description}>
@@ -49,14 +48,14 @@ export default async function Profile({
   if (users.length === 0) {
     return (
       <>
-        <NavigationBar username={session && session.user.username} />
+        <NavigationBar username={(user && user.username) || ''} />
         <main className={styles.main}>
           <div className={styles.content}>
             <div className={styles.description}>
               {/* <h1>MemeCache</h1> */}
               <h1>404</h1>
               <p>
-                Couldn't find a profile for <b>{params.username}</b>.
+                Couldn&apos;t find a profile for <b>{params.username}</b>.
               </p>
             </div>
           </div>
@@ -65,12 +64,12 @@ export default async function Profile({
     );
   }
 
-  const user = users[0];
+  const userFromDb = users[0];
 
   const caches = await db(
     `SELECT * FROM "Cache" c
     WHERE "ownerUserId" = $1`,
-    [user.id]
+    [userFromDb.id]
   );
 
   const memes = await db(
@@ -80,7 +79,7 @@ export default async function Profile({
     LEFT JOIN "Cache" c ON c.id = mc."cacheId"
     WHERE u.id = $1
     ORDER BY "createdAt" ASC`,
-    [user.id]
+    [userFromDb.id]
   );
 
   const memesByCache = memes.reduce((acc, meme) => {
@@ -94,7 +93,7 @@ export default async function Profile({
 
   return (
     <>
-      <NavigationBar username={session && session.user.username} />
+      <NavigationBar username={(user && user.username) || ''} />
       <main className={styles.main}>
         <div className={styles.content}>
           <div className={styles.description}>
@@ -107,7 +106,7 @@ export default async function Profile({
                 alignItems: 'center',
               }}
             >
-              <h1>{user.username}</h1>
+              <h1>{user?.username}</h1>
 
               <Button
                 style={{ height: '40px' }}

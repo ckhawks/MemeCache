@@ -1,6 +1,6 @@
 'use client';
 
-import React, { cache, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button, Col, Form, Row } from 'react-bootstrap';
 
 export default function UploadComponent(props: {
@@ -11,7 +11,7 @@ export default function UploadComponent(props: {
   }[];
 }) {
   const [file, setFile] = useState<File | null>(null);
-  const [cacheId, setCacheId] = useState<string>(null);
+  const [cacheId, setCacheId] = useState<string>('');
   const [message, setMessage] = useState('');
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,7 +83,9 @@ export default function UploadComponent(props: {
             >
               {props.caches &&
                 props.caches.map((cache) => (
-                  <option value={cache?.id}>{cache?.name}</option>
+                  <option value={cache?.id} key={cache?.id}>
+                    {cache?.name}
+                  </option>
                 ))}
             </Form.Select>
           </Col>

@@ -3,14 +3,14 @@
 import { db } from '@/db/db';
 import styles from '../main.module.scss';
 import NavigationBar from '@/components/NavigationBar';
-import { getSession } from '@/auth/lib';
+import { getUserFromAccessToken } from '@/auth/lib';
 import { redirect } from 'next/navigation';
 
 import { GalleryMasonry } from '../../components/GalleryMasonry';
 import FooterBar from '@/components/FooterBar';
 
 export default async function Explore() {
-  const session = await getSession();
+  const user = await getUserFromAccessToken();
   // console.log("session", session);
 
   // if (!session) {
@@ -27,7 +27,7 @@ export default async function Explore() {
 
   return (
     <>
-      <NavigationBar username={session && session.user.username} />
+      <NavigationBar username={(user && user.username) || ''} />
       <main className={styles.main}>
         <div className={styles.content}>
           <div className={styles.description}>

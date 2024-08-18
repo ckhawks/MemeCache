@@ -79,10 +79,11 @@ export default function NavigationBar(props: { username: string }) {
           {props.username && (
             <>
               <Link
-                href={'/logout'}
-                className={`${styles['button']} ${styles['button-small']}`}
+                href={'/api/logout'}
+                // className={`${styles['button']} ${styles['button-small']} ${styles['button-secondary']}`}
+                className={`${navStyles['navbar-link']}`}
               >
-                Logout <LogOut size={14} />
+                Log out <LogOut size={14} />
               </Link>
               <Link
                 href={'/me/' + props.username}
