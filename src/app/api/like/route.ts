@@ -42,6 +42,18 @@ export async function POST(request: Request) {
     }
 
     if (likeStatus === 'true') {
+      const existingLike = await db(
+        `SELECT id FROM "Like" WHERE "memeId" = $1 AND "userId" = $2`,
+        [memeId, userId]
+      );
+
+      if (existingLike.length > 0) {
+        return NextResponse.json(
+          { error: 'User has already liked this meme' },
+          { status: 400 }
+        );
+      }
+
       const addLikeResponse = await db(
         `INSERT INTO "Like" ("memeId", "userId") VALUES ($1, $2)`,
         [memeId, userId]

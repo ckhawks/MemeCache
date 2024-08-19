@@ -11,6 +11,7 @@ export default function CacheAccordion(props: {
     id: string;
   };
   isCurrentUser: boolean;
+  userId: string;
   memes: any[];
 }) {
   return (
@@ -58,7 +59,10 @@ export default function CacheAccordion(props: {
           <Accordion.Body className={'cache'}>
             {props.memes.length != 0 && (
               <div className={styles['memes-masonry']}>
-                <GalleryMasonry memes={props.memes} />
+                <GalleryMasonry
+                  memes={props.memes}
+                  currentUserId={props.userId}
+                />
               </div>
             )}
             {props.memes.length == 0 && <div>No memes found.</div>}

@@ -72,15 +72,46 @@ export default async function Profile({
     [userFromDb.id]
   );
 
+  // const memes = await db(
+  //   `SELECT m.*, u.username, u.id as "userId", c.name as "cacheName", c.id as "cacheId" FROM "Meme" m
+  //   LEFT JOIN "User" u ON u.id = m."uploaderUserId"
+  //   LEFT JOIN "MemeCache" mc ON mc."memeId" = m.id
+  //   LEFT JOIN "Cache" c ON c.id = mc."cacheId"
+  //   WHERE u.id = $1
+  //   ORDER BY "createdAt" ASC`,
+  //   [userFromDb.id]
+  // );
+
   const memes = await db(
-    `SELECT m.*, u.username, u.id as "userId", c.name as "cacheName", c.id as "cacheId" FROM "Meme" m
+    `
+    SELECT 
+      m.*, 
+      u.username, 
+      u.id as "userId", 
+      c.id as "cacheId",
+      c.name as "cacheName",
+      COUNT(l.id) as "likeCount",
+      CASE 
+        WHEN EXISTS (
+          SELECT 1 
+          FROM "Like" l2 
+          WHERE l2."memeId" = m.id AND l2."userId" = $2
+        ) THEN true 
+        ELSE false 
+      END as "hasLiked"
+    FROM "Meme" m
     LEFT JOIN "User" u ON u.id = m."uploaderUserId"
     LEFT JOIN "MemeCache" mc ON mc."memeId" = m.id
     LEFT JOIN "Cache" c ON c.id = mc."cacheId"
+    LEFT JOIN "Like" l ON l."memeId" = m.id
     WHERE u.id = $1
-    ORDER BY "createdAt" ASC`,
-    [userFromDb.id]
+    GROUP BY m.id, u.username, u.id, c.name, c.id
+    ORDER BY m."createdAt" ASC
+    `,
+    [userFromDb?.id, user?.id]
   );
+
+  console.log(memes.length);
 
   const memesByCache = memes.reduce((acc, meme) => {
     const cacheId = meme.cacheId || null; // Handle uncached memes
@@ -90,6 +121,8 @@ export default async function Profile({
     acc[cacheId].push(meme);
     return acc;
   }, {});
+
+  console.log(memesByCache);
 
   const isCurrentUser = user?.id === userFromDb.id;
 
@@ -138,6 +171,7 @@ export default async function Profile({
                 memes={memesByCache[cache.id] || []}
                 key={cache.id}
                 isCurrentUser
+                userId={user?.id || ''}
               />
             ))}
         </div>
