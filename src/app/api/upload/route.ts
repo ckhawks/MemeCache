@@ -25,7 +25,7 @@ export async function POST(request: Request) {
 
     let uuid = crypto.randomUUID();
 
-    console.log('Upload bucket', process.env.MC_AWS_S3_BUCKET);
+    // console.log('Upload bucket', process.env.MC_AWS_S3_BUCKET);
 
     const uploadParams = {
       Bucket: process.env.MC_AWS_S3_BUCKET,
@@ -43,14 +43,14 @@ export async function POST(request: Request) {
       [uuid, new Date().toISOString(), formData.get('userId'), uuid, file.type]
     ); // todo change uploaderUserId to real
 
-    console.log('uploadResponse', uploadResponse);
+    // console.log('uploadResponse', uploadResponse);
 
     const addToCacheResponse = await db(
       `INSERT INTO "MemeCache" ("memeId", "cacheId") VALUES ($1, $2)`,
       [uuid, formData.get('cacheId')]
     );
 
-    console.log('addToCacheResponse', addToCacheResponse);
+    // console.log('addToCacheResponse', addToCacheResponse);
 
     // INSERT INTO public."Meme"
     // (id, "createdAt", "deletedAt", "uploaderUserId", s3key)

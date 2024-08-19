@@ -10,22 +10,67 @@ export default function EditAvatarComponent(props: { userId: string }) {
   const [file, setFile] = useState<File | null>(null);
   const [contentType, setContentType] = useState<string>('');
   const [submitEnabled, setSubmitEnabled] = useState(false);
-  const [cacheId, setCacheId] = useState<string>('');
   const [message, setMessage] = useState('');
+
+  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 1MB in bytes
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
-      setFile(event.target.files[0]);
-      setContentType(event.target.files[0].type);
-      setSubmitEnabled(
-        supportedImageTypes.indexOf(event.target.files[0].type) > -1
-      );
-      console.log();
+      const selectedFile = event.target.files[0];
+
+      // if (selectedFile.size > MAX_FILE_SIZE) {
+      //   setMessage(`File size exceeds the maximum limit of 2MB.`);
+      //   setSubmitEnabled(false);
+      //   return;
+      // }
+
+      if (!(supportedImageTypes.indexOf(selectedFile.type) > -1)) {
+        setMessage('That file type is not supported.');
+        setSubmitEnabled(false);
+        return;
+      }
+
+      setFile(selectedFile);
+      setContentType(selectedFile.type);
+      setSubmitEnabled(supportedImageTypes.indexOf(selectedFile.type) > -1);
     }
   };
 
-  const handleCacheChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setCacheId(event.target.value);
+  const resizeImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+          reject(new Error('Failed to get canvas context'));
+          return;
+        }
+
+        const width = 128;
+        const height = 128;
+
+        canvas.width = width;
+        canvas.height = height;
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('Failed to resize image'));
+          }
+        }, file.type);
+      };
+
+      img.onerror = (error) => {
+        reject(error);
+      };
+    });
   };
 
   const handleUpload = async () => {
@@ -34,13 +79,23 @@ export default function EditAvatarComponent(props: { userId: string }) {
       return;
     }
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('userId', props.userId);
-    formData.append('cacheId', cacheId);
-
     try {
-      const response = await fetch('/api/upload', {
+      const resizedBlob = await resizeImage(file);
+      const resizedFile = new File([resizedBlob], file.name, {
+        type: file.type,
+      });
+
+      // Optional: Check the size of the resized file
+      if (resizedFile.size > MAX_FILE_SIZE) {
+        setMessage('Resized image exceeds the maximum file size limit of 2MB.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', resizedFile);
+      formData.append('userId', props.userId);
+
+      const response = await fetch('/api/user/avatar', {
         method: 'POST',
         body: formData,
       });
@@ -60,24 +115,14 @@ export default function EditAvatarComponent(props: { userId: string }) {
     }
   };
 
-  console.log('cacheId', cacheId);
-
   return (
     <div>
       <Form>
-        {/* <h1>Upload a file</h1> */}
         <Row>
           <Col>
             <Form.Control type="file" onChange={handleFileChange} />
             <span>{contentType}</span>
           </Col>
-          {/* <input
-            style={{ display: 'none' }}
-            type="hidden"
-            id="userId"
-            name="userId"
-            value={props.userId}
-          ></input> */}
           <Col>
             <button
               onClick={handleUpload}

@@ -57,10 +57,16 @@
   text-decoration: none;
   font-size: 14px;
 
-  &:hover {
+  &:hover:not(&:disabled) {
     background-color: var(--button-primary-bg-color-hover);
     cursor: pointer;
     box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;
+  }
+
+  &:disabled {
+    background-color: var(--button-secondary-bg-color-hover);
+    color: var(--sub-text-color);
+    cursor: not-allowed;
   }
 }
 

@@ -20,14 +20,14 @@ export async function GET(
   );
 
   if (users.length !== 1) {
-    console.log('api/avatar/[username], users.length', users.length);
+    // console.log('api/avatar/[username], users.length', users.length);
     return new NextResponse('Could not find user by that username.', {
       status: 404,
     });
   }
 
   const user = users[0];
-  console.log('user', user);
+  // console.log('user', user);
 
   if (user.avatarS3Key === undefined || user.avatarS3Key === null) {
     // return new NextResponse('User does not have an avatar set.', {

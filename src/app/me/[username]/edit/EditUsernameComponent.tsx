@@ -62,13 +62,13 @@ export default function EditUsernameComponent(props: {
         {/* <h1>Upload a file</h1> */}
         <Row>
           <Col>
-            <InputGroup className="mb-3">
+            <InputGroup>
               <InputGroup.Text id="basic-addon1">.me/me/</InputGroup.Text>
               <Form.Control
                 placeholder="Username"
                 aria-label="Username"
                 aria-describedby="basic-addon1"
-                style={{ maxWidth: '400px' }}
+                // style={{ maxWidth: '400px' }}
                 defaultValue={props.username}
               />
             </InputGroup>
@@ -85,6 +85,7 @@ export default function EditUsernameComponent(props: {
               onClick={handleUpload}
               disabled={!submitEnabled}
               className={`${styles['button']}`}
+              disabled
             >
               Update
             </button>

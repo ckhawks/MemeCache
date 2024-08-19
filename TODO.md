@@ -25,3 +25,4 @@
 
 - fix random sign outs ?
 - test fix for: prevent two users from having same username with different casing
+- limit username to only alphanumeric

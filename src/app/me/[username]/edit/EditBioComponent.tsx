@@ -59,7 +59,7 @@ export default function EditBioComponent(props: { userId: string }) {
         {/* <h1>Upload a file</h1> */}
         <Row>
           <Col>
-            <InputGroup className="mb-3">
+            <InputGroup>
               <Form.Control
                 as="textarea"
                 placeholder="Describe your account!"
@@ -78,7 +78,7 @@ export default function EditBioComponent(props: { userId: string }) {
           <Col>
             <button
               onClick={handleUpload}
-              disabled={!submitEnabled}
+              disabled={true || !submitEnabled}
               className={`${styles['button']}`}
             >
               Update

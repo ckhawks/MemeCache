@@ -23,7 +23,12 @@ export default function MemeMediaRenderer(props: {
   if (supportedVideoTypes.indexOf(props.meme?.contentType) > -1) {
     return (
       <div className={styles['meme-media']}>
-        <video controls className={styles['meme-media-item']} loop>
+        <video
+          controls
+          className={styles['meme-media-item']}
+          loop
+          style={{ display: 'block' }}
+        >
           <source src={'/api/resource/' + props.meme.id} />
         </video>
       </div>

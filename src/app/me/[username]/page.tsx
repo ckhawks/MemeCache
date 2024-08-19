@@ -112,7 +112,7 @@ export default async function Profile({
     [userFromDb?.id, user?.id]
   );
 
-  console.log(memes.length);
+  // console.log(memes.length);
 
   const memesByCache = memes.reduce((acc, meme) => {
     const cacheId = meme.cacheId || null; // Handle uncached memes
@@ -123,7 +123,7 @@ export default async function Profile({
     return acc;
   }, {});
 
-  console.log(memesByCache);
+  // console.log(memesByCache);
 
   const isCurrentUser = user?.id === userFromDb.id;
 
