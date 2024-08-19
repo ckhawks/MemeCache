@@ -210,7 +210,7 @@ export async function register(prevState: any, formData: FormData) {
   }
 
   // verify usenrame aren't taken
-  const query2 = 'SELECT * FROM "User" WHERE username = $1';
+  const query2 = 'SELECT * FROM "User" WHERE LOWER(username) = LOWER($1)';
   const params2 = [formData.get('username')];
   const usersWithUsername = await db(query2, params2);
 

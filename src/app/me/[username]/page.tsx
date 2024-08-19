@@ -9,6 +9,7 @@ import { Plus } from 'react-feather';
 import { Button } from 'react-bootstrap';
 import CacheAccordion from './CacheAccordion';
 import FooterBar from '@/components/FooterBar';
+import Link from 'next/link';
 
 export default async function Profile({
   params,
@@ -31,7 +32,7 @@ export default async function Profile({
             <div className={styles.description}>
               {/* <h1>MemeCache</h1> */}
               <h1>404</h1>
-              <p>Please profile a profile name.</p>
+              <p>Please enter a profile name.</p>
             </div>
           </div>
         </main>
@@ -150,6 +151,14 @@ export default async function Profile({
                   // className={}
                 />
                 <h1>{userFromDb?.username}</h1>
+                {isCurrentUser && (
+                  <Link
+                    href={'/me/' + user?.username + '/edit'}
+                    className={`${styles['button']} ${styles['button-secondary']}`}
+                  >
+                    Edit profile
+                  </Link>
+                )}
               </div>
 
               {isCurrentUser && (
