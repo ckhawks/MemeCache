@@ -6,8 +6,6 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { db } from '@/db/db';
 
-const bcrypt = require('bcrypt');
-
 export interface UserPayload {
   id: string;
   username: string;
@@ -160,6 +158,7 @@ export async function decrypt(input: string): Promise<any> {
 
 // https://stackoverflow.com/a/17201754
 async function hash_password(input: string): Promise<any> {
+  const bcrypt = require('bcrypt');
   var salt = bcrypt.genSaltSync(10);
   var hash = bcrypt.hashSync(input, salt);
 
@@ -168,6 +167,7 @@ async function hash_password(input: string): Promise<any> {
 }
 
 async function check_password(input: string, hash: string): Promise<any> {
+  const bcrypt = require('bcrypt');
   // Load hash from your password DB.
   return bcrypt.compareSync(input, hash); // true
 }
@@ -351,6 +351,7 @@ export async function logout() {
 export async function handleTokenRefresh(request: NextRequest) {
   const refreshToken = request.cookies.get('refreshToken')?.value;
   if (!refreshToken) {
+    console.log('No refresh token provided');
     return NextResponse.json(
       { error: 'No refresh token provided' },
       { status: 401 }

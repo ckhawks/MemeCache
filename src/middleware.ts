@@ -2,6 +2,7 @@ import { handleTokenRefresh, validateAccessToken } from '@/auth/lib';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function middleware(request: NextRequest) {
+  // console.log('middleware');
   const accessToken = request.cookies.get('accessToken')?.value;
 
   if (!accessToken) {
@@ -19,5 +20,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // Token is invalid, try to refresh
+  console.log('Token is invalid, try to refresh');
   return handleTokenRefresh(request);
 }
+
+export const config = {
+  matcher: ['/((?!api|_next|.*\\..*).*)'],
+};
