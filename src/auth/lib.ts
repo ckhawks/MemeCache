@@ -348,7 +348,7 @@ export async function logout() {
   redirect('/login');
 }
 
-export async function handleTokenRefresh(request: NextRequest) {
+export async function handleTokenRefreshOld(request: NextRequest) {
   const refreshToken = request.cookies.get('refreshToken')?.value;
   if (!refreshToken) {
     console.log('No refresh token provided');
@@ -375,6 +375,24 @@ export async function handleTokenRefresh(request: NextRequest) {
       { error: 'Invalid refresh token' },
       { status: 401 }
     );
+  }
+}
+
+export async function handleTokenRefresh(
+  request: NextRequest
+): Promise<{ accessToken: string; user: UserPayload } | null> {
+  const refreshToken = request.cookies.get('refreshToken')?.value;
+  if (!refreshToken) {
+    console.log('No refresh token provided');
+    return null;
+  }
+
+  try {
+    const { accessToken, user } = await refreshAccessToken(refreshToken);
+    return { accessToken, user };
+  } catch (error) {
+    console.error('Error refreshing token:', error);
+    return null;
   }
 }
 
