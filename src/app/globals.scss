@@ -191,6 +191,8 @@ input[type='number']::-webkit-outer-spin-button {
 
 .modal-content {
   border: none;
+  color: black;
+  background-color: var(--background-color) !important;
 }
 
 .modal-header {

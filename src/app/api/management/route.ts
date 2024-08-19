@@ -8,7 +8,7 @@ import { GetFileForMemeByS3Path } from '@/util/s3/GetFileForMeme';
 export async function GET(request: Request) {
   try {
     // disable for now
-    return true;
+    return NextResponse.json({ error: 'Go away' }, { status: 500 });
     // validate user accessing is admin
     const user = await getUserFromAccessToken();
     if (!isAdmin(user as UserPayload)) {
