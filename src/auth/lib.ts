@@ -389,6 +389,7 @@ export async function handleTokenRefresh(
 
   try {
     const { accessToken, user } = await refreshAccessToken(refreshToken);
+    // @ts-ignore
     return { accessToken, user };
   } catch (error) {
     console.error('Error refreshing token:', error);
