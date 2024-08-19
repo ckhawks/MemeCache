@@ -11,6 +11,11 @@ export async function POST(request: Request) {
   const s3Client = getS3Client();
 
   try {
+    // TODO add reject if not within constants/mimeTypes.ts accepted range
+    // TODO compress images
+    // TODO limit videos to 1min
+    // TODO limit files to 50Mb
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
 
@@ -34,8 +39,8 @@ export async function POST(request: Request) {
     await s3Client.send(command);
 
     const uploadResponse = await db(
-      `INSERT INTO "Meme" (id, "createdAt", "uploaderUserId", "s3Key") VALUES ($1, $2, $3, $4)`,
-      [uuid, new Date().toISOString(), formData.get('userId'), uuid]
+      `INSERT INTO "Meme" (id, "createdAt", "uploaderUserId", "s3Key", "contentType") VALUES ($1, $2, $3, $4, $5)`,
+      [uuid, new Date().toISOString(), formData.get('userId'), uuid, file.type]
     ); // todo change uploaderUserId to real
 
     console.log('uploadResponse', uploadResponse);

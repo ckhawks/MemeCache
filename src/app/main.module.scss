@@ -77,6 +77,15 @@
   }
 }
 
+.button-danger {
+  background-color: #da2f35;
+  color: white;
+
+  &:hover {
+    background-color: #c82b31;
+  }
+}
+
 .button-small {
   padding: 6px 12px;
 }
@@ -203,6 +212,12 @@
   width: 100%;
 }
 
+.meme-media-item {
+  width: 100%;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
 .meme-body {
   padding: 1rem;
   border-top: 1px solid var(--border-color);
@@ -220,6 +235,8 @@
 
 .meme-body-date {
   color: var(--sub-text-color);
+  // display: flex;
+  // gap: 4px;
 }
 
 .meme-username {

@@ -3,7 +3,6 @@
 
 import Masonry from 'react-masonry-css';
 import styles from '../app/main.module.scss';
-import { Image } from 'react-bootstrap';
 import {
   getRelativeTimeString,
   getServerSideRelativeTime,
@@ -12,6 +11,8 @@ import { Folder } from 'react-feather';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import LikeButton from './LikeButton';
+import MemeMediaRenderer from './MemeMediaRenderer';
+import DeleteMemeButton from './DeleteMemeButton';
 
 export function GalleryMasonry(props: { memes: any[]; currentUserId: string }) {
   const [, forceUpdate] = useState({});
@@ -42,20 +43,31 @@ export function GalleryMasonry(props: { memes: any[]; currentUserId: string }) {
           {reversedMemes.map((meme) => {
             return (
               <div key={meme.id} className={`${styles['meme']}`}>
-                <Image
-                  className={styles['meme-media']}
-                  src={'/api/resource/' + meme.id}
-                  alt="visual meme :("
-                />
+                <MemeMediaRenderer meme={meme} />
                 <div className={styles['meme-body']}>
                   <div className={styles['meme-body-title']}>
                     <Folder size={14} /> <span>{meme.cacheName}</span>{' '}
-                    <LikeButton
-                      memeId={meme.id}
-                      userId={props.currentUserId}
-                      liked={meme.hasLiked}
-                      likes={meme.likeCount}
-                    />
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        gap: '8px',
+                        marginLeft: 'auto',
+                      }}
+                    >
+                      {props.currentUserId === meme.userId && (
+                        <DeleteMemeButton
+                          memeId={meme.id}
+                          userId={props.currentUserId}
+                        />
+                      )}
+                      <LikeButton
+                        memeId={meme.id}
+                        userId={props.currentUserId}
+                        liked={meme.hasLiked}
+                        likes={meme.likeCount}
+                      />
+                    </div>
                   </div>
                   <div className={styles['meme-body-date']}>
                     {typeof window === 'undefined'

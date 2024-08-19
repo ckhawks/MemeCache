@@ -188,3 +188,21 @@ input[type='number']::-webkit-outer-spin-button {
   color: rgb(0, 0, 0);
   background: rgb(255, 165, 165);
 }
+
+.modal-content {
+  border: none;
+}
+
+.modal-header {
+  border-bottom: none;
+  padding-bottom: 0px;
+}
+
+.modal-title {
+  font-weight: 700;
+}
+
+.modal-footer {
+  background-color: rgba(0, 0, 0, 0.05);
+  justify-content: space-between;
+}
