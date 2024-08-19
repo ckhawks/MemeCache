@@ -10,30 +10,13 @@ export default function EditUsernameComponent(props: {
   userId: string;
   username: string;
 }) {
-  const [file, setFile] = useState<File | null>(null);
-  const [contentType, setContentType] = useState<string>('');
   const [submitEnabled, setSubmitEnabled] = useState(false);
-  const [cacheId, setCacheId] = useState<string>('');
   const [message, setMessage] = useState('');
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      setFile(event.target.files[0]);
-      setContentType(event.target.files[0].type);
-      setSubmitEnabled(
-        supportedImageTypes.indexOf(event.target.files[0].type) > -1
-      );
-      console.log();
-    }
-  };
-
-  const handleCacheChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setCacheId(event.target.value);
-  };
 
   const handleUpload = async () => {
     const formData = new FormData();
     formData.append('userId', props.userId);
+    formData.append('username', '');
 
     try {
       const response = await fetch('/api/upload', {
@@ -45,8 +28,6 @@ export default function EditUsernameComponent(props: {
 
       if (response.ok) {
         setMessage(result.message);
-        setFile(null);
-        setContentType('');
         setSubmitEnabled(false);
       } else {
         setMessage(result.error || 'Something went wrong');
@@ -83,9 +64,8 @@ export default function EditUsernameComponent(props: {
           <Col>
             <button
               onClick={handleUpload}
-              disabled={!submitEnabled}
+              disabled={true || !submitEnabled}
               className={`${styles['button']}`}
-              disabled
             >
               Update
             </button>

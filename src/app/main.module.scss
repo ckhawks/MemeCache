@@ -75,7 +75,7 @@
   border: 1px solid var(--border-color);
   color: var(--button-secondary-color);
   font-weight: 400;
-  &:hover {
+  &:hover:not(&:disabled) {
     background-color: var(--button-secondary-bg-color-hover);
     box-shadow: none;
     color: var(--button-secondary-color-hover);

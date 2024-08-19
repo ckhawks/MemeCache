@@ -20,7 +20,7 @@ export default async function RegisterPage() {
         <div className={styles.description}>
           <Link href="/" style={{ textDecoration: 'none' }}>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <h1>MemeCache</h1>
+              <h1 style={{ textDecoration: 'none' }}>MemeCache</h1>
             </div>
           </Link>
 
@@ -33,7 +33,7 @@ export default async function RegisterPage() {
           style={{ marginTop: '24px' }}
         ></div>
 
-        <section>
+        <div style={{ width: '100%' }}>
           <h4 style={{ marginBottom: '24px' }}>Register</h4>
           {!user && <RegisterComponent />}
 
@@ -44,7 +44,7 @@ export default async function RegisterPage() {
       )} */}
 
           {/* <pre>Session: {JSON.stringify(session, null, 2)}</pre> */}
-        </section>
+        </div>
       </main>
     </div>
   );

@@ -18,7 +18,7 @@ export default async function LoginPage() {
     <div className={styles.wrapper}>
       <main className={`${styles.main} ${styles.narrow}`}>
         <div className={styles.description}>
-          <Link href="/">
+          <Link href="/" style={{ textDecoration: 'unset' }}>
             <div style={{ display: 'flex', justifyContent: 'center' }}></div>
 
             <h1>MemeCache</h1>
@@ -32,7 +32,7 @@ export default async function LoginPage() {
           style={{ marginTop: '24px' }}
         ></div>
 
-        <section>
+        <div style={{ width: '100%' }}>
           <h4 style={{ marginBottom: '24px' }}>Login</h4>
           {!user && <LoginComponent />}
 
@@ -43,7 +43,7 @@ export default async function LoginPage() {
       )} */}
 
           {/* <pre>Session: {JSON.stringify(session, null, 2)}</pre> */}
-        </section>
+        </div>
       </main>
     </div>
   );
