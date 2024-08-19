@@ -11,6 +11,8 @@
   margin: auto auto;
   flex: 1;
   width: 100%;
+  background-color: var(--background-color);
+  color: var(--text-color);
 }
 
 .content {
@@ -46,8 +48,8 @@
   flex-direction: row;
   padding: 8px 16px;
   font-weight: 500;
-  background-color: black;
-  color: white;
+  background-color: var(--button-primary-bg-color);
+  color: var(--button-primary-color);
   border-radius: 4px;
   transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out,
     color 0.2s ease-in-out;
@@ -56,22 +58,22 @@
   font-size: 14px;
 
   &:hover {
-    background-color: rgba(0, 0, 0, 0.9);
+    background-color: var(--button-primary-bg-color-hover);
     cursor: pointer;
     box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;
   }
 }
 
 .button-secondary {
-  background-color: white;
-  border: 1px solid #ececec;
-  color: #666666;
+  background-color: var(--button-secondary-bg-color);
+  border: 1px solid var(--border-color);
+  color: var(--button-secondary-color);
   font-weight: 400;
   &:hover {
-    background-color: rgba(0, 0, 0, 0.08);
+    background-color: var(--button-secondary-bg-color-hover);
     box-shadow: none;
-    color: black;
-    border: 1px solid #ececec;
+    color: var(--button-secondary-color-hover);
+    border: 1px solid var(--border-color);
   }
 }
 
@@ -177,8 +179,8 @@
 
 .meme {
   border-radius: 8px;
-  border: 1px solid #ececec;
-  background-color: white;
+  border: 1px solid var(--border-color);
+  background-color: var(--background-color);
   font-size: 14px;
   max-width: calc((1200px - 20px * 2) / 3);
   height: fit-content;
@@ -190,7 +192,7 @@
     // transform: scale(1.02);
     // cursor: pointer;
     box-shadow: rgba(100, 100, 111, 0.1) 0px 7px 29px 0px;
-    border: 1px solid #d0d0d0;
+    border: 1px solid var(--border-color-hover);
   }
 }
 
@@ -203,7 +205,7 @@
 
 .meme-body {
   padding: 1rem;
-  border-top: 1px solid #ececec;
+  border-top: 1px solid var(--border-color);
 }
 
 .meme-body-title {
@@ -213,21 +215,21 @@
   flex-direction: row;
   align-items: center;
   gap: 4px;
-  color: rgb(23, 23, 23);
+  color: var(--text-color);
 }
 
 .meme-body-date {
-  color: #8f8f8f;
+  color: var(--sub-text-color);
 }
 
 .meme-username {
   font-weight: 500;
-  color: #3d3d3d;
+  color: var(--mostly-text-color);
   text-decoration: none;
   transition: color 0.2s ease-in-out;
   &:hover {
     cursor: pointer;
-    color: rgb(23, 23, 23);
+    color: var(--text-color);
   }
 }
 

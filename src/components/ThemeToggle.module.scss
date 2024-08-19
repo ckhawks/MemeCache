@@ -1,0 +1,17 @@
+.icon.active {
+  color: var(--text-color);
+}
+
+.icon {
+  color: var(--sub-text-color);
+}
+
+.wrapper {
+  border: solid 1px var(--border-color);
+  border-radius: 100px;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}

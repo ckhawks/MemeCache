@@ -13,8 +13,6 @@ export default function CacheAccordion(props: {
   isCurrentUser: boolean;
   memes: any[];
 }) {
-  console.log('self: ', self);
-
   return (
     <div key={props.cache.id}>
       <Accordion>

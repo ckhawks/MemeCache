@@ -4,6 +4,7 @@ import Link from 'next/link';
 import styles from '../app/main.module.scss';
 import footerStyles from './FooterBar.module.scss';
 import { usePathname } from 'next/navigation';
+import ThemeToggle from './ThemeToggle';
 
 export default function FooterBar() {
   const pathname = usePathname();
@@ -28,7 +29,9 @@ export default function FooterBar() {
             Content Policy
           </Link>
         </div>
-        <div className={footerStyles['footer-right']}>right</div>
+        <div className={footerStyles['footer-right']}>
+          <ThemeToggle />
+        </div>
       </div>
     </div>
   );
