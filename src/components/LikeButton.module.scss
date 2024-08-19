@@ -1,0 +1,30 @@
+.icon,
+.likes {
+  color: var(--sub-text-color);
+  transition: color 0.2s ease-in-out;
+}
+
+.icon.liked {
+  color: #e26f6f;
+}
+
+.likes.liked {
+  color: #e26f6f;
+}
+
+.wrapper {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  align-items: center;
+  margin-left: auto;
+
+  &:hover {
+    cursor: pointer;
+  }
+
+  // now thats podracing
+  &:hover > *:not(.liked) {
+    color: var(--mostly-text-color);
+  }
+}

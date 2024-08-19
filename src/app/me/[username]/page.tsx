@@ -108,7 +108,16 @@ export default async function Profile({
                 alignItems: 'center',
               }}
             >
-              <h1>{userFromDb?.username}</h1>
+              <div>
+                <img
+                  src={'/api/resource/avatar/' + userFromDb.username}
+                  width={128}
+                  height={128}
+                  style={{ borderRadius: '100%' }}
+                  // className={}
+                />
+                <h1>{userFromDb?.username}</h1>
+              </div>
 
               {isCurrentUser && (
                 <Button

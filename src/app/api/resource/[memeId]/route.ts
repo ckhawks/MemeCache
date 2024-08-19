@@ -12,6 +12,12 @@ export async function GET(
     return new NextResponse('Please provide an id.', { status: 404 });
   }
 
+  if (params.memeId === 'avatar') {
+    return new NextResponse('Preventing accessing avatar rount', {
+      status: 404,
+    });
+  }
+
   try {
     const s3Client = getS3Client();
     console.log('bucket: ', process.env.MC_AWS_S3_BUCKET);

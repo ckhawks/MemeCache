@@ -5,6 +5,7 @@ import styles from '../app/main.module.scss';
 import navStyles from './NavigationBar.module.scss';
 import { usePathname } from 'next/navigation';
 import { LogOut, User } from 'react-feather';
+import { Image } from 'react-bootstrap';
 
 export default function NavigationBar(props: { username: string }) {
   const pathname = usePathname();
@@ -91,7 +92,13 @@ export default function NavigationBar(props: { username: string }) {
                 style={{ textDecoration: 'none', color: 'unset' }}
                 className={navStyles['navbar-right-user']}
               >
-                <User size={14} />
+                <img
+                  src={'/api/resource/avatar/' + props.username}
+                  width={21}
+                  height={21}
+                  className={navStyles['profile-picture']}
+                />
+                {/* <User size={14} /> */}
                 {props.username}
               </Link>
             </>

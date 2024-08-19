@@ -11,8 +11,9 @@ import {
 import { Folder } from 'react-feather';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import LikeButton from './LikeButton';
 
-export function GalleryMasonry(props: { memes: any[] }) {
+export function GalleryMasonry(props: { memes: any[]; currentUserId: string }) {
   const [, forceUpdate] = useState({});
 
   useEffect(() => {
@@ -48,7 +49,13 @@ export function GalleryMasonry(props: { memes: any[] }) {
                 />
                 <div className={styles['meme-body']}>
                   <div className={styles['meme-body-title']}>
-                    <Folder size={14} /> {meme.cacheName}
+                    <Folder size={14} /> <span>{meme.cacheName}</span>{' '}
+                    <LikeButton
+                      memeId={meme.id}
+                      userId={props.currentUserId}
+                      liked={meme.hasLiked}
+                      likes={meme.likeCount}
+                    />
                   </div>
                   <div className={styles['meme-body-date']}>
                     {typeof window === 'undefined'
