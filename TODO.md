@@ -1,28 +1,30 @@
 ## feature todo
 
-- pre-signed URLs for uploading files so that it avoids the origin server
-- change profile picture
-- confirmation email
-- forgot password
-- change username
+- DONE: change profile picture
 - profile bio
+- randomize explore
 - create cache
 - edit cache
 - delete cache
 - view likes
-- randomize explore
-- invite collaborators
+- pre-signed URLs for uploading files so that it avoids the origin server
+- optimize images on upload (might have to happen from the client)
 - follow profile
 - follow cache
-- optimize images on upload
+- following feed
 - add tags
 - add transcription
-- add application process (3 memes)
 - upload from social media
+- confirmation email
+- add application process (3 memes)
+- forgot password
+- change username
 - logo
+- invite collaborators
 
 ## bugs
 
 - fix random sign outs ?
+- fix first load not having session on SSR
 - test fix for: prevent two users from having same username with different casing
 - limit username to only alphanumeric

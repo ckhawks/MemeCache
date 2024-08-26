@@ -5,6 +5,7 @@ import './globals.scss';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { LightThemeProvider } from '@/contexts/LightThemeContext';
 import { getInitialLightTheme } from '@/contexts/getInitialLightTheme';
+import { MiddlewareValidator } from '@/components/MiddlewareValidator';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -23,6 +24,7 @@ export default function RootLayout({
   return (
     <html lang="en" data-theme={initialTheme}>
       <body className={inter.className}>
+        <MiddlewareValidator />
         <LightThemeProvider initialTheme={initialTheme}>
           {children}
         </LightThemeProvider>
