@@ -47,27 +47,35 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    console.log('userId', user?.id);
-    const currentUser = await db(
+    let currentUserResponse = await db(
       `
         SELECT id, username, "avatarS3Key" from "User" 
         WHERE id = $1 
       `,
       [user?.id]
     );
-    console.log('currentUser', currentUser);
-    if (currentUser.length != 1) {
+
+    console.log('currentUserResponse', currentUserResponse);
+    console.log(
+      'currentUserResponse.length',
+      currentUserResponse.length,
+      currentUserResponse.length != 1
+    );
+
+    if (currentUserResponse.length != 1) {
       return NextResponse.json(
         { error: 'Unable to locate user.' },
         { status: 400 }
       );
     }
+    const currentUser = currentUserResponse[0];
+    console.log('currentUser', currentUser);
 
-    if (currentUser[0].avatarS3Key !== '') {
+    if (currentUser.avatarS3Key !== '') {
       // delete existing avatar from S3
       const command = new DeleteObjectCommand({
         Bucket: process.env.MC_AWS_S3_BUCKET,
-        Key: currentUser[0].avatarS3Key,
+        Key: currentUser.avatarS3Key,
       });
       await s3Client.send(command);
     }
