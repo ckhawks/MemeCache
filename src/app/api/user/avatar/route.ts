@@ -47,6 +47,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
+    console.log('userId', user?.id);
     const currentUser = await db(
       `
         SELECT id, username, "avatarS3Key" from "User" 
@@ -54,6 +55,7 @@ export async function POST(request: Request) {
       `,
       [user?.id]
     );
+    console.log('currentUser', currentUser);
     if (currentUser.length != 1) {
       return NextResponse.json(
         { error: 'Unable to locate user.' },
