@@ -79,28 +79,35 @@ export async function POST(request: Request) {
       });
       await s3Client.send(command);
     }
+    console.log('here1');
 
     // generate a file name for the new avatar
     let uuid = crypto.randomUUID();
     const newAvatarKey = 'avatars/' + user.username + '-' + uuid;
 
+    console.log('here2');
     const uploadParams = {
       Bucket: process.env.MC_AWS_S3_BUCKET,
       Key: newAvatarKey,
       Body: await file.arrayBuffer(),
       ContentType: file.type,
     } as PutObjectCommandInput;
+    console.log('here3');
 
     const command = new PutObjectCommand(uploadParams);
+    console.log('here3.5');
     await s3Client.send(command);
+    console.log('here4');
 
     const updateUserResponse = await db(
       `UPDATE "User" SET "avatarS3Key" = $1 WHERE "id" = $2;`,
       [newAvatarKey, user?.id]
     );
+    console.log('here5');
 
     revalidatePath('/api/resource/avatar/' + user?.username);
     revalidatePath('/me/' + user?.username + '/edit');
+    console.log('here6');
 
     return NextResponse.json(
       { message: 'Avatar changed successfully' },
