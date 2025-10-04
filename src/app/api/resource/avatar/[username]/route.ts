@@ -64,7 +64,7 @@ export async function GET(
         status: 200,
         headers: {
           'Content-Type': data.ContentType!,
-          'Cache-Control': 'public, max-age=31536000, immutable', // optional, for caching
+          // 'Cache-Control': 'public, max-age=31536000, immutable', // optional, for caching
         },
       });
     } catch (error) {

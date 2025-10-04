@@ -125,6 +125,7 @@ export default function EditAvatarComponent(props: { userId: string }) {
           </Col>
           <Col>
             <button
+              type="button"
               onClick={handleUpload}
               disabled={!submitEnabled}
               className={`${styles['button']}`}
