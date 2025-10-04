@@ -71,12 +71,15 @@ export async function POST(request: Request) {
     const currentUser = currentUserResponse[0];
     console.log('currentUser', currentUser);
 
-    if (currentUser.avatarS3Key !== '') {
+    console.log('here0');
+    if (currentUser.avatarS3Key !== '' && currentUser.avatarS3Key !== null) {
+      console.log('here0.1');
       // delete existing avatar from S3
       const command = new DeleteObjectCommand({
         Bucket: process.env.MC_AWS_S3_BUCKET,
         Key: currentUser.avatarS3Key,
       });
+      console.log('here0.2');
       await s3Client.send(command);
     }
     console.log('here1');
