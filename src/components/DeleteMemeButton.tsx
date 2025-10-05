@@ -13,7 +13,10 @@ export default function DeleteMemeButton(props: {
   const [processing, setProcessing] = useState(false);
 
   const handleClose = () => setShow(false);
-  const handleShow = () => setShow(true);
+  const handleShow = (event: any) => {
+    event.stopPropagation();
+    setShow(true);
+  };
 
   const handleDeleteMeme = async () => {
     setProcessing(true);

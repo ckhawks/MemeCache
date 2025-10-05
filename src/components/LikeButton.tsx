@@ -13,6 +13,7 @@ export default function LikeButton(props: {
   const [likes, setLikes] = useState<number>(props.likes);
 
   const onToggleLike = async (event: any) => {
+    event.stopPropagation();
     if (props.userId === '') {
       return;
     }
