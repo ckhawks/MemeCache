@@ -33,6 +33,25 @@ export default function FooterBar() {
           <ThemeToggle />
         </div>
       </div>
+      <footer>
+        <div
+          style={{
+            textAlign: 'center',
+            marginTop: '1rem',
+            fontSize: '0.875rem',
+            color: '#666',
+          }}
+        >
+          From{' '}
+          <a
+            href="https://memecache.me"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            MemeCache.me
+          </a>
+        </div>
+      </footer>
     </div>
   );
 }

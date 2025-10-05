@@ -105,27 +105,56 @@ export async function generateMetadata({
   );
   const meme = await res.json();
 
-  return {
-    title: meme.cacheName || 'Meme',
-    description: `Check out this meme by ${meme.username || 'unknown'}`,
-    openGraph: {
-      title: meme.cacheName || 'Meme',
-      description: `Check out this meme by ${meme.username || 'unknown'}`,
-      images: [
-        {
+  const title = meme.cacheName || 'Meme';
+  const description = `Check out this meme by ${meme.username || 'unknown'}`;
+  const url = `${
+    process.env.NEXT_PUBLIC_BASE_URL || 'https://memecache.me'
+  }/meme/${meme.id}`;
+
+  if (meme.contentType && meme.contentType.startsWith('video/')) {
+    return {
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        type: 'video.other',
+        url,
+        siteName: 'MemeCache.me',
+        video: {
           url: `/api/resource/${meme.id}`,
+          type: meme.contentType,
         },
-      ],
-      type: 'article',
-      url: `${
-        process.env.NEXT_PUBLIC_BASE_URL || 'https://memecache.me'
-      }/meme/${meme.id}`,
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: meme.cacheName || 'Meme',
-      description: `Check out this meme by ${meme.username || 'unknown'}`,
-      images: [`/api/resource/${meme.id}`],
-    },
-  };
+      },
+      twitter: {
+        card: 'player',
+        title,
+        description,
+        player: `/api/resource/${meme.id}`,
+      },
+    };
+  } else {
+    return {
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        images: [
+          {
+            url: `/api/resource/${meme.id}`,
+          },
+        ],
+        type: 'article',
+        url,
+        siteName: 'MemeCache.me',
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title,
+        description,
+        images: [`/api/resource/${meme.id}`],
+      },
+    };
+  }
 }
