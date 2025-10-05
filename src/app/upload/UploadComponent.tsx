@@ -4,7 +4,7 @@ import {
   supportedImageTypes,
   supportedVideoTypes,
 } from '@/constants/mimeTypes';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button, Col, Form, Row } from 'react-bootstrap';
 
 export default function UploadComponent(props: {
@@ -19,8 +19,31 @@ export default function UploadComponent(props: {
   const [submitEnabled, setSubmitEnabled] = useState(false);
   const [cacheId, setCacheId] = useState<string>('');
   const [message, setMessage] = useState('');
+  const [preview, setPreview] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files && event.target.files[0];
+    if (file) {
+      // Determine media type based on file type
+      if (file.type.startsWith('image/')) {
+        setMediaType('image');
+      } else if (file.type.startsWith('video/')) {
+        setMediaType('video');
+      } else {
+        setMediaType(null);
+        setPreview(null);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+
     if (event.target.files && event.target.files[0]) {
       setFile(event.target.files[0]);
       setContentType(event.target.files[0].type);
@@ -61,6 +84,12 @@ export default function UploadComponent(props: {
         setFile(null);
         setContentType('');
         setSubmitEnabled(false);
+        setPreview(null);
+        setMediaType(null);
+        if (inputRef.current) {
+          inputRef.current.value = '';
+        }
+        // alert('Upload successful. File selection cleared.');
       } else {
         setMessage(result.error || 'Something went wrong');
       }
@@ -81,7 +110,11 @@ export default function UploadComponent(props: {
         {/* <h1>Upload a file</h1> */}
         <Row>
           <Col>
-            <Form.Control type="file" onChange={handleFileChange} />
+            <Form.Control
+              type="file"
+              onChange={handleFileChange}
+              ref={inputRef}
+            />
             <span>{contentType}</span>
           </Col>
           {/* <input
@@ -114,6 +147,21 @@ export default function UploadComponent(props: {
         </Row>
         {message && <p>{message}</p>}
       </Form>
+      {preview && mediaType === 'image' && (
+        <img
+          src={preview}
+          alt="Image Preview"
+          style={{ maxWidth: '100%', height: 'auto' }}
+        />
+      )}
+      {preview && mediaType === 'video' && (
+        <video src={preview} controls style={{ maxWidth: '100%' }} />
+      )}
+      {!preview && (
+        <div style={{ marginTop: '10px', fontStyle: 'italic' }}>
+          No file selected
+        </div>
+      )}
     </div>
   );
 }
