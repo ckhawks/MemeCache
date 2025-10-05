@@ -7,14 +7,19 @@ import {
 
 export default function MemeMediaRenderer(props: {
   meme: { id: string; contentType: string };
+  large?: boolean;
 }) {
   if (supportedImageTypes.indexOf(props.meme?.contentType) > -1) {
     return (
-      <div className={styles['meme-media']}>
+      <div
+        className={`${styles['meme-media']} ${props.large ? styles.large : ''}`}
+      >
         <Image
           src={'/api/resource/' + props.meme.id}
           alt=":("
-          className={styles['meme-media-item']}
+          className={`${styles['meme-media-item']} ${
+            props.large ? styles.large : ''
+          }`}
         />
       </div>
     );
@@ -22,10 +27,14 @@ export default function MemeMediaRenderer(props: {
 
   if (supportedVideoTypes.indexOf(props.meme?.contentType) > -1) {
     return (
-      <div className={styles['meme-media']}>
+      <div
+        className={`${styles['meme-media']} ${props.large ? styles.large : ''}`}
+      >
         <video
           controls
-          className={styles['meme-media-item']}
+          className={`${styles['meme-media-item']} ${
+            props.large ? styles.large : ''
+          }`}
           loop
           style={{ display: 'block' }}
         >

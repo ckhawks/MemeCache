@@ -13,7 +13,7 @@ export async function GET(
   }
 
   if (params.memeId === 'avatar') {
-    return new NextResponse('Preventing accessing avatar rount', {
+    return new NextResponse('Preventing accessing avatar route', {
       status: 404,
     });
   }

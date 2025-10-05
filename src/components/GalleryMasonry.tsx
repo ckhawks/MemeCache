@@ -13,6 +13,7 @@ import Link from 'next/link';
 import LikeButton from './LikeButton';
 import MemeMediaRenderer from './MemeMediaRenderer';
 import DeleteMemeButton from './DeleteMemeButton';
+import { redirect } from 'next/navigation';
 
 export function GalleryMasonry(props: { memes: any[]; currentUserId: string }) {
   const [, forceUpdate] = useState({});
@@ -42,7 +43,13 @@ export function GalleryMasonry(props: { memes: any[]; currentUserId: string }) {
         >
           {reversedMemes.map((meme) => {
             return (
-              <div key={meme.id} className={`${styles['meme']}`}>
+              <div
+                onClick={() => {
+                  window.location.href = `/meme/${meme.id}`;
+                }}
+                key={meme.id}
+                className={`${styles['meme']}`}
+              >
                 <MemeMediaRenderer meme={meme} />
                 <div className={styles['meme-body']}>
                   <div className={styles['meme-body-title']}>
