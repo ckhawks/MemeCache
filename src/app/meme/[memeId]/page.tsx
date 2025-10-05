@@ -6,15 +6,6 @@ import NavigationBar from '@/components/NavigationBar';
 import { getUserFromAccessToken } from '@/auth/lib';
 import FooterBar from '@/components/FooterBar';
 import BackButton from '@/components/BackButton';
-import MemeMediaRenderer from '@/components/MemeMediaRenderer';
-import Link from 'next/link';
-import DeleteMemeButton from '@/components/DeleteMemeButton';
-import LikeButton from '@/components/LikeButton';
-import { Folder } from 'react-feather';
-import {
-  getRelativeTimeString,
-  getServerSideRelativeTime,
-} from '@/util/datetimeFormat';
 import { MemeDetailsLarge } from './MemeDetailsLarge';
 
 interface Meme {
@@ -99,4 +90,42 @@ export default async function MemeDetails({
       <FooterBar />
     </>
   );
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { memeId: string };
+}) {
+  // Fetch meme details from an API endpoint; adjust URL or logic as needed
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL || 'https://memecache.me'}/api/meme/${
+      params.memeId
+    }`
+  );
+  const meme = await res.json();
+
+  return {
+    title: meme.cacheName || 'Meme',
+    description: `Check out this meme by ${meme.username || 'unknown'}`,
+    openGraph: {
+      title: meme.cacheName || 'Meme',
+      description: `Check out this meme by ${meme.username || 'unknown'}`,
+      images: [
+        {
+          url: `/api/resource/${meme.id}`,
+        },
+      ],
+      type: 'article',
+      url: `${
+        process.env.NEXT_PUBLIC_BASE_URL || 'https://memecache.me'
+      }/meme/${meme.id}`,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: meme.cacheName || 'Meme',
+      description: `Check out this meme by ${meme.username || 'unknown'}`,
+      images: [`/api/resource/${meme.id}`],
+    },
+  };
 }
