@@ -1,0 +1,30 @@
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-direction: row;
+  margin-top: 0.5rem;
+}
+
+.transcription-text {
+  border: 1px solid var(--border-color);
+  white-space: pre-wrap;
+  padding: 16px;
+  border-radius: 4px;
+
+  & > p {
+    margin: 0;
+  }
+}
+
+.transcription-author {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--sub-text-color);
+}
+
+.transcription-area {
+  width: 100%;
+  padding: 16px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color-hover);
+}

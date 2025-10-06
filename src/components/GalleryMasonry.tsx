@@ -14,6 +14,7 @@ import LikeButton from './LikeButton';
 import MemeMediaRenderer from './MemeMediaRenderer';
 import DeleteMemeButton from './DeleteMemeButton';
 import { redirect } from 'next/navigation';
+import { TagChip } from './TagChip';
 
 export function GalleryMasonry(props: { memes: any[]; currentUserId: string }) {
   const [, forceUpdate] = useState({});
@@ -101,6 +102,11 @@ export function GalleryMasonry(props: { memes: any[]; currentUserId: string }) {
                     </Link>
                     {/* {meme.createdAt.toISOString()} */}
                   </div>
+                  {/* <div className={styles['tag-chips']}>
+                    <TagChip tag={'brakence'} />
+                    <TagChip tag={'depression'} />
+                    <span className={styles['tags-extra']}>+4</span>
+                  </div> */}
                 </div>
               </div>
             );

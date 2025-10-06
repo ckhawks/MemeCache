@@ -1,25 +1,43 @@
 ## feature todo
 
 - DONE: change profile picture
-- profile bio
+- DONE: optimize images on upload (might have to happen from the client)
+- DONE: add download button
+- DONE: add opengraph metadata
+- DONE: add transcription
+
+### High
+
+- add tags
+- large feed
+- add transcription history viewer (moderation)
+- add categorization queue (own or global)
+  - score based on having transcription and having >5 tags
+- confirmation email
 - randomize explore
+
+### Medium
+
+- profile bio
+- add contribution score to profile (transcription = 5 pts, each new tag = 2pts, rate tag = 1pt)
+- view likes
+- pre-signed URLs for uploading files so that it avoids the origin server
+- follow tag
+- following feed
+- upload from social media
+- add application process (3 memes)
+- new logo
+
+### Low
+
+- transcription guidelines
+- follow profile
+- follow cache
 - create cache
 - edit cache
 - delete cache
-- view likes
-- pre-signed URLs for uploading files so that it avoids the origin server
-- optimize images on upload (might have to happen from the client)
-- follow profile
-- follow cache
-- following feed
-- add tags
-- add transcription
-- upload from social media
-- confirmation email
-- add application process (3 memes)
 - forgot password
 - change username
-- logo
 - invite collaborators
 
 ## bugs

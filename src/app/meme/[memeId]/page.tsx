@@ -7,6 +7,7 @@ import { getUserFromAccessToken } from '@/auth/lib';
 import FooterBar from '@/components/FooterBar';
 import BackButton from '@/components/BackButton';
 import { MemeDetailsLarge } from './MemeDetailsLarge';
+import MemeTranscriptionEditor from '@/components/MemeTranscriptionEditor';
 
 interface Meme {
   id: string;
@@ -85,6 +86,10 @@ export default async function MemeDetails({
             {/* <p>{memes.length} items</p> */}
           </div>
           <MemeDetailsLarge meme={meme} user={user} />
+          <MemeTranscriptionEditor
+            memeId={params.memeId}
+            userId={user?.id || ''}
+          />
         </div>
       </main>
       <FooterBar />
