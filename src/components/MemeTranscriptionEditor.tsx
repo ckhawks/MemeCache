@@ -97,7 +97,7 @@ export default function MemeTranscriptionEditor({
             )}
           </div>
 
-          <div className={styles['action-buttons']}>
+          { (userId !== '' && userId !== null ) && <div className={styles['action-buttons']}>
             <button
               className={globals.button}
               onClick={() => setIsEditing(true)}
@@ -105,7 +105,7 @@ export default function MemeTranscriptionEditor({
             >
               Edit
             </button>
-          </div>
+          </div>}
         </div>
       ) : (
         <div>

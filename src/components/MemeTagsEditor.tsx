@@ -114,7 +114,8 @@ export default function MemeTagsEditor({
           <i>No tags.</i>
         )}
       </div>
-      <div className={styles['tag-actions']} style={{ marginTop: '1rem' }}>
+      { (userId !== '' && userId != null ) && (
+        <div className={styles['tag-actions']} style={{ marginTop: '1rem' }}>
         <input
             id="new-tag-input"
           type="text"
@@ -131,6 +132,8 @@ export default function MemeTagsEditor({
           Add Tag
         </button>
       </div>
+      )}
+      
     </div>
   );
 }
