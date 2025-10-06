@@ -28,6 +28,7 @@ export default function MemeTranscriptionEditor({
 
   useEffect(() => {
     async function fetchTranscription() {
+      setLoading(true);
       try {
         const res = await fetch(`/api/meme/${memeId}/transcription`);
         if (res.ok) {
@@ -39,9 +40,13 @@ export default function MemeTranscriptionEditor({
         }
       } catch (err) {
         console.error(err);
+      } finally {
+        setLoading(false);
       }
     }
+    
     fetchTranscription();
+    // setLoading(false);
   }, [memeId]);
 
   const handleSave = async () => {
@@ -74,21 +79,29 @@ export default function MemeTranscriptionEditor({
       {!isEditing ? (
         <div>
           <div className={styles['transcription-text']}>
-            <p>
-              {transcriptionData?.text || <i>No transcription submitted.</i>}
-            </p>
-            <div className={styles['transcription-author']}>
-              Last updated by{' '}
-              <span style={{ color: 'black', fontWeight: '500' }}>
-                {transcriptionData?.editedByUsername}
-              </span>
-            </div>
+            {loading && <p>Loading...</p>}
+            {!loading && (
+              <>
+                <p>
+                  {transcriptionData?.text || (
+                    <i>No transcription submitted.</i>
+                  )}
+                </p>
+                { transcriptionData?.editedByUsername && <div className={styles['transcription-author']}>
+                  Last updated by{' '}
+                  <span style={{ color: 'black', fontWeight: '500' }}>
+                    {transcriptionData?.editedByUsername}
+                  </span>
+                </div>}
+              </>
+            )}
           </div>
 
           <div className={styles['action-buttons']}>
             <button
               className={globals.button}
               onClick={() => setIsEditing(true)}
+              disabled={loading}
             >
               Edit
             </button>

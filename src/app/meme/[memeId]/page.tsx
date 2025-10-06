@@ -8,6 +8,7 @@ import FooterBar from '@/components/FooterBar';
 import BackButton from '@/components/BackButton';
 import { MemeDetailsLarge } from './MemeDetailsLarge';
 import MemeTranscriptionEditor from '@/components/MemeTranscriptionEditor';
+import MemeTagsEditor from '@/components/MemeTagsEditor';
 
 interface Meme {
   id: string;
@@ -41,8 +42,6 @@ export default async function MemeDetails({
   //   LEFT JOIN "Cache" c ON c.id = mc."cacheId"
   //   ORDER BY "createdAt" ASC`
   // );
-
-  console.log();
 
   const memeData = await db(
     `
@@ -90,6 +89,7 @@ export default async function MemeDetails({
             memeId={params.memeId}
             userId={user?.id || ''}
           />
+          <MemeTagsEditor memeId={params.memeId} userId={user?.id || ''} />
         </div>
       </main>
       <FooterBar />

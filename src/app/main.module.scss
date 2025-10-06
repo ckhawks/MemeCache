@@ -290,58 +290,6 @@
   margin-top: 8px;
 }
 
-.tag-chip {
-  border: 1px solid var(--border-color);
-  border-radius: 30px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 12px;
-  padding-right: 8px;
-  font-size: 12px;
-  color: rgb(107, 107, 107);
-  width: fit-content;
-
-  & > svg {
-    color: rgb(177, 177, 177);
-  }
-
-  transition: width 0.2s ease-in-out, border 0.2s ease-in-out,
-    padding 0.2s ease-in-out;
-
-  .tag-action-icon {
-    transform: scaleX(0);
-    transition: transform 0.2s ease-in-out;
-    // display: none;
-    max-width: 0px;
-  }
-
-  &:hover {
-    border: 1px solid var(--border-color-hover);
-    cursor: pointer;
-    padding-right: 8px;
-
-    .tag-action-icon {
-      transform: scaleX(1);
-      display: block;
-      max-width: unset;
-    }
-  }
-
-  &.active {
-    // background-color: rgb(230, 255, 230);
-    // border: 1px solid rgb(141, 197, 141);
-    // color: rgb(77, 164, 77);
-
-    background-color: rgb(240, 240, 240);
-    border: 1px solid rgb(203, 203, 203);
-    color: rgb(91, 91, 91);
-    & > svg {
-      color: rgb(117, 117, 117);
-    }
-  }
-}
-
 .tags-extra {
   font-size: 11px;
   color: rgb(107, 107, 107);
