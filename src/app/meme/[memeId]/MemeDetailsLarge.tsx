@@ -26,31 +26,21 @@ export function MemeDetailsLarge(props: { meme: any; user: any }) {
               marginLeft: 'auto',
             }}
           >
-            <a
-              href={`/api/resource/${props.meme.id}`}
-              download
-              style={{
-                color: 'gray',
-                padding: '4px 8px',
-                border: '1px solid #ccc',
-                borderRadius: '8px',
-                textDecoration: 'none',
-                fontWeight: 400,
-                // color: '#333',
-                display: 'flex',
-                gap: '4px',
-                alignItems: 'center',
-              }}
-            >
-              <Download size={14} />
-              Download
-            </a>
             {props.user?.id === props.meme.userId && (
               <DeleteMemeButton
                 memeId={props.meme.id}
                 userId={props.user?.id || ''}
               />
             )}
+            <a
+              href={`/api/resource/${props.meme.id}`}
+              download
+              style={{
+                color: 'gray',
+              }}
+            >
+              <Download size={14} />
+            </a>
             <LikeButton
               memeId={props.meme.id}
               userId={props.user?.id || ''}

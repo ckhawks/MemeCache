@@ -6,6 +6,7 @@ import {
 } from '@/constants/mimeTypes';
 import React, { useEffect, useRef, useState } from 'react';
 import { Button, Col, Form, Row } from 'react-bootstrap';
+import imageCompression from 'browser-image-compression';
 
 export default function UploadComponent(props: {
   userId: string;
@@ -66,8 +67,42 @@ export default function UploadComponent(props: {
       return;
     }
 
+    let fileToUpload = file;
+
+    // For images, always attempt to compress losslessly and downscale if over 1920
+    if (mediaType === 'image') {
+      try {
+        const options = {
+          maxWidthOrHeight: 1920,
+          useWebWorker: true,
+          initialQuality: 1, // maintain original quality
+        };
+        console.log('Uncompressed file size: ', fileToUpload.size);
+        fileToUpload = await imageCompression(file, options);
+        console.log('Compressed file size: ', fileToUpload.size);
+        if (fileToUpload.size > 4 * 1024 * 1024) {
+          // Check if compressed file exceeds 4MB
+          setMessage(
+            'Compressed image file is still larger than 4MB. Please choose a smaller image.'
+          );
+          return;
+        }
+      } catch (error) {
+        console.error('Image compression error: ', error);
+      }
+    } else if (mediaType === 'video') {
+      // Limit video file size to 30MB for now
+      const MAX_VIDEO_SIZE = 30 * 1024 * 1024; // 30 MB
+      if (file.size > MAX_VIDEO_SIZE) {
+        setMessage(
+          'Video file is too large. Please select a video less than 30 MB.'
+        );
+        return;
+      }
+    }
+
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', fileToUpload);
     formData.append('userId', props.userId);
     formData.append('cacheId', cacheId);
 
@@ -89,7 +124,6 @@ export default function UploadComponent(props: {
         if (inputRef.current) {
           inputRef.current.value = '';
         }
-        // alert('Upload successful. File selection cleared.');
       } else {
         setMessage(result.error || 'Something went wrong');
       }

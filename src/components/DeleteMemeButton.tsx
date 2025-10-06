@@ -1,9 +1,8 @@
-import { Heart, Trash } from 'react-feather';
-
+import { Trash } from 'react-feather';
 import localStyles from './LikeButton.module.scss';
 import styles from '../app/main.module.scss';
 import { useState } from 'react';
-import { Alert, Button, Form, InputGroup, Modal } from 'react-bootstrap';
+import { Button, Form, Modal } from 'react-bootstrap';
 
 export default function DeleteMemeButton(props: {
   memeId: string;
@@ -12,13 +11,17 @@ export default function DeleteMemeButton(props: {
   const [show, setShow] = useState(false);
   const [processing, setProcessing] = useState(false);
 
-  const handleClose = () => setShow(false);
+  const handleClose = (event?: any) => {
+    event?.stopPropagation();
+    setShow(false);
+  };
   const handleShow = (event: any) => {
     event.stopPropagation();
     setShow(true);
   };
 
-  const handleDeleteMeme = async () => {
+  const handleDeleteMeme = async (event: any) => {
+    event.stopPropagation();
     setProcessing(true);
     const formData = new FormData();
     formData.append('memeId', props.memeId);
@@ -57,7 +60,7 @@ export default function DeleteMemeButton(props: {
       <div onClick={handleShow} className={localStyles['wrapper']}>
         <Trash size={14} className={`${localStyles['icon']}`} />
       </div>
-      <Modal show={show} onHide={handleClose} centered>
+      <Modal show={show} onHide={() => handleClose} centered>
         <Form action={handleDeleteMeme}>
           <Modal.Header closeButton>
             <Modal.Title style={{ fontWeight: 700 }}>Delete meme</Modal.Title>

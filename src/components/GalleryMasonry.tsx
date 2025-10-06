@@ -7,7 +7,7 @@ import {
   getRelativeTimeString,
   getServerSideRelativeTime,
 } from '@/util/datetimeFormat';
-import { Folder } from 'react-feather';
+import { Download, Folder } from 'react-feather';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import LikeButton from './LikeButton';
@@ -68,6 +68,18 @@ export function GalleryMasonry(props: { memes: any[]; currentUserId: string }) {
                           userId={props.currentUserId}
                         />
                       )}
+                      <a
+                        href={`/api/resource/${meme.id}`}
+                        download
+                        style={{
+                          color: 'gray',
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                        }}
+                      >
+                        <Download size={14} />
+                      </a>
                       <LikeButton
                         memeId={meme.id}
                         userId={props.currentUserId}
