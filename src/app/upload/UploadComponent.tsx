@@ -72,20 +72,34 @@ export default function UploadComponent(props: {
     // For images, always attempt to compress losslessly and downscale if over 1920
     if (mediaType === 'image') {
       try {
-        const options = {
-          maxWidthOrHeight: 1920,
-          useWebWorker: true,
-          initialQuality: 1, // maintain original quality
-        };
-        console.log('Uncompressed file size: ', fileToUpload.size);
-        fileToUpload = await imageCompression(file, options);
-        console.log('Compressed file size: ', fileToUpload.size);
-        if (fileToUpload.size > 4 * 1024 * 1024) {
-          // Check if compressed file exceeds 4MB
-          setMessage(
-            'Compressed image file is still larger than 4MB. Please choose a smaller image.'
+        // If GIF, skip compression/conversion to preserve animation
+        if (file.type === 'image/gif') {
+          console.log(
+            'GIF detected; skipping compression to preserve animation.'
           );
-          return;
+          // enforce 4MB limit for GIFs
+          if (file.size > 4 * 1024 * 1024) {
+            setMessage(
+              'GIF file is too large. Please select a GIF smaller than 4MB.'
+            );
+            return;
+          }
+        } else {
+          const options = {
+            maxWidthOrHeight: 1920,
+            useWebWorker: true,
+            initialQuality: 1, // maintain original quality
+          };
+          console.log('Uncompressed file size: ', fileToUpload.size);
+          fileToUpload = await imageCompression(file, options);
+          console.log('Compressed file size: ', fileToUpload.size);
+          if (fileToUpload.size > 4 * 1024 * 1024) {
+            // Check if compressed file exceeds 4MB
+            setMessage(
+              'Compressed image file is still larger than 4MB. Please choose a smaller image.'
+            );
+            return;
+          }
         }
       } catch (error) {
         console.error('Image compression error: ', error);
