@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:migrate:status": "node scripts/migrate.mjs --status",
+    "db:migrate:dry": "node scripts/migrate.mjs --dry-run"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1106.0",
@@ -16,6 +20,7 @@
     "browser-image-compression": "^2.0.2",
     "jose": "^5.6.3",
     "next": "14.2.35",
+    "pg": "^8.23.0",
     "react": "^18",
     "react-bootstrap": "^2.10.4",
     "react-dom": "^18",
@@ -26,6 +31,7 @@
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/pg": "^8.21.0",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",

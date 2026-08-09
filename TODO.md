@@ -64,7 +64,16 @@ instance and in query string literals; nothing has ever been committed.
 - [x] `pg_dump --schema-only` from Neon into `db/schema.sql` and commit it. **Done
       2026-08-09.** Findings are written up in `db/README.md`; the ones that change other
       phases are listed below.
-- [ ] Add a lightweight migration runner and an initial migration.
+- [x] Add a lightweight migration runner and an initial migration. **Done 2026-08-09.**
+      `scripts/migrate.mjs` applies `db/migrations/*.sql` once each, in a transaction,
+      tracked in a `_migration` table. `npm run db:migrate`, `:status`, `:dry`.
+      Migration `001` adds the missing indexes and the case-insensitive unique indexes.
+      Verified end to end against a throwaway local Postgres: `db/schema.sql` restores
+      into an empty database, `001` applies and is idempotent, and the new
+      `user_username_lower_key` correctly rejects `Alice` against an existing `alice`.
+- [ ] **Migration 001 has not been applied to the live database yet.** It cannot be, with
+      the current credentials — see the role note in Phase 2. Apply it during the Dallas
+      restore, or grant CREATE first if you want the index speedup on Neon before then.
 - [ ] ~~Add `Meme.status`~~ — not needed. `deletedAt` columns **already exist** on `Meme`,
       `Like` and `User` and are simply never used. Phase 7 soft delete is a code change,
       not a schema change.
@@ -80,8 +89,9 @@ instance and in query string literals; nothing has ever been committed.
       one cache despite the join-table shape. Either drop both constraints and finish the
       feature, or accept one-cache-per-user and remove the dead UI. Ties to Phase 9g.
 - [ ] Install the `uuid-ossp` extension on the Dallas database before restoring.
-- [ ] Add `.env.example`.
-- [ ] Rewrite `README.md` as real setup instructions (it is still the create-next-app boilerplate).
+- [x] Add `.env.example`. **Done 2026-08-09.**
+- [x] Rewrite `README.md` as real setup instructions. **Done 2026-08-09.** Includes the
+      warning that `npm run dev` runs against the production database and bucket.
 - [ ] Delete dead code: `src/auth/lib copy.ts`, `middlewareOld`, `middlewareTemp`,
       `handleTokenRefreshOld`, and the commented-out query blocks in most page files.
 - [ ] Normalize SQL identifier casing. The dump confirms **three** conventions in one
@@ -89,14 +99,27 @@ instance and in query string literals; nothing has ever been committed.
       unquoted lowercase on `MemeTag`/`MemeTagVote`/`Tag`, and snake_case on
       `MemeTranscription`. Query code has to match each exactly, which is why the tag
       queries look inconsistent — they are correct, just for a differently-named table.
-- [ ] Add a GitHub Action running `tsc --noEmit` and `next lint`.
+- [x] Add a GitHub Action running `tsc --noEmit`, `next lint` and `next build`.
+      **Done 2026-08-09**, `.github/workflows/ci.yml`. Untested — it has never run,
+      since nothing has been pushed yet.
 
 ## Phase 2 — Neon to Dallas Postgres
 
 The entire database layer is the 8-line `db()` helper in `src/db/db.ts`, which makes this
 much smaller than it sounds.
 
-- [ ] Create the `memecache` database and role on Dallas Postgres (port 7465).
+- [ ] Create the `memecache` database and role on Dallas Postgres (port 7465), plus the
+      `uuid-ossp` extension. **Give the app a least-privilege role** — see below.
+- [ ] **The app currently connects to Neon as `test_owner`, a member of `neon_superuser`
+      holding `pg_read_all_data` and `pg_write_all_data`.** The tables are owned by a
+      different role, `memecache-api`. So the web application's database credentials are
+      effectively superuser, which is the wrong shape for a public-facing app and should
+      not be reproduced on Dallas. The new role wants `CONNECT`, `USAGE` on `public`, and
+      `SELECT`/`INSERT`/`UPDATE`/`DELETE` on the app tables — nothing more.
+- [ ] Note: despite those privileges, `test_owner` has **no `CREATE` on schema `public`**
+      (the Postgres 15+ default), which is why `npm run db:migrate` fails against Neon
+      with `permission denied for schema public`. Not worth fixing on Neon if the move is
+      imminent — apply migration 001 during the restore instead.
 - [ ] Replace `@neondatabase/serverless` with `pg`. The `neon()` HTTP driver does not speak
       the wire protocol and will not work against plain Postgres.
 - [ ] While rewriting `db()`: use one shared `Pool` at module scope. The current code
