@@ -5,7 +5,6 @@
 // exposed validateAccessToken, refreshAccessToken and updateUserActivity(userId) as
 // unauthenticated endpoints. The three real form actions live in @/auth/actions instead.
 
-import { NextRequest } from 'next/server';
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { db } from '@/db/db';
@@ -25,11 +24,27 @@ const refreshTokenSecret = process.env.JWT_REFRESH_SECRET!;
 const accessTokenKey = new TextEncoder().encode(accessTokenSecret);
 const refreshTokenKey = new TextEncoder().encode(refreshTokenSecret);
 
+// The access token used to last 15 minutes, with middleware silently minting a new one
+// from the refresh token on every request. That could not survive the move to self-hosted
+// Postgres: middleware runs in the Edge Runtime, which cannot open a database connection,
+// and the Neon HTTP driver was the only thing that ever made it work.
+//
+// It was also only half working. Middleware set the refreshed cookie on the *response*,
+// while the server component rendering the page read the *request* -- so the refresh never
+// helped the render that triggered it. That is the "random sign outs" and "no session on
+// first SSR load" pair in TODO.md.
+//
+// So the access token now simply lives as long as the refresh token and there is nothing
+// to refresh. The cost is that a stolen token stays valid until it expires; revocation is
+// logout (which deletes the refresh token row) and the role check in validateAccessToken.
+// Acceptable for an invite-only site. If registration ever opens, see db/MIGRATION.md.
+export const ACCESS_TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60;
+
 async function createAccessToken(user: UserPayload) {
   return await new SignJWT({ ...user })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('15m') // Short-lived access token
+    .setExpirationTime(`${ACCESS_TOKEN_TTL_SECONDS}s`)
     .sign(accessTokenKey);
 }
 
@@ -54,23 +69,33 @@ export async function createTokens(user: UserPayload) {
   return { accessToken, refreshToken };
 }
 
+// How stale "lastActive" is allowed to get before it is worth a write.
+const ACTIVITY_WRITE_INTERVAL_MS = 5 * 60 * 1000;
+
 export async function validateAccessToken(token: string) {
   try {
     const { payload } = await jwtVerify(token, accessTokenKey, {
       algorithms: ['HS256'],
     });
 
-    // Check if the user still exists and their role hasn't changed
-    const [user] = await db('SELECT role FROM "User" WHERE id = $1', [
-      payload.id,
-    ]);
+    // Check the user still exists and their role has not changed. With no short-lived
+    // token to expire, this role check is the main way a session stops being valid
+    // before logout, so it stays on the request path.
+    const [user] = await db(
+      'SELECT role, "lastActive" FROM "User" WHERE id = $1',
+      [payload.id]
+    );
 
     if (!user || user.role !== payload.role) {
       return null; // Token is no longer valid
     }
 
-    // Update user's last activity
-    await updateUserActivity(payload?.id as string);
+    // This used to write on every single request. Only write when the value is actually
+    // stale -- getOnlineUsers() buckets to 15 minutes, so 5-minute resolution is ample.
+    const last = user.lastActive ? new Date(user.lastActive).getTime() : 0;
+    if (Date.now() - last > ACTIVITY_WRITE_INTERVAL_MS) {
+      await updateUserActivity(payload?.id as string);
+    }
 
     return payload as unknown as UserPayload;
   } catch (error) {
@@ -78,45 +103,10 @@ export async function validateAccessToken(token: string) {
   }
 }
 
-export async function validateRefreshToken(token: string) {
-  try {
-    const { payload } = await jwtVerify(token, refreshTokenKey, {
-      algorithms: ['HS256'],
-    });
-    return payload as { userId: string };
-  } catch (error) {
-    return null;
-  }
-}
-
-export async function refreshAccessToken(refreshToken: string) {
-  const payload = await validateRefreshToken(refreshToken);
-  if (!payload) {
-    throw new Error('Invalid refresh token');
-  }
-
-  // Check if refresh token exists in database
-  const [dbToken] = await db('SELECT * FROM "RefreshToken" WHERE token = $1', [
-    refreshToken,
-  ]);
-  if (!dbToken) {
-    throw new Error('Refresh token not found');
-  }
-
-  // Get user data
-  const [user] = await db(
-    'SELECT id, username, email, role FROM "User" WHERE id = $1',
-    [payload.userId]
-  );
-  if (!user) {
-    throw new Error('User not found');
-  }
-
-  // Create new access token
-  const accessToken = await createAccessToken(user as any);
-
-  return { accessToken, user };
-}
+// The refresh token is still issued and still recorded in the RefreshToken table, because
+// logout deletes the row and that is what a future "log out everywhere" would hang off.
+// Nothing redeems it for a new access token any more -- the access token outlives it being
+// needed. refreshAccessToken() and handleTokenRefresh() were removed along with middleware.
 
 // https://stackoverflow.com/a/17201754
 export async function hashPassword(input: string): Promise<string> {
@@ -131,25 +121,6 @@ export async function checkPassword(
 ): Promise<boolean> {
   const bcrypt = require('bcrypt');
   return bcrypt.compareSync(input, hash);
-}
-
-export async function handleTokenRefresh(
-  request: NextRequest
-): Promise<{ accessToken: string; user: UserPayload } | null> {
-  const refreshToken = request.cookies.get('refreshToken')?.value;
-  if (!refreshToken) {
-    console.log('No refresh token provided');
-    return null;
-  }
-
-  try {
-    const { accessToken, user } = await refreshAccessToken(refreshToken);
-    // @ts-ignore
-    return { accessToken, user };
-  } catch (error) {
-    console.error('Error refreshing token:', error);
-    return null;
-  }
 }
 
 export async function getUserFromAccessToken() {

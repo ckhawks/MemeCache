@@ -8,9 +8,8 @@ everything below is the server-side work.
 
 ## Before you start
 
-**Middleware is a hard prerequisite.** `src/middleware.ts` runs in the Edge Runtime and
-transitively imports `pg`, which cannot run there. See "The middleware problem" at the
-bottom. Resolve that before deploying the driver swap anywhere.
+The middleware blocker is **resolved** — see "The middleware problem" at the bottom for
+what it was and which option was taken. Nothing else gates this runbook.
 
 ## 1. Create the database and a least-privilege role
 
@@ -154,17 +153,33 @@ reads the **request**, so the refresh does not help the render that triggered it
 helps the next request. That is the bug behind "random sign outs" and "no session on first
 SSR load" in TODO.md.
 
-Options, in rough order of preference:
+### Resolved: middleware deleted, access token lengthened
 
-1. **Make middleware DB-free.** Verify the access-token signature with `jose`, which is
-   Edge-safe, and nothing else. Move refresh into a Node route handler. Deletes
-   `MiddlewareValidator` and the `middleware_run` cookie. This is Phase 5's plan, pulled
-   forward.
-2. **Delete middleware entirely and lengthen the access token.** If the access token lives
-   as long as the refresh token, per-request refresh stops mattering and
-   `getUserFromAccessToken()` in Node covers everything. Simplest by a distance; the cost
-   is that revoking a session no longer takes effect within 15 minutes.
-3. **Upgrade to Next 16 first**, then run middleware on the Node runtime and keep the
-   current logic. Also clears the 5 remaining npm advisories, which only resolve on that
-   major. But a 14 to 16 upgrade is its own project and would be happening during a
-   database migration.
+Three options were on the table — an Edge-safe signature-only middleware with refresh moved
+to a Node route, deleting middleware outright, or upgrading to Next 16 so middleware could
+run on Node. **Deleting it won**, because it is the only one that makes the app smaller and
+it closes two long-standing bugs rather than preserving them.
+
+What changed:
+
+- `src/middleware.ts` deleted.
+- `src/components/MiddlewareValidator.tsx` deleted, along with the `middleware_run` cookie
+  and the full-page `window.location.reload()` it triggered.
+- Access token TTL raised from 15 minutes to 7 days, matching the refresh token, and the
+  cookie `maxAge` now derives from the same constant. Those two previously disagreed: a
+  15-minute cookie carrying a token middleware was supposed to refresh, so the browser
+  dropped a still-valid session and the user appeared logged out.
+- `refreshAccessToken()` and `handleTokenRefresh()` removed — nothing redeems a refresh
+  token any more.
+- `validateAccessToken()` now writes `lastActive` only when it is more than 5 minutes
+  stale, instead of on every single request. `getOnlineUsers()` buckets to 15 minutes, so
+  the resolution is ample.
+
+Refresh tokens are still issued and still recorded, because logout deletes the row and that
+is the hook a future "log out everywhere" would use.
+
+**The tradeoff:** a stolen access token stays valid until it expires. Revocation is logout,
+plus the role check in `validateAccessToken`, which still runs against the database on each
+request. For an invite-only site with 15 accounts that is a fair trade. **If registration
+ever opens to the public, revisit it** — the natural move then is option one, a
+signature-only middleware with a Node refresh route.

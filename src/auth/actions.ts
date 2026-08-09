@@ -9,9 +9,17 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { db } from '@/db/db';
-import { checkPassword, createTokens, hashPassword } from '@/auth/lib';
+import {
+  ACCESS_TOKEN_TTL_SECONDS,
+  checkPassword,
+  createTokens,
+  hashPassword,
+} from '@/auth/lib';
 
-const ACCESS_TOKEN_MAX_AGE = 15 * 60; // 15 minutes
+// Must match the JWT's own expiry. When these disagreed -- a 15 minute cookie holding a
+// token that middleware was supposed to refresh -- the browser dropped a still-valid
+// session and the user appeared logged out.
+const ACCESS_TOKEN_MAX_AGE = ACCESS_TOKEN_TTL_SECONDS;
 const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60; // 7 days
 
 function setSessionCookies(accessToken: string, refreshToken: string) {

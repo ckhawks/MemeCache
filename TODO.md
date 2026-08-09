@@ -120,10 +120,15 @@ much smaller than it sounds.
       (the Postgres 15+ default), which is why `npm run db:migrate` fails against Neon
       with `permission denied for schema public`. Not worth fixing on Neon if the move is
       imminent — apply migration 001 during the restore instead.
-- [ ] Replace `@neondatabase/serverless` with `pg`. The `neon()` HTTP driver does not speak
-      the wire protocol and will not work against plain Postgres.
-- [ ] While rewriting `db()`: use one shared `Pool` at module scope. The current code
-      constructs a fresh client on every single call.
+- [x] Replace `@neondatabase/serverless` with `pg`. **Done 2026-08-09.** Verified by
+      running the app's real queries through both drivers and comparing row counts,
+      per-column types and serialised values — the `/explore` feed query, a `COUNT`, a
+      `SUM`, a timestamp-bearing user row and an empty result. All five byte-identical.
+- [x] One shared `Pool` at module scope, cached on `globalThis` so Next's dev-server hot
+      reload does not leak a pool per reload. The old code built a fresh client per call.
+- [x] Externalise `pg-native` in `next.config.mjs` alongside `bcrypt`.
+- [ ] Remove `@neondatabase/serverless` from `package.json` once the cutover is done and
+      there is no chance of needing to point back at Neon.
 - [ ] `pg_dump` the data from Neon, restore to Dallas, verify row counts per table.
 - [ ] Confirm the nightly Chicago backup picks up the new database. The `pg_hba` rule is
       `host all user_does_backups <ip>/32 md5` and `user_does_backups` holds cluster-level
@@ -171,22 +176,30 @@ in Dallas reading a `us-west-1` bucket, streamed through Node.
 - [ ] Keep the S3 bucket read-only for a week, then delete.
 - [ ] Presigned URLs for upload so files skip the origin entirely.
 
-## Phase 5 — Fix the session model
+## Phase 5 — Fix the session model — DONE 2026-08-09, folded into Phase 2
 
-These three are one root cause. When the 15-minute access token expires, `middleware.ts`
-refreshes it and sets the cookie on the **response**, but the server component then calls
-`getUserFromAccessToken()`, which reads `cookies()` from the **request** — still holding the
-old token. The page renders logged-out, and `MiddlewareValidator.tsx` papers over it with a
-full `window.location.reload()`.
+Phase 2 forced this early. Swapping to `pg` broke the build: `middleware.ts` runs in the
+Edge Runtime and transitively imported the driver, and the Edge Runtime has no TCP sockets.
+The Neon HTTP driver was the only reason it ever worked, and self-hosted Postgres removes
+that option.
 
-- [ ] Forward the refreshed cookie onto the request via
-      `NextResponse.next({ request: { headers } })` so the same render sees it.
-- [ ] Delete `MiddlewareValidator` and the `middleware_run` cookie hack.
-- [ ] Stop hitting the DB in middleware on every request. It currently does a `SELECT role`
-      plus an `UPDATE lastActive` before the page runs its own auth query. Verify the JWT
-      signature only; throttle the activity write.
-- [ ] Lengthen the access token or add sliding refresh so expiry is never user-visible.
-- [ ] Closes: "fix random sign outs", "fix first load not having session on SSR".
+All three bugs shared one root cause. The 15-minute access token was refreshed by
+middleware, which set the new cookie on the **response** while the server component read
+the **request** — so the refresh never helped the render that triggered it, and the cookie
+`maxAge` expired at 15 minutes regardless.
+
+- [x] ~~Forward the refreshed cookie onto the request~~ — moot, there is no refresh.
+- [x] Deleted `middleware.ts`, `MiddlewareValidator.tsx`, and the `middleware_run` cookie.
+- [x] Access token TTL 15 minutes to 7 days, matching the refresh token; the cookie
+      `maxAge` now derives from the same constant so the two cannot drift apart again.
+- [x] `validateAccessToken` writes `lastActive` only when it is over 5 minutes stale
+      instead of on every request. The role check stays on the request path — with no
+      short expiry, it is the main way a session goes invalid before logout.
+- [x] Closes: "fix random sign outs", "fix first load not having session on SSR".
+
+**Tradeoff accepted:** a stolen access token stays valid until it expires. Fine for 15
+invite-only accounts. If registration ever opens, revisit — the move then is a
+signature-only Edge middleware plus a Node refresh route. Written up in `db/MIGRATION.md`.
 
 ## Phase 6 — Drop Bootstrap
 
