@@ -64,10 +64,7 @@ export function GalleryMasonry(props: { memes: any[]; currentUserId: string }) {
                       }}
                     >
                       {props.currentUserId === meme.userId && (
-                        <DeleteMemeButton
-                          memeId={meme.id}
-                          userId={props.currentUserId}
-                        />
+                        <DeleteMemeButton memeId={meme.id} />
                       )}
                       <a
                         href={`/api/resource/${meme.id}`}

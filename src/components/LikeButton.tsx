@@ -30,11 +30,10 @@ export default function LikeButton(props: {
   };
 
   const handleChangeLikeState = async () => {
+    // No userId here on purpose -- the server takes the liker from the session.
     const formData = new FormData();
     formData.append('memeId', props.memeId);
-    formData.append('userId', props.userId);
     formData.append('status', (!liked).toString());
-    // formData.append('cacheId', cacheId);
 
     try {
       const response = await fetch('/api/like', {

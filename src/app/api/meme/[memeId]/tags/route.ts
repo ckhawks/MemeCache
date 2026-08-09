@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db/db';
 import { getUserFromAccessToken } from '@/auth/lib';
 
+const MAX_TAG_LENGTH = 50;
+
 // GET: Retrieve all tags with scores and metadata for a meme ordered by score DESC
 export async function GET(
   request: Request,
@@ -114,10 +116,17 @@ export async function POST(
       let tagId = body.tagId;
       // If tagName is provided, check if the tag exists (case insensitive). Create it if not.
       if (body.tagName) {
-        const tagName = body.tagName.trim();
+        const tagName =
+          typeof body.tagName === 'string' ? body.tagName.trim() : '';
         if (!tagName) {
           return NextResponse.json(
             { error: 'Invalid tagName' },
+            { status: 400 }
+          );
+        }
+        if (tagName.length > MAX_TAG_LENGTH) {
+          return NextResponse.json(
+            { error: `Tag is too long (limit ${MAX_TAG_LENGTH} characters).` },
             { status: 400 }
           );
         }
@@ -136,6 +145,13 @@ export async function POST(
             [tagName]
           );
           tagId = createdTag[0].id;
+        }
+      } else {
+        // tagId came straight from the client, so confirm it is a real tag rather than
+        // letting an arbitrary value reach the insert.
+        const knownTag = await db(`SELECT id FROM "Tag" WHERE id = $1`, [tagId]);
+        if (knownTag.length !== 1) {
+          return NextResponse.json({ error: 'Unknown tagId' }, { status: 400 });
         }
       }
 

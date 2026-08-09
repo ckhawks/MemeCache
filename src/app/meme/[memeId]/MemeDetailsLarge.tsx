@@ -27,10 +27,7 @@ export function MemeDetailsLarge(props: { meme: any; user: any }) {
             }}
           >
             {props.user?.id === props.meme.userId && (
-              <DeleteMemeButton
-                memeId={props.meme.id}
-                userId={props.user?.id || ''}
-              />
+              <DeleteMemeButton memeId={props.meme.id} />
             )}
             <a
               href={`/api/resource/${props.meme.id}`}

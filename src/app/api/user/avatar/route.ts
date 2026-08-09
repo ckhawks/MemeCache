@@ -10,6 +10,9 @@ import crypto from 'crypto';
 import { db } from '@/db/db';
 import { getUserFromAccessToken } from '@/auth/lib';
 import { revalidatePath } from 'next/cache';
+import { supportedImageTypes } from '@/constants/mimeTypes';
+
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 
 // change this to be a server action
 
@@ -17,34 +20,35 @@ export async function POST(request: Request) {
   const s3Client = getS3Client();
 
   try {
-    // TODO add reject if not within constants/mimeTypes.ts accepted range
-    // TODO compress images
-    // TODO limit videos to 1min
-    // TODO limit files to 50Mb
-
     // if user has an avatar already, delete it from S3
     // upload new file to s3
     // write new avatar s3 key to user in db
 
-    const formData = await request.formData();
-    const userId = formData.get('userId');
-    const file = formData.get('file') as File;
-
-    if (userId === '') {
-      return NextResponse.json(
-        { error: 'No userId provided' },
-        { status: 400 }
-      );
-    }
-
-    // Validate that they are the right user
+    // The avatar owner is taken from the session, never from the request body.
     const user = await getUserFromAccessToken();
-    if (user?.id !== userId) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const formData = await request.formData();
+    const file = formData.get('file') as File;
+
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    }
+
+    if (!supportedImageTypes.includes(file.type)) {
+      return NextResponse.json(
+        { error: `Unsupported file type: ${file.type}` },
+        { status: 415 }
+      );
+    }
+
+    if (file.size > MAX_AVATAR_BYTES) {
+      return NextResponse.json(
+        { error: 'Avatar is too large. Limit is 2MB.' },
+        { status: 413 }
+      );
     }
 
     let currentUserResponse = await db(

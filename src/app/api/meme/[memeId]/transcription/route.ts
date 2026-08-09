@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db/db';
 import { getUserFromAccessToken } from '@/auth/lib';
 
+const MAX_TRANSCRIPTION_LENGTH = 5000;
+
 // GET: Fetch the most recent transcription for this meme
 export async function GET(
   request: Request,
@@ -53,31 +55,33 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { text, edited_by } = body;
+    const text = typeof body.text === 'string' ? body.text.trim() : '';
 
-    if (!text || !edited_by) {
+    if (!text) {
+      return NextResponse.json({ error: 'Missing text' }, { status: 400 });
+    }
+
+    if (text.length > MAX_TRANSCRIPTION_LENGTH) {
       return NextResponse.json(
-        { error: 'Missing text or edited_by' },
+        {
+          error: `Transcription is too long (limit ${MAX_TRANSCRIPTION_LENGTH} characters).`,
+        },
         { status: 400 }
       );
     }
 
-    // Ensure the authenticated user matches the provided edited_by
-    if (user.id !== edited_by) {
-      return NextResponse.json(
-        { error: 'Unauthorized: User mismatch' },
-        { status: 401 }
-      );
-    }
+    // The editor is the session user. The client used to send edited_by and the server
+    // only checked it matched -- there was never a reason to accept it at all.
+    const editedBy = user.id;
 
     const result = await db(
       `INSERT INTO "MemeTranscription" (meme_id, text, edited_by) VALUES ($1, $2, $3) RETURNING *`,
-      [params.memeId, text, edited_by]
+      [params.memeId, text, editedBy]
     );
 
     // Fetch the username for the edited_by user
     const userInfo = await db(`SELECT username FROM "User" WHERE id = $1`, [
-      edited_by,
+      editedBy,
     ]);
 
     const editedByUsername =

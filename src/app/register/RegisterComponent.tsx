@@ -1,6 +1,6 @@
 'use client';
 
-import { register } from '@/auth/lib';
+import { register } from '@/auth/actions';
 import { useFormState } from 'react-dom';
 
 import styles from '../main.module.scss';

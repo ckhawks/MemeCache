@@ -9,7 +9,6 @@ import { Button, Col, Form, Row } from 'react-bootstrap';
 import imageCompression from 'browser-image-compression';
 
 export default function UploadComponent(props: {
-  userId: string;
   caches: {
     id: string;
     name: string;
@@ -116,8 +115,8 @@ export default function UploadComponent(props: {
     }
 
     const formData = new FormData();
+    // No userId here on purpose -- the server takes the uploader from the session.
     formData.append('file', fileToUpload);
-    formData.append('userId', props.userId);
     formData.append('cacheId', cacheId);
 
     try {

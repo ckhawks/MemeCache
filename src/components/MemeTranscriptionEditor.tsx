@@ -56,7 +56,8 @@ export default function MemeTranscriptionEditor({
       const res = await fetch(`/api/meme/${memeId}/transcription`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: transcription, edited_by: userId }),
+        // No edited_by here on purpose -- the server takes the editor from the session.
+        body: JSON.stringify({ text: transcription }),
       });
       if (res.ok) {
         setIsEditing(false);

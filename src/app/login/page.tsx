@@ -1,7 +1,7 @@
 'use server';
 
 import styles from '../main.module.scss';
-import { getUserFromAccessToken, logout } from '@/auth/lib';
+import { getUserFromAccessToken } from '@/auth/lib';
 import LoginComponent from './LoginComponent';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';

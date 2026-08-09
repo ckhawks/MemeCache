@@ -1,45 +1,33 @@
+// @/auth/actions.ts
+//
+// The only three auth functions that are meant to be callable from the client. Everything
+// under 'use server' becomes a public endpoint, so nothing else belongs in this file --
+// the helpers live in @/auth/lib.
+
 'use server';
 
-import { NextRequest, NextResponse } from 'next/server';
-import { SignJWT, jwtVerify } from 'jose';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { db } from '@/db/db';
+import { checkPassword, createTokens, hashPassword } from '@/auth/lib';
 
-const bcrypt = require('bcrypt');
+const ACCESS_TOKEN_MAX_AGE = 15 * 60; // 15 minutes
+const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60; // 7 days
 
-// THANKS TO https://github.com/balazsorban44/auth-poc-next/blob/main/lib.ts
-
-const secretKey = process.env.JWT_SECRET;
-const key = new TextEncoder().encode(secretKey);
-
-export async function encrypt(payload: any) {
-  return await new SignJWT(payload)
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime('24 hours from now')
-    .sign(key);
-}
-
-export async function decrypt(input: string): Promise<any> {
-  const { payload } = await jwtVerify(input, key, {
-    algorithms: ['HS256'],
+function setSessionCookies(accessToken: string, refreshToken: string) {
+  cookies().set('accessToken', accessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: ACCESS_TOKEN_MAX_AGE,
   });
-  return payload;
-}
 
-// https://stackoverflow.com/a/17201754
-async function hash_password(input: string): Promise<any> {
-  var salt = bcrypt.genSaltSync(10);
-  var hash = bcrypt.hashSync(input, salt);
-
-  // Store hash in your password DB.
-  return hash;
-}
-
-async function check_password(input: string, hash: string): Promise<any> {
-  // Load hash from your password DB.
-  return bcrypt.compareSync(input, hash); // true
+  cookies().set('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: REFRESH_TOKEN_MAX_AGE,
+  });
 }
 
 export async function register(prevState: any, formData: FormData) {
@@ -80,7 +68,7 @@ export async function register(prevState: any, formData: FormData) {
   }
 
   // verify usenrame aren't taken
-  const query2 = 'SELECT * FROM "User" WHERE username = $1';
+  const query2 = 'SELECT * FROM "User" WHERE LOWER(username) = LOWER($1)';
   const params2 = [formData.get('username')];
   const usersWithUsername = await db(query2, params2);
 
@@ -93,13 +81,14 @@ export async function register(prevState: any, formData: FormData) {
 
   // store user in DB
   const query3 =
-    'INSERT INTO "User" ("username", "email", "passwordHash") VALUES ($1, $2, $3)';
+    'INSERT INTO "User" ("username", "email", "passwordHash", "role") VALUES ($1, $2, $3, $4)';
   const params3 = [
     formData.get('username'),
     formData.get('email'),
-    await hash_password(formData.get('password')?.toString() || ''),
+    await hashPassword(formData.get('password')?.toString() || ''),
+    'user',
   ];
-  const userCreated = await db(query3, params3); // this returns nothing []
+  await db(query3, params3); // this returns nothing []
 
   // get user info from database by email/password
   const query4 = `SELECT * FROM "User" WHERE username = $1`;
@@ -114,25 +103,18 @@ export async function register(prevState: any, formData: FormData) {
   }
 
   const user = usersFromCreated[0];
-  delete user['password'];
+  delete user['passwordHash'];
 
   // Create default memecache for the user
   const query5 = `INSERT INTO "Cache" ("name", "ownerUserId") VALUES ($1, $2)`;
   const params5 = [formData.get('username') + "'s Memes", user.id];
-  const cacheCreated = await db(query5, params5);
+  await db(query5, params5);
 
-  // Create the session
-  const expires = new Date(Date.now() + 2400 * 1000);
-  const session = await encrypt({ user, expires });
+  const { accessToken, refreshToken } = await createTokens(user as any);
 
   // Save the session in a cookie
-  // Save the session in a cookie
-  cookies().set('session', session, {
-    expires,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-  });
+  setSessionCookies(accessToken, refreshToken);
+
   redirect('/');
 }
 
@@ -151,7 +133,7 @@ export async function login(prevState: any, formData: FormData) {
 
   // validate credentials
   const query =
-    'SELECT id, email, username, "passwordHash" FROM "User" WHERE email = $1';
+    'SELECT id, email, username, role, "passwordHash" FROM "User" WHERE email = $1';
   const params = [formData.get('email')];
   const users = await db(query, params);
 
@@ -168,7 +150,7 @@ export async function login(prevState: any, formData: FormData) {
 
   const user = users[0]; // get user info from database by email/password
 
-  let password_valid = await check_password(
+  const password_valid = await checkPassword(
     formData.get('password')?.toString() || '',
     user.passwordHash
   );
@@ -178,47 +160,24 @@ export async function login(prevState: any, formData: FormData) {
 
   delete user['passwordHash']; // strip the password off the object
 
-  // Create the session
-  const expires = new Date(Date.now() + 2400 * 1000);
-  const session = await encrypt({ user, expires });
+  const { accessToken, refreshToken } = await createTokens(user as any);
 
   // Save the session in a cookie
-  cookies().set('session', session, {
-    expires,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-  });
+  setSessionCookies(accessToken, refreshToken);
+
   redirect('/');
 }
 
 export async function logout() {
+  const refreshToken = cookies().get('refreshToken')?.value;
+  if (refreshToken) {
+    // Remove refresh token from database
+    await db('DELETE FROM "RefreshToken" WHERE token = $1', [refreshToken]);
+  }
+
   // Destroy the session
-  cookies().set('session', '', { expires: new Date(0) });
+  cookies().set('accessToken', '', { maxAge: 0 });
+  cookies().set('refreshToken', '', { maxAge: 0 });
+
   redirect('/login');
-}
-
-export async function getSession() {
-  const session = cookies().get('session')?.value;
-  if (!session) return null;
-  return await decrypt(session);
-}
-
-export async function updateSession(request: NextRequest) {
-  const session = request.cookies.get('session')?.value;
-  if (!session) return;
-
-  // Refresh the session so it doesn't expire
-  const parsed = await decrypt(session);
-  parsed.expires = new Date(Date.now() + 2400 * 1000);
-  const res = NextResponse.next();
-  res.cookies.set({
-    name: 'session',
-    value: await encrypt(parsed),
-    httpOnly: true,
-    expires: parsed.expires,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-  });
-  return res;
 }

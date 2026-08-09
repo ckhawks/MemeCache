@@ -26,7 +26,7 @@ export default async function Upload() {
         <div className={styles.content}>
           <div className={styles.description}>
             <h1>Upload</h1>
-            <UploadComponent userId={user?.id} caches={caches as any} />
+            <UploadComponent caches={caches as any} />
           </div>
           {/* <Button variant="primary">Primary</Button>{' '} */}
         </div>

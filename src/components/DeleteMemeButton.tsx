@@ -4,10 +4,7 @@ import styles from '../app/main.module.scss';
 import { useState } from 'react';
 import { Button, Form, Modal } from 'react-bootstrap';
 
-export default function DeleteMemeButton(props: {
-  memeId: string;
-  userId: string;
-}) {
+export default function DeleteMemeButton(props: { memeId: string }) {
   const [show, setShow] = useState(false);
   const [processing, setProcessing] = useState(false);
 
@@ -23,10 +20,9 @@ export default function DeleteMemeButton(props: {
   const handleDeleteMeme = async (event: any) => {
     event.stopPropagation();
     setProcessing(true);
+    // No userId here on purpose -- the server checks ownership against the session.
     const formData = new FormData();
     formData.append('memeId', props.memeId);
-    formData.append('userId', props.userId);
-    // formData.append('cacheId', cacheId);
 
     try {
       const response = await fetch('/api/meme/delete', {

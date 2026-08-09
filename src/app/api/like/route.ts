@@ -5,38 +5,26 @@ import { getUserFromAccessToken } from '@/auth/lib';
 // change this to be a server action
 
 export async function POST(request: Request) {
-  // TODO verify userId is the current userId from the session
-
-  // const s3Client = getS3Client();
-
   try {
-    const formData = await request.formData();
-    const memeId = formData.get('memeId');
-    const userId = formData.get('userId');
-    const likeStatus = formData.get('status');
-
-    if (userId === '') {
-      return NextResponse.json(
-        { error: 'No memeId provided' },
-        { status: 400 }
-      );
-    }
-
     const user = await getUserFromAccessToken();
-    if (user?.id !== userId) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (memeId === '') {
+    const formData = await request.formData();
+    const memeId = formData.get('memeId');
+    const likeStatus = formData.get('status');
+
+    if (!memeId) {
       return NextResponse.json(
         { error: 'No memeId provided' },
         { status: 400 }
       );
     }
 
-    if (likeStatus === '') {
+    if (likeStatus !== 'true' && likeStatus !== 'false') {
       return NextResponse.json(
-        { error: 'No status provided' },
+        { error: 'status must be "true" or "false"' },
         { status: 400 }
       );
     }
@@ -44,7 +32,7 @@ export async function POST(request: Request) {
     if (likeStatus === 'true') {
       const existingLike = await db(
         `SELECT id FROM "Like" WHERE "memeId" = $1 AND "userId" = $2`,
-        [memeId, userId]
+        [memeId, user.id]
       );
 
       if (existingLike.length > 0) {
@@ -54,15 +42,15 @@ export async function POST(request: Request) {
         );
       }
 
-      const addLikeResponse = await db(
-        `INSERT INTO "Like" ("memeId", "userId") VALUES ($1, $2)`,
-        [memeId, userId]
-      );
+      await db(`INSERT INTO "Like" ("memeId", "userId") VALUES ($1, $2)`, [
+        memeId,
+        user.id,
+      ]);
     } else {
-      const removeLikeResponse = await db(
-        `DELETE FROM "Like" WHERE "memeId" = $1 AND "userId" = $2`,
-        [memeId, userId]
-      );
+      await db(`DELETE FROM "Like" WHERE "memeId" = $1 AND "userId" = $2`, [
+        memeId,
+        user.id,
+      ]);
     }
 
     // get up to date number of likes to share with frontend
