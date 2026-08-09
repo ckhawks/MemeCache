@@ -147,7 +147,26 @@ much smaller than it sounds.
       `pg_hba.conf` is per-database per-host and that is the thing that bites.
 - [ ] Keep the Neon instance alive read-only for a week before tearing it down.
 
-## Phase 3 — Vercel to the Dallas VPS
+## Phase 3 — Vercel to the Dallas VPS — DONE 2026-08-09
+
+`memecache.me` now resolves to the Dallas box and is served from it, over HTTPS, against
+Dallas Postgres. Deployment details and the deploy loop are in `db/MIGRATION.md`.
+
+Verified externally after cutover: `/`, `/explore`, `/login`, `/register` all 200, HTTP
+301s to HTTPS, the certificate is for `memecache.me`, the Explore page renders all 193
+memes with 12 distinct uploaders, and both a meme image and an avatar load through the app
+from S3. No data lost — Neon was byte-identical to the dump afterwards.
+
+Unit is `memecache-nextjs` on port 3007 behind nginx, ~45 MB resident, `MemoryMax=768M`.
+No deploy key was needed: the repository is public, so the box clones over HTTPS.
+
+Still open from this phase:
+
+- [ ] Confirm a `memecache` dump appears in the Chicago backup tomorrow morning.
+- [ ] Decommission the Vercel project — it no longer receives traffic.
+- [ ] Tear down Neon after a week. It is the rollback until then.
+
+### Original plan, for reference
 
 Follow the conventions already established on that box (see the puckstats deploy loop).
 

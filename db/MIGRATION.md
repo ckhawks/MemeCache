@@ -3,25 +3,16 @@
 Runbook for Phase 2 of TODO.md. Target is the Dallas box, `extravm-puckvps-1`, Postgres 17
 on port **7465** (not 5432 — connecting without `-p` fails with "connection refused").
 
-## Status: staged restore complete 2026-08-09
+## Status: CUTOVER COMPLETE, 2026-08-09
 
-Steps 1 to 4 have been **executed**. The `memecache` database exists on Dallas, fully
-restored and verified. Steps 5 to 7 — repointing the app, confirming backups, and
-decommissioning Neon — happen at cutover, alongside Phase 3.
+`memecache.me` is served from Dallas against Dallas Postgres. Steps 1 to 5 are done.
+Steps 6 and 7 — confirming the Chicago backup and decommissioning Neon — remain.
 
-**Neon is still the live database and is unmodified.** Verified: same 10 tables, no
-`_migration` table, unchanged row counts, none of migration 001's indexes. Every operation
-run against it was a read.
+**No data was lost.** Neon was compared against the dump after cutover and came back
+byte-identical on all 10 tables, so nothing was written to it between the dump at 08:57 and
+the DNS change. The newest content predates today by months regardless.
 
-Vercel cannot reach Dallas Postgres in practice. It is bound to `0.0.0.0:7465` and does
-accept remote connections, but every rule in `pg_hba.conf` is a specific `/32` — home IPs,
-Tailscale, the Chicago backup host. Vercel functions egress from a wide dynamic range, so
-allowing them would mean either `0.0.0.0/0` on a cluster holding eight other databases, or
-Vercel's paid static-egress feature. Neither is worth it when Phase 3 moves the app onto
-this box anyway. **Cut the app and the database over together.**
-
-At cutover, re-dump and re-restore rather than reusing the 2026-08-09 copy — it is 70 KB
-and takes seconds, and anything written to Neon since is otherwise lost.
+**Neon is still running, unmodified, and is the rollback.** Leave it a week.
 
 ### What was verified
 
@@ -157,11 +148,13 @@ SELECT extname FROM pg_extension;                      -- expect uuid-ossp
 SELECT indexname FROM pg_indexes WHERE schemaname='public';
 ```
 
-## 5. Point the app at it
+## 5. Point the app at it — DONE
 
 `DATABASE_URL` in the app's `.env`, then restart. It is read at runtime, so this is a
 restart and not a rebuild. No code change — `src/db/db.ts` already speaks the standard wire
 protocol to either host.
+
+The app itself now lives on this box. See the deployment section at the end.
 
 ## 6. Backups
 
@@ -228,3 +221,53 @@ plus the role check in `validateAccessToken`, which still runs against the datab
 request. For an invite-only site with 15 accounts that is a fair trade. **If registration
 ever opens to the public, revisit it** — the natural move then is option one, a
 signature-only middleware with a Node refresh route.
+
+---
+
+## Deployment (Phase 3, done 2026-08-09)
+
+The app runs on the Dallas box, same host as its database.
+
+| | |
+|---|---|
+| Directory | `/root/memecache` |
+| systemd unit | `memecache-nextjs` |
+| Port | 3007 (loopback only; nginx fronts it) |
+| nginx vhost | `/etc/nginx/sites-available/memecache.me` |
+| TLS | Let's Encrypt, apex only (no `www` record exists), auto-renewing |
+| Env | `/root/memecache/.env`, mode 0600 |
+| Resident memory | ~45 MB at idle |
+
+Conventions followed from the rest of the box: `ExecStart` runs the node binary directly
+via `/usr/local/bin/node` rather than an `npm run start` wrapper, and the nvm path is not
+hardcoded. `MemoryMax=768M` and `--max-old-space-size=512` are set because this host runs
+on roughly 1.7 GiB available with Postgres serving nine databases and LiveKit alongside.
+`OOMScoreAdjust=200` makes this app a more attractive kill target than the database.
+
+`client_max_body_size 50m` in the vhost is load-bearing — nginx defaults to 1 MB, which
+would reject the 30 MB video uploads at the proxy before the route ever ran.
+
+The repository is public, so the box clones over HTTPS anonymously and no deploy key is
+needed.
+
+### Deploy loop
+
+```bash
+ssh dallas
+cd /root/memecache && git pull --ff-only
+npm ci                      # only when package-lock.json moved
+NODE_OPTIONS="--max-old-space-size=1024" nice -n 19 npm run build
+systemctl restart memecache-nextjs
+```
+
+`nice -n 19` matters: `next build` saturates all four cores and degrades in-progress
+LiveKit calls, so avoid deploying during a scheduled DJ broadcast.
+
+Verify with `systemctl is-active memecache-nextjs` and
+`curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3007/`.
+
+### Still open
+
+- Confirm a `memecache` dump appears in the Chicago backup the morning after cutover.
+- Decommission the Vercel project — it no longer receives traffic.
+- Tear down Neon after a week.
