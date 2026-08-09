@@ -22,6 +22,30 @@ Two things to know:
 
 Server is PostgreSQL **16.14** on Neon. The migration target (Dallas, port 7465) runs **17**.
 
+## Backups
+
+Full dumps (schema **and** rows) live in `db/backups/`, which is gitignored — they contain
+user email addresses and bcrypt password hashes and must never be committed. `.gitignore`
+also covers `*.dump` anywhere in the tree as a second line of defence. `schema.sql` is
+schema-only, so it is tracked.
+
+Being gitignored means these are **not backed up by pushing**. Once the database moves to
+Dallas it falls under the existing nightly dump to Chicago; until then, copy anything you
+care about somewhere durable yourself.
+
+To take one:
+
+```bash
+pg_dump --no-owner --no-privileges -Fc \
+  -f db/backups/memecache-full-$(date +%F).dump "$DATABASE_URL_DIRECT"
+```
+
+Restore with `pg_restore -d <target> <file>`. Current contents:
+
+| File | Taken | Source |
+|---|---|---|
+| `memecache-full-2026-08-09.dump` | 2026-08-09 | Neon, PostgreSQL 16.14, custom format, 70 KB |
+
 ## Requirements
 
 The schema depends on the **`uuid-ossp`** extension. It must be created in the target
