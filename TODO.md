@@ -129,7 +129,18 @@ much smaller than it sounds.
 - [x] Externalise `pg-native` in `next.config.mjs` alongside `bcrypt`.
 - [ ] Remove `@neondatabase/serverless` from `package.json` once the cutover is done and
       there is no chance of needing to point back at Neon.
-- [ ] `pg_dump` the data from Neon, restore to Dallas, verify row counts per table.
+- [x] `pg_dump` the data from Neon, restore to Dallas, verify. **Done 2026-08-09** as a
+      staged restore — Neon remains the live database and is unmodified. The `memecache`
+      database and `memecache_app` role exist on Dallas with the data in place, migration
+      001 applied, row counts matching, per-table content checksums byte-identical on all
+      10 tables, and sequence positions carried across. Full record in `db/MIGRATION.md`.
+- [ ] **Re-dump and re-restore at cutover.** The 2026-08-09 copy goes stale the moment
+      anyone uses the live site. It is 70 KB and takes seconds.
+- [ ] **Cut the app and database over together.** Vercel cannot practically reach Dallas
+      Postgres: it accepts remote connections, but every `pg_hba` rule is a specific
+      `/32`, and Vercel egresses from a wide dynamic range. Allowing it would mean
+      `0.0.0.0/0` on a cluster holding 8 other databases, or Vercel's paid static egress.
+      Phase 3 moves the app onto the box anyway.
 - [ ] Confirm the nightly Chicago backup picks up the new database. The `pg_hba` rule is
       `host all user_does_backups <ip>/32 md5` and `user_does_backups` holds cluster-level
       `pg_read_all_data`, so it should be automatic — but verify rather than assume, since

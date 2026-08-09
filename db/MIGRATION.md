@@ -3,8 +3,53 @@
 Runbook for Phase 2 of TODO.md. Target is the Dallas box, `extravm-puckvps-1`, Postgres 17
 on port **7465** (not 5432 — connecting without `-p` fails with "connection refused").
 
-Nothing here has been executed yet. The application-side driver swap is done and verified;
-everything below is the server-side work.
+## Status: staged restore complete 2026-08-09
+
+Steps 1 to 4 have been **executed**. The `memecache` database exists on Dallas, fully
+restored and verified. Steps 5 to 7 — repointing the app, confirming backups, and
+decommissioning Neon — happen at cutover, alongside Phase 3.
+
+**Neon is still the live database and is unmodified.** Verified: same 10 tables, no
+`_migration` table, unchanged row counts, none of migration 001's indexes. Every operation
+run against it was a read.
+
+Vercel cannot reach Dallas Postgres in practice. It is bound to `0.0.0.0:7465` and does
+accept remote connections, but every rule in `pg_hba.conf` is a specific `/32` — home IPs,
+Tailscale, the Chicago backup host. Vercel functions egress from a wide dynamic range, so
+allowing them would mean either `0.0.0.0/0` on a cluster holding eight other databases, or
+Vercel's paid static-egress feature. Neither is worth it when Phase 3 moves the app onto
+this box anyway. **Cut the app and the database over together.**
+
+At cutover, re-dump and re-restore rather than reusing the 2026-08-09 copy — it is 70 KB
+and takes seconds, and anything written to Neon since is otherwise lost.
+
+### What was verified
+
+| Check | Result |
+|---|---|
+| Row counts, all 10 tables | Match source exactly |
+| Content checksums (`md5` of ordered row text), all 10 tables | Byte-identical |
+| Sequence positions (4 sequences) | Match — no duplicate-key risk on first insert |
+| Migration 001 applied | Yes, ledger row written as the runner would |
+| Indexes from 001 | All 8 present |
+| Case-insensitive username uniqueness | Enforced; probe rejected and rolled back |
+| App role connects and owns its tables | Yes, `memecache_app` |
+| Other 8 databases on the cluster | Untouched |
+
+The only restore error was `COMMENT ON EXTENSION "uuid-ossp"`, which needs extension
+ownership and is purely cosmetic.
+
+### What exists on Dallas now
+
+- database `memecache`, role `memecache_app` (both new; nothing pre-existing was modified)
+- `/root/.memecache-db-credentials`, mode 0600, holding the generated password and a
+  ready-made `DATABASE_URL`
+- `/root/memecache-cutover.dump`, the 2026-08-09 source dump
+
+No configuration file, service, or other database was touched. `pg_hba.conf` was **not**
+edited — `memecache_app` reaches the database through the existing
+`host all all 127.0.0.1/32 md5` rule, which is exactly what a Phase 3 app on this box
+needs.
 
 ## Before you start
 
