@@ -141,3 +141,38 @@ describe('slugs', () => {
     expect(await getMeme('0Ol1Il0')).toBeNull();
   });
 });
+
+describe('listRelatedMemes', () => {
+  it('ranks shared confirmed tags first, then same uploader, then newest, never the meme itself', async () => {
+    const { listRelatedMemes } = await import('@/db/queries/memes');
+    const alice = await makeUser('alice');
+    const bob = await makeUser('bob');
+    const carol = await makeUser('carol');
+    const base = await makeMeme(alice, '2026-01-01T00:00:00Z');
+    const sharesTwo = await makeMeme(bob, '2025-01-01T00:00:00Z');
+    const sharesOne = await makeMeme(bob, '2025-02-01T00:00:00Z');
+    const sameUploader = await makeMeme(alice, '2025-03-01T00:00:00Z');
+    const unrelatedNewest = await makeMeme(bob, '2026-02-01T00:00:00Z');
+    const downvotedShare = await makeMeme(bob, '2025-04-01T00:00:00Z');
+
+    const cats = await findOrCreateTag('cats', alice);
+    const loaf = await findOrCreateTag('loaf', alice);
+    for (const meme of [base, sharesTwo]) {
+      await addTagToMeme(meme, cats, alice);
+      await addTagToMeme(meme, loaf, alice);
+    }
+    await addTagToMeme(sharesOne, cats, alice);
+    // A shared tag voted down to 0 is not confirmed, so it does not count.
+    await addTagToMeme(downvotedShare, cats, alice);
+    await voteOnTag(downvotedShare, cats, carol, -1);
+
+    const related = await listRelatedMemes({ id: base, uploaderId: alice });
+    expect(related.map((m) => m.id)).toEqual([
+      sharesTwo,
+      sharesOne,
+      sameUploader,
+      unrelatedNewest,
+      downvotedShare,
+    ]);
+  });
+});

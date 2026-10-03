@@ -5,16 +5,16 @@ import { supportedImageTypes, supportedVideoTypes } from '@/constants/mimeTypes'
 import d from './MemeDetail.module.scss';
 
 // The meme on its own page: scaled to fill the column, small memes included, but never taller
-// than 70% of the screen. CSS alone cannot do both without knowing the shape (it would stretch
+// than 75% of the screen. CSS alone cannot do both without knowing the shape (it would stretch
 // or crop), so the aspect ratio is read when the media loads and the width becomes
-// min(column, 70vh x ratio). Until then it fills the column, which is right for the common
+// min(column, 75vh x ratio). Until then it fills the column, which is right for the common
 // wide and square memes.
 export default function DetailMedia(props: {
   meme: { id: string; contentType: string; username: string };
 }) {
   const [ratio, setRatio] = useState<number | null>(null);
   const src = '/api/resource/' + props.meme.id;
-  const style = ratio ? { width: `min(100%, calc(70vh * ${ratio}))` } : undefined;
+  const style = ratio ? { width: `min(100%, calc(75vh * ${ratio}))` } : undefined;
 
   if (supportedImageTypes.includes(props.meme.contentType)) {
     return (

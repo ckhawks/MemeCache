@@ -1,27 +1,79 @@
-// The meme page: one centered column. The meme on top, its action bar right under it, then
-// who posted it, the caption, tags and date.
+// The meme page. Desktop: the meme with its action bar under it on the left, the details
+// in a column beside it. Phones: meme, actions, details, stacked.
 .post {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+  grid-template-areas:
+    'media side'
+    'actions side';
+  grid-template-rows: auto 1fr;
+  gap: 16px 48px;
+  align-items: start;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'media'
+      'actions'
+      'side';
+    grid-template-rows: auto;
+    gap: 16px;
+  }
+}
+
+.actionsArea {
+  grid-area: actions;
+}
+
+// The details column: author, caption, tags, date. Stays in view beside a tall meme.
+.side {
+  grid-area: side;
   display: flex;
   flex-direction: column;
   gap: 20px;
-  max-width: 720px;
-  margin: 0 auto;
+
+  @media (min-width: 901px) {
+    position: sticky;
+    top: 16px;
+  }
+
+  @media (max-width: 900px) {
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+  }
 }
 
-// Centers a meme narrower than the column (a tall one, capped by height).
-.frame {
+.related {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 56px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border-color);
+}
+
+.relatedTitle {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+// Left-aligned, so a meme narrower than the column (a tall one, capped by height) lines up
+// with the action bar under it.
+.frame {
+  grid-area: media;
+  display: flex;
+  justify-content: flex-start;
   min-width: 0;
 }
 
 // Fills the column, small memes included (DetailMedia sets the width from the shape), but
-// never taller than 70% of the screen, so the action bar under it is always in view.
+// never taller than 75% of the screen, so the action bar under it stays in view.
 .media {
   display: block;
   width: 100%;
   height: auto;
-  max-height: 70vh;
+  max-height: 75vh;
   // Safety net before the shape is known: never distort, at worst letterbox.
   object-fit: contain;
   border-radius: 12px;
@@ -72,11 +124,6 @@
 
 .postDelete {
   margin-left: auto;
-}
-
-.postRule {
-  height: 1px;
-  background-color: var(--border-color);
 }
 
 .posted {

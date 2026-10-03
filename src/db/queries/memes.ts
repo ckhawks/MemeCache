@@ -198,3 +198,37 @@ export async function getMemeMedia(id: string): Promise<{ s3Key: string } | null
   );
   return row ?? null;
 }
+
+// "More like this" under a meme: other memes ranked by how many confirmed tags (net score
+// at least 1) they share with it, then by the same uploader, then newest. Memes that share
+// nothing still fill the list, so an untagged meme gets a feed too.
+export async function listRelatedMemes(
+  meme: { id: string; uploaderId: string },
+  viewerId?: string,
+  limit = 12
+): Promise<MemeCard[]> {
+  return db<MemeCard>(
+    `WITH confirmed AS (
+       SELECT mt.meme_id, mt.tag_id
+         FROM meme_tag mt
+        WHERE (SELECT COALESCE(sum(v.vote), 0)
+                 FROM meme_tag_vote v
+                WHERE v.meme_id = mt.meme_id AND v.tag_id = mt.tag_id) >= 1
+     ),
+     this_meme AS (
+       SELECT tag_id FROM confirmed WHERE meme_id = $2
+     )
+     SELECT ${CARD_COLUMNS}
+       FROM meme m
+       JOIN app_user u ON u.id = m.uploader_id
+      WHERE m.id <> $2
+        AND m.deleted_at IS NULL
+      ORDER BY
+        (SELECT count(*) FROM confirmed c WHERE c.meme_id = m.id AND c.tag_id IN (SELECT tag_id FROM this_meme)) DESC,
+        (m.uploader_id = $3) DESC,
+        m.created_at DESC,
+        m.id DESC
+      LIMIT $4`,
+    [viewerParam(viewerId), meme.id, meme.uploaderId, limit]
+  );
+}

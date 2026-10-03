@@ -10,7 +10,8 @@ import MemeTranscriptionEditor from '@/components/MemeTranscriptionEditor';
 import MemeTagsEditor from '@/components/MemeTagsEditor';
 import { getUserFromAccessToken } from '@/auth/lib';
 import { isModerator } from '@/auth/role';
-import { getMeme } from '@/db/queries/memes';
+import { getMeme, listRelatedMemes } from '@/db/queries/memes';
+import { GalleryMasonry } from '@/components/GalleryMasonry';
 import { getKarma } from '@/db/queries/users';
 import { getCurrentTranscription } from '@/db/queries/transcriptions';
 import { listTagsForMeme } from '@/db/queries/tags';
@@ -31,10 +32,11 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
 
   // Loaded with the page, so the panel is complete on first paint instead of showing
   // "Loading..." while the editors fetch their own data.
-  const [transcription, tags, karma] = await Promise.all([
+  const [transcription, tags, karma, related] = await Promise.all([
     getCurrentTranscription(meme.id),
     listTagsForMeme(meme.id, user?.id),
     getKarma(meme.uploaderId),
+    listRelatedMemes(meme, user?.id),
   ]);
 
   const initialTranscription = transcription && {
@@ -51,19 +53,28 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
           <div className={styles.description}>
             <BackButton to={'/explore'} text={'Back'} />
           </div>
-          {/* One centered column: the meme, its action bar, then who posted it, the
-              caption and tags. */}
+          {/* The meme with its actions under it, the details beside it. */}
           <div className={d.post}>
             <div className={d.frame}>
               <DetailMedia meme={meme} />
             </div>
-            <PostActions meme={meme} user={user} canDelete={canDelete} />
-            <div className={d.postRule} />
-            <PostAuthor username={meme.username} karma={karma} />
-            <MemeTranscriptionEditor plain memeId={meme.id} userId={user?.id || ''} initial={initialTranscription} />
-            <MemeTagsEditor plain memeId={meme.id} userId={user?.id || ''} initial={tags} />
-            <MemePosted createdAt={meme.createdAt} />
+            <div className={d.actionsArea}>
+              <PostActions meme={meme} user={user} canDelete={canDelete} />
+            </div>
+            <aside className={d.side}>
+              <PostAuthor username={meme.username} karma={karma} />
+              <MemeTranscriptionEditor plain memeId={meme.id} userId={user?.id || ''} initial={initialTranscription} />
+              <MemeTagsEditor plain memeId={meme.id} userId={user?.id || ''} initial={tags} />
+              <MemePosted createdAt={meme.createdAt} />
+            </aside>
           </div>
+
+          {related.length > 0 && (
+            <section className={d.related}>
+              <h2 className={d.relatedTitle}>More like this</h2>
+              <GalleryMasonry memes={related} currentUserId={user?.id || ''} view="grid" />
+            </section>
+          )}
         </div>
       </main>
       <FooterBar />
