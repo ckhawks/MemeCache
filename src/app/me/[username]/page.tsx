@@ -9,7 +9,7 @@ import FeedPager from '@/components/FeedPager';
 import { GalleryMasonry } from '@/components/GalleryMasonry';
 import { getUserFromAccessToken } from '@/auth/lib';
 import { isAdmin } from '@/auth/role';
-import { getProfile, getProfileStats } from '@/db/queries/users';
+import { getKarma, getProfile, getProfileStats } from '@/db/queries/users';
 import { countMemes, listMemes } from '@/db/queries/memes';
 import { getFeedView } from '@/server/feedView';
 
@@ -36,16 +36,18 @@ export default async function Profile(props: {
   }
 
   const filter = { viewerId: user?.id, uploaderId: profile.id };
-  const [page, total, stats] = await Promise.all([
+  const [page, total, stats, karma] = await Promise.all([
     listMemes(filter, searchParams.cursor),
     countMemes(filter),
     getProfileStats(profile.id),
+    getKarma(profile.id),
   ]);
 
   const isCurrentUser = user?.id === profile.id;
   const badge = ROLE_BADGES[stats.role];
 
   const statItems = [
+    { value: karma, label: 'Karma' },
     { value: stats.uploads, label: 'Uploads' },
     { value: stats.likesReceived, label: 'Likes received' },
     { value: stats.tagsAdded, label: 'Tags added' },

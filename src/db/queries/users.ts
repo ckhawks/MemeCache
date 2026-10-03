@@ -150,3 +150,27 @@ export async function getProfileStats(userId: string): Promise<ProfileStats> {
   );
   return row;
 }
+
+// Karma: what other people have given a user's contributions. Likes on their memes plus the
+// net of votes on tags they added, never counting their own. Can go negative.
+// docs/xp-levels.md has the full design; this is the part computable today.
+export async function getKarma(userId: string): Promise<number> {
+  if (!isUuid(userId)) {
+    return 0;
+  }
+  const [row] = await db<{ karma: number }>(
+    `SELECT
+       (SELECT count(*)
+          FROM meme_like l
+          JOIN meme m ON m.id = l.meme_id
+         WHERE m.uploader_id = $1 AND m.deleted_at IS NULL AND l.user_id <> $1)
+     + (SELECT COALESCE(sum(v.vote), 0)
+          FROM meme_tag_vote v
+          JOIN meme_tag mt ON mt.meme_id = v.meme_id AND mt.tag_id = v.tag_id
+          JOIN meme m ON m.id = mt.meme_id
+         WHERE mt.added_by = $1 AND m.deleted_at IS NULL AND v.voter_id <> $1)
+       AS karma`,
+    [userId]
+  );
+  return Number(row.karma);
+}

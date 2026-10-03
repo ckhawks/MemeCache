@@ -1,168 +1,6 @@
-// Desktop: the meme fills the left column (scaled up when small, see DetailMedia) with the
-// details beside it. Phones: stacked.
-.layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(340px, 440px);
-  gap: 56px;
-  align-items: start;
-
-  @media (max-width: 900px) {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-}
-
-// Centers a tall meme, which stops short of the column's width.
-.frame {
-  display: flex;
-  justify-content: center;
-  min-width: 0;
-}
-
-.media {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-height: 80vh;
-  // Safety net before the shape is known: never distort, at worst letterbox.
-  object-fit: contain;
-  border-radius: 12px;
-}
-
-// The details column: a soft filled panel (no border), its sections divided by thin rules.
-// Sticks beside a tall meme while scrolling on desktop.
-.panel {
-  display: flex;
-  flex-direction: column;
-  padding: 8px 20px;
-  border-radius: 16px;
-  background-color: var(--hover-background-color);
-
-  & > * {
-    padding: 16px 0;
-  }
-
-  & > * + * {
-    border-top: 1px solid var(--border-color);
-  }
-
-  @media (min-width: 901px) {
-    position: sticky;
-    top: 16px;
-  }
-
-  @media (max-width: 900px) {
-    padding: 4px 16px;
-  }
-}
-
-// Who posted it: a small card inside the panel, linking to their profile.
-.uploader {
-  // Overrides the panel's section padding: the card carries its own.
-  padding: 0 !important;
-  margin: 12px 0;
-  border-top: none !important;
-}
-
-.uploaderCard {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  background-color: var(--background-color);
-  color: var(--text-color);
-  text-decoration: none;
-  transition: border-color 0.15s ease-in-out;
-
-  &:hover {
-    border-color: var(--border-color-hover);
-  }
-}
-
-.avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 100%;
-  object-fit: cover;
-  border: 1px solid var(--border-color);
-}
-
-.uploaderText {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.uploaderLabel {
-  font-size: 12px;
-  color: var(--sub-text-color);
-}
-
-.uploaderName {
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.uploaderChevron {
-  margin-left: auto;
-  color: var(--sub-text-color);
-}
-
-// The actions as one toolbar; delete pushed to the far end.
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 22px;
-
-  // The shared icon-button wrapper pushes itself right with margin-left: auto;
-  // in this toolbar they sit in order instead.
-  & > * {
-    margin-left: 0;
-  }
-}
-
-.deleteSlot {
-  margin-left: auto !important;
-}
-
-// The posted date, at the bottom of the panel.
-.posted {
-  font-size: 13px;
-  color: var(--sub-text-color);
-}
-
-// ---- Layouts A and B (?layout=a, ?layout=b) ----
-
-// A: the meme beside a plain column, no panel.
-.layoutA {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
-  gap: 48px;
-  align-items: start;
-
-  @media (max-width: 900px) {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-}
-
-.postColumn {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-
-  @media (min-width: 901px) {
-    position: sticky;
-    top: 16px;
-  }
-}
-
-// B: one centered column, the meme on top.
-.layoutB {
+// The meme page: one centered column. The meme on top, its action bar right under it, then
+// who posted it, the caption, tags and date.
+.post {
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -170,10 +8,30 @@
   margin: 0 auto;
 }
 
+// Centers a meme narrower than the column (a tall one, capped by height).
+.frame {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+// Fills the column, small memes included (DetailMedia sets the width from the shape), but
+// never taller than 70% of the screen, so the action bar under it is always in view.
+.media {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 70vh;
+  // Safety net before the shape is known: never distort, at worst letterbox.
+  object-fit: contain;
+  border-radius: 12px;
+}
+
 .postAuthor {
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  align-self: flex-start;
   color: var(--text-color);
   text-decoration: none;
 
@@ -190,8 +48,19 @@
   border: 1px solid var(--border-color);
 }
 
+.postAuthorText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
 .postAuthorName {
   font-weight: 600;
+}
+
+.postKarma {
+  font-size: 13px;
+  color: var(--sub-text-color);
 }
 
 .postActions {
@@ -208,4 +77,9 @@
 .postRule {
   height: 1px;
   background-color: var(--border-color);
+}
+
+.posted {
+  font-size: 13px;
+  color: var(--sub-text-color);
 }

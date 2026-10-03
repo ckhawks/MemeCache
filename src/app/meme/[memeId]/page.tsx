@@ -5,23 +5,18 @@ import NavigationBar from '@/components/NavigationBar';
 import FooterBar from '@/components/FooterBar';
 import BackButton from '@/components/BackButton';
 import DetailMedia from './DetailMedia';
-import { PostActions, PostAuthor } from './PostParts';
+import { MemePosted, PostActions, PostAuthor } from './PostParts';
 import MemeTranscriptionEditor from '@/components/MemeTranscriptionEditor';
 import MemeTagsEditor from '@/components/MemeTagsEditor';
-import { MemeDetailsLarge, MemePosted } from './MemeDetailsLarge';
 import { getUserFromAccessToken } from '@/auth/lib';
 import { isModerator } from '@/auth/role';
 import { getMeme } from '@/db/queries/memes';
+import { getKarma } from '@/db/queries/users';
 import { getCurrentTranscription } from '@/db/queries/transcriptions';
 import { listTagsForMeme } from '@/db/queries/tags';
 
-export default async function MemeDetails(props: {
-  params: Promise<{ memeId: string }>;
-  searchParams: Promise<{ layout?: string }>;
-}) {
+export default async function MemeDetails(props: { params: Promise<{ memeId: string }> }) {
   const params = await props.params;
-  // Temporary: ?layout=a / ?layout=b to compare layouts on real memes. Default is the panel (c).
-  const layout = (await props.searchParams).layout ?? 'c';
   const user = await getUserFromAccessToken();
   const meme = await getMeme(params.memeId, user?.id);
 
@@ -36,9 +31,10 @@ export default async function MemeDetails(props: {
 
   // Loaded with the page, so the panel is complete on first paint instead of showing
   // "Loading..." while the editors fetch their own data.
-  const [transcription, tags] = await Promise.all([
+  const [transcription, tags, karma] = await Promise.all([
     getCurrentTranscription(meme.id),
     listTagsForMeme(meme.id, user?.id),
+    getKarma(meme.uploaderId),
   ]);
 
   const initialTranscription = transcription && {
@@ -55,55 +51,19 @@ export default async function MemeDetails(props: {
           <div className={styles.description}>
             <BackButton to={'/explore'} text={'Back'} />
           </div>
-          {layout === 'a' && (
-            <div className={d.layoutA}>
-              <div className={d.frame}>
-                <DetailMedia meme={meme} />
-              </div>
-              <div className={d.postColumn}>
-                <PostAuthor username={meme.username} />
-                <PostActions meme={meme} user={user} canDelete={canDelete} />
-                <div className={d.postRule} />
-                <MemeTranscriptionEditor plain memeId={meme.id} userId={user?.id || ''} initial={initialTranscription} />
-                <MemeTagsEditor plain memeId={meme.id} userId={user?.id || ''} initial={tags} />
-                <MemePosted createdAt={meme.createdAt} />
-              </div>
-            </div>
-          )}
-          {layout === 'b' && (
-            <div className={d.layoutB}>
-              <div className={d.frame}>
-                <DetailMedia meme={meme} />
-              </div>
-              <PostActions meme={meme} user={user} canDelete={canDelete} />
-              <div className={d.postRule} />
-              <PostAuthor username={meme.username} />
-              <MemeTranscriptionEditor plain memeId={meme.id} userId={user?.id || ''} initial={initialTranscription} />
-              <MemeTagsEditor plain memeId={meme.id} userId={user?.id || ''} initial={tags} />
-              <MemePosted createdAt={meme.createdAt} />
-            </div>
-          )}
-          {layout !== 'a' && layout !== 'b' && (
-          <div className={d.layout}>
+          {/* One centered column: the meme, its action bar, then who posted it, the
+              caption and tags. */}
+          <div className={d.post}>
             <div className={d.frame}>
               <DetailMedia meme={meme} />
             </div>
-            <aside className={d.panel}>
-              <MemeDetailsLarge
-                meme={meme}
-                user={user}
-                canDelete={canDelete}
-              />
-              <MemeTranscriptionEditor
-                memeId={meme.id}
-                userId={user?.id || ''}
-                initial={initialTranscription}
-              />
-              <MemeTagsEditor memeId={meme.id} userId={user?.id || ''} initial={tags} />
-              <MemePosted createdAt={meme.createdAt} />
-            </aside>
+            <PostActions meme={meme} user={user} canDelete={canDelete} />
+            <div className={d.postRule} />
+            <PostAuthor username={meme.username} karma={karma} />
+            <MemeTranscriptionEditor plain memeId={meme.id} userId={user?.id || ''} initial={initialTranscription} />
+            <MemeTagsEditor plain memeId={meme.id} userId={user?.id || ''} initial={tags} />
+            <MemePosted createdAt={meme.createdAt} />
           </div>
-          )}
         </div>
       </main>
       <FooterBar />

@@ -12,6 +12,8 @@ interface Tag {
   score: number;
   // The viewer added this tag to this meme.
   own?: boolean;
+  // The viewer's vote: 1, -1, or 0.
+  myVote?: number;
 }
 
 // The meme's tags as chips, ending in a "+ Add tag" chip that opens an inline field.
@@ -77,6 +79,7 @@ export default function MemeTagsEditor(props: {
             onVote={handleVote}
             // No voting on your own tags, and none while logged out.
             disableVote={tag.own || !signedIn}
+            voteHint={!signedIn ? 'Log in to vote' : tag.own ? 'You added this tag' : undefined}
           />
         ))}
         {signedIn &&

@@ -5,6 +5,12 @@ import { NextResponse } from 'next/server';
 
 // TODO switch this to use like a short slug for resource id's instead of full uuid because its ugly
 
+// Avatars were served with no caching, so every page refetched every avatar from storage and
+// they popped in late. The URL is per username, not per image, so it cannot be immutable:
+// browsers reuse it for 10 minutes and revalidate in the background for a week after. The
+// edit page busts it with ?timeStamp, so your own change shows at once.
+const AVATAR_CACHE = 'public, max-age=600, stale-while-revalidate=604800';
+
 export async function GET(
   request: Request,
   props: { params: Promise<{ username: string }> }
@@ -39,7 +45,7 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': data.ContentType!,
-        // 'Cache-Control': 'public, max-age=31536000, immutable', // optional, for caching
+        'Cache-Control': AVATAR_CACHE,
       },
     });
   } else {
@@ -57,7 +63,7 @@ export async function GET(
         status: 200,
         headers: {
           'Content-Type': data.ContentType!,
-          // 'Cache-Control': 'public, max-age=31536000, immutable', // optional, for caching
+          'Cache-Control': AVATAR_CACHE,
         },
       });
     } catch (error) {

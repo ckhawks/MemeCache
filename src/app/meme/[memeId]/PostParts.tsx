@@ -10,11 +10,11 @@ import SendMemeButton from '@/components/SendMemeButton';
 import DeleteMemeButton from '@/components/DeleteMemeButton';
 import type { MemeCard } from '@/db/queries/memes';
 import type { UserPayload } from '@/auth/lib';
+import { getRelativeTimeString, getServerSideRelativeTime } from '@/util/datetimeFormat';
 
-// Pieces for the meme page layouts A and B (?layout=a, ?layout=b): an author row and a row
-// of labeled action pills.
+// Pieces of the meme page: the author line, the action bar, and the posted date.
 
-export function PostAuthor(props: { username: string }) {
+export function PostAuthor(props: { username: string; karma: number }) {
   return (
     <Link href={'/me/' + encodeURIComponent(props.username)} className={d.postAuthor}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -25,7 +25,10 @@ export function PostAuthor(props: { username: string }) {
         height={36}
         className={d.postAvatar}
       />
-      <span className={d.postAuthorName}>{props.username}</span>
+      <span className={d.postAuthorText}>
+        <span className={d.postAuthorName}>{props.username}</span>
+        <span className={d.postKarma}>{props.karma.toLocaleString()} karma</span>
+      </span>
     </Link>
   );
 }
@@ -56,6 +59,26 @@ export function PostActions(props: {
           <DeleteMemeButton labeled memeId={meme.id} asModerator={props.user?.id !== meme.uploaderId} />
         </span>
       )}
+    </div>
+  );
+}
+
+// When it was posted, as a date and as a relative time.
+export function MemePosted(props: { createdAt: Date }) {
+  const date = new Date(props.createdAt);
+  // UTC on both server and browser, so the rendered date cannot differ between them.
+  const exact = date.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+  const relative =
+    typeof window === 'undefined' ? getServerSideRelativeTime(date) : getRelativeTimeString(date);
+
+  return (
+    <div className={d.posted}>
+      Posted {exact} · {relative}
     </div>
   );
 }

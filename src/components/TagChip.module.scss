@@ -1,80 +1,122 @@
-.tag-chip {
-    border: 1px solid var(--border-color);
-    border-radius: 30px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 8px 2px 12px;
-    font-size: 12px;
-    color: var(--sub-text-color);
-    width: fit-content;
-    text-decoration: none;
-    transition:
-      border-color 0.15s ease-in-out,
-      color 0.15s ease-in-out;
-
-    & > svg {
-      color: var(--sub-text-color);
-    }
-
-    // The vote arrows are always there, faint, and brighten on hover. They used to scale in
-    // from zero width on hover, so the chip grew and pushed its neighbors around, and rows of
-    // chips jumped as the pointer crossed them.
-    .tag-action-icon {
-      opacity: 0.45;
-      transition: opacity 0.15s ease-in-out;
-    }
-
-    &:hover {
-      border-color: var(--border-color-hover);
-      color: var(--text-color);
-      cursor: pointer;
-
-      .tag-action-icon {
-        opacity: 1;
-      }
-    }
-
-    &.active {
-      // background-color: rgb(230, 255, 230);
-      // border: 1px solid rgb(141, 197, 141);
-      // color: rgb(77, 164, 77);
-
-      background-color: rgb(240, 240, 240);
-      border: 1px solid rgb(203, 203, 203);
-      color: rgb(91, 91, 91);
-      & > svg {
-        color: rgb(117, 117, 117);
-      }
-    }
-  }
-
-.tag-actions {
-  display: flex;
-  align-items: center;
+.wrap {
+  position: relative;
+  display: inline-flex;
 }
 
-.tag-action {
-  display: flex;
-  cursor: pointer;
-  background: none;
-  border: none;
-  padding: 0;
-  color: inherit;
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 30px;
+  font-size: 12px;
+  color: var(--mostly-text-color);
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease-in-out,
+    color 0.15s ease-in-out;
+
+  &:hover {
+    border-color: var(--border-color-hover);
+    color: var(--text-color);
+  }
+}
+
+.score {
+  color: var(--sub-text-color);
+  font-variant-numeric: tabular-nums;
 }
 
 .unconfirmed {
   opacity: 0.55;
 }
 
-// Touch screens never hover, so the vote arrows would never appear. Show them always.
-// Touch screens: bigger targets for the vote arrows, and full strength since there is no hover.
-@media (hover: none) {
-  .tag-chip .tag-action-icon {
-    opacity: 1;
+// The vote control: a small bubble above the chip, shown on hover or keyboard focus. The
+// ::after strip bridges the gap to the chip, so moving the pointer up into the bubble does
+// not end the hover.
+.popover {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  z-index: 10;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  margin-bottom: 6px;
+  border: 1px solid var(--border-color-hover);
+  border-radius: 8px;
+  background-color: var(--background-color);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  transform: translate(-50%, 2px);
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  transition:
+    opacity 0.12s ease-in-out,
+    transform 0.12s ease-in-out;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    height: 8px;
+  }
+}
+
+.wrap:hover .popover,
+.wrap:focus-within .popover {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, 0);
+}
+
+.hint {
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--sub-text-color);
+}
+
+.tag-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--sub-text-color);
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--hover-background-color);
+    color: var(--text-color);
   }
 
-  .tag-action {
-    padding: 4px;
+  &.voted {
+    color: var(--text-color);
+    background-color: var(--hover-background-color);
+  }
+}
+
+// Touch screens: no hover, so the arrows sit inline after the chip and hints are dropped.
+@media (hover: none) {
+  .popover {
+    position: static;
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+    margin: 0 0 0 2px;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    background: none;
+  }
+
+  .hint {
+    display: none;
   }
 }

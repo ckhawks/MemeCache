@@ -152,6 +152,10 @@ Admins get no special rank. They climb like everyone else.
 
 ## Karma
 
+**Live since 2026-10-03** (`getKarma` in `src/db/queries/users.ts`): shown next to the
+author on meme pages and as the first stat on profiles. Computed per request; fine at this
+size.
+
 A third number, like Reddit karma: the net score other people give your contributions.
 Unlike XP it can go down, and it can go negative.
 

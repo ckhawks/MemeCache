@@ -132,3 +132,22 @@ describe('profile stats', () => {
     expect(stats.memberSince).not.toBeNull();
   });
 });
+
+describe('karma', () => {
+  it('counts likes and tag votes from others, never your own, and can go down', async () => {
+    const { getKarma } = await import('@/db/queries/users');
+    const alice = await makeUser('alice');
+    const bob = await makeUser('bob');
+    const carol = await makeUser('carol');
+    const meme = await makeMeme(alice);
+    await setLike(meme, bob, true);
+    await setLike(meme, alice, true); // self-like: not counted
+    const tag = await findOrCreateTag('cats', alice);
+    await addTagToMeme(meme, tag, alice); // alice's automatic +1: not counted
+    await voteOnTag(meme, tag, bob, 1);
+    await voteOnTag(meme, tag, carol, -1);
+    expect(await getKarma(alice)).toBe(1 + (1 - 1));
+    await voteOnTag(meme, tag, bob, -1);
+    expect(await getKarma(alice)).toBe(1 - 2);
+  });
+});
