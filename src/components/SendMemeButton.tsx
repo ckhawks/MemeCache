@@ -19,13 +19,15 @@ const EXTENSIONS: Record<string, string> = {
 // browser cannot share files, which is most desktops, it copies the meme's link instead.
 export default function SendMemeButton(props: {
   memeId: string;
+  // For the copied link: /meme/<slug>.
+  slug: string;
   contentType: string;
 }) {
   const [copied, setCopied] = useState(false);
 
   const copyLink = async () => {
     await navigator.clipboard.writeText(
-      `${window.location.origin}/meme/${props.memeId}`
+      `${window.location.origin}/meme/${props.slug}`
     );
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);

@@ -40,8 +40,9 @@ export const POST = route({
       })
     );
 
+    let slug: string;
     try {
-      await createMeme({
+      slug = await createMeme({
         id,
         uploaderId: user.id,
         s3Key: id,
@@ -54,6 +55,6 @@ export const POST = route({
       throw error;
     }
 
-    return { id };
+    return { id, slug };
   },
 });

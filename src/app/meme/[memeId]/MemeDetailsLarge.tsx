@@ -48,7 +48,7 @@ export function MemeDetailsLarge(props: {
       <div className={d.actions}>
         <LikeButton memeId={meme.id} userId={props.user?.id || ''} liked={meme.hasLiked} likes={meme.likeCount} />
         {props.user && <SaveMemeButton memeId={meme.id} saved={meme.hasSaved} />}
-        <SendMemeButton memeId={meme.id} contentType={meme.contentType} />
+        <SendMemeButton memeId={meme.id} slug={meme.slug} contentType={meme.contentType} />
         <Tooltip label="Download">
           <a href={`/api/resource/${meme.id}`} download aria-label="Download" className={likeStyles['wrapper']}>
             <Download size={14} className={likeStyles['icon']} />

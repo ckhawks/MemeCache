@@ -145,9 +145,9 @@ export default function UploadComponent() {
       const formData = new FormData();
       // No user id here on purpose: the server takes the uploader from the session.
       formData.append('file', fileToUpload);
-      const result = await api<{ id: string }>('/api/upload', { body: formData });
+      const result = await api<{ id: string; slug: string }>('/api/upload', { body: formData });
       reset();
-      setUploadedId(result.id);
+      setUploadedId(result.slug);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'The upload failed. Try again.');
     } finally {

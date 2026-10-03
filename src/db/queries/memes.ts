@@ -1,8 +1,10 @@
 import { db } from '@/db/db';
-import { isUuid } from './ids';
+import { isSlug, isUuid } from './ids';
 
 export interface MemeCard {
   id: string;
+  // The short public id used in page URLs: /meme/<slug>.
+  slug: string;
   contentType: string;
   createdAt: Date;
   uploaderId: string;
@@ -35,6 +37,7 @@ export const FEED_PAGE_SIZE = 60;
 // multiplies one by the other, which is how like counts and tag scores used to inflate.
 const CARD_COLUMNS = `
   m.id,
+  m.slug,
   m.content_type AS "contentType",
   m.created_at AS "createdAt",
   m.uploader_id AS "uploaderId",
@@ -144,33 +147,37 @@ export async function countMemes(filter: MemeFilter): Promise<number> {
   return row.count;
 }
 
-// Null when the meme does not exist or has been deleted.
-export async function getMeme(id: string, viewerId?: string): Promise<MemeCard | null> {
-  if (!isUuid(id)) {
+// By uuid or by slug. Null when the meme does not exist or has been deleted.
+export async function getMeme(idOrSlug: string, viewerId?: string): Promise<MemeCard | null> {
+  const column = isUuid(idOrSlug) ? 'm.id = $2::uuid' : isSlug(idOrSlug) ? 'm.slug = $2' : null;
+  if (!column) {
     return null;
   }
   const [meme] = await db<MemeCard>(
     `SELECT ${CARD_COLUMNS}
        FROM meme m
        JOIN app_user u ON u.id = m.uploader_id
-      WHERE m.id = $2::uuid
+      WHERE ${column}
         AND m.deleted_at IS NULL`,
-    [viewerParam(viewerId), id]
+    [viewerParam(viewerId), idOrSlug]
   );
   return meme ?? null;
 }
 
+// Returns the slug the database generated for it.
 export async function createMeme(meme: {
   id: string;
   uploaderId: string;
   s3Key: string;
   contentType: string;
-}) {
-  await db(
+}): Promise<string> {
+  const [row] = await db<{ slug: string }>(
     `INSERT INTO meme (id, uploader_id, s3_key, content_type)
-     VALUES ($1, $2, $3, $4)`,
+     VALUES ($1, $2, $3, $4)
+     RETURNING slug`,
     [meme.id, meme.uploaderId, meme.s3Key, meme.contentType]
   );
+  return row.slug;
 }
 
 // Soft delete. The row and the stored file stay, so a takedown can hold content and a

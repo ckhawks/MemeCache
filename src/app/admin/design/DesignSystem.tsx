@@ -155,7 +155,7 @@ export default function DesignSystem(props: { memes: MemeCard[]; userId: string 
               </Tooltip>
             </Labeled>
             <Labeled label="Send">
-              <SendMemeButton memeId={FAKE_MEME} contentType="image/png" />
+              <SendMemeButton memeId={FAKE_MEME} slug="Xm7Kq2N" contentType="image/png" />
             </Labeled>
             <Labeled label="Save / Saved">
               <div className={ds.row}>

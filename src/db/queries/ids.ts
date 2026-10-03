@@ -6,3 +6,10 @@ const UUID_PATTERN =
 export function isUuid(value: unknown): value is string {
   return typeof value === 'string' && UUID_PATTERN.test(value);
 }
+
+// Public meme slugs (migration 004): 7 characters, no 0 O o 1 l I.
+const SLUG_PATTERN = /^[2-9A-HJ-NP-Za-km-np-z]{7}$/;
+
+export function isSlug(value: unknown): value is string {
+  return typeof value === 'string' && SLUG_PATTERN.test(value);
+}

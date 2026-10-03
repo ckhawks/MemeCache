@@ -34,7 +34,7 @@ export function GalleryMasonry(props: {
 
   const card = (meme: MemeCard) => (
     <div
-      onClick={() => router.push(`/meme/${meme.id}`)}
+      onClick={() => router.push(`/meme/${meme.slug}`)}
       key={meme.id}
       className={`${styles['meme']}`}
     >
@@ -80,7 +80,7 @@ export function GalleryMasonry(props: {
                 <Download size={14} className={likeStyles['icon']} />
               </a>
             </Tooltip>
-            <SendMemeButton memeId={meme.id} contentType={meme.contentType} />
+            <SendMemeButton memeId={meme.id} slug={meme.slug} contentType={meme.contentType} />
             {props.currentUserId && <SaveMemeButton memeId={meme.id} saved={meme.hasSaved} />}
             <LikeButton
               memeId={meme.id}

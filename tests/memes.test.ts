@@ -126,3 +126,18 @@ describe('cascades', () => {
     }
   });
 });
+
+describe('slugs', () => {
+  it('gives each meme a short slug without confusable characters, findable by slug or uuid', async () => {
+    const { createMeme } = await import('@/db/queries/memes');
+    const alice = await makeUser('alice');
+    const id = (await import('node:crypto')).randomUUID();
+    const slug = await createMeme({ id, uploaderId: alice, s3Key: id, contentType: 'image/png' });
+
+    expect(slug).toMatch(/^[2-9A-HJ-NP-Za-km-np-z]{7}$/);
+    expect((await getMeme(slug))?.id).toBe(id);
+    expect((await getMeme(id))?.slug).toBe(slug);
+    // A string of the right length but outside the alphabet is not looked up at all.
+    expect(await getMeme('0Ol1Il0')).toBeNull();
+  });
+});

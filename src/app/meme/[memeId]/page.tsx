@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import styles from '../../main.module.scss';
 import d from './MemeDetail.module.scss';
 import NavigationBar from '@/components/NavigationBar';
@@ -21,6 +21,10 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
 
   if (!meme) {
     notFound();
+  }
+  // Links from before migration 004 used the uuid. Send them to the short URL.
+  if (params.memeId !== meme.slug) {
+    permanentRedirect(`/meme/${meme.slug}`);
   }
 
   // Loaded with the page, so the panel is complete on first paint instead of showing
@@ -81,7 +85,7 @@ export async function generateMetadata(props: { params: Promise<{ memeId: string
   const description = `Check out this meme by ${meme.username}`;
   const url = `${
     process.env.NEXT_PUBLIC_BASE_URL || 'https://memecache.me'
-  }/meme/${meme.id}`;
+  }/meme/${meme.slug}`;
 
   if (meme.contentType.startsWith('video/')) {
     return {
