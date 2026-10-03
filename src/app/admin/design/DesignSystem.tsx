@@ -115,21 +115,21 @@ export default function DesignSystem(props: { memes: MemeCard[]; userId: string 
       <Section title="Buttons" note="main.module.scss: button, button-secondary, button-danger, button-small.">
         <Themed>
           <div className={ds.row}>
-            <Labeled label="primary">
+            <Labeled label="Primary">
               <button type="button" className={main['button']}>Upload</button>
             </Labeled>
-            <Labeled label="secondary">
+            <Labeled label="Secondary">
               <button type="button" className={`${main['button']} ${main['button-secondary']}`}>Cancel</button>
             </Labeled>
-            <Labeled label="danger">
+            <Labeled label="Danger">
               <button type="button" className={`${main['button']} ${main['button-danger']}`}>Delete</button>
             </Labeled>
-            <Labeled label="small">
+            <Labeled label="Small">
               <button type="button" className={`${main['button']} ${main['button-secondary']} ${main['button-small']}`}>
                 Change
               </button>
             </Labeled>
-            <Labeled label="disabled">
+            <Labeled label="Disabled">
               <button type="button" className={main['button']} disabled>
                 Uploading…
               </button>
@@ -144,26 +144,26 @@ export default function DesignSystem(props: { memes: MemeCard[]; userId: string 
       >
         <Themed>
           <div className={ds.row}>
-            <Labeled label="delete">
+            <Labeled label="Delete">
               <DeleteMemeButton memeId={FAKE_MEME} />
             </Labeled>
-            <Labeled label="download">
+            <Labeled label="Download">
               <Tooltip label="Download">
                 <a href="#" aria-label="Download" className={likeStyles['wrapper']} onClick={(e) => e.preventDefault()}>
                   <Download size={14} className={likeStyles['icon']} />
                 </a>
               </Tooltip>
             </Labeled>
-            <Labeled label="send">
+            <Labeled label="Send">
               <SendMemeButton memeId={FAKE_MEME} contentType="image/png" />
             </Labeled>
-            <Labeled label="save / saved">
+            <Labeled label="Save / Saved">
               <div className={ds.row}>
                 <SaveMemeButton memeId={FAKE_MEME} saved={false} />
                 <SaveMemeButton memeId={FAKE_MEME} saved />
               </div>
             </Labeled>
-            <Labeled label="like / liked / signed out">
+            <Labeled label="Like / Liked / Signed out">
               <div className={ds.row}>
                 <LikeButton memeId={FAKE_MEME} userId={props.userId} liked={false} likes={3} />
                 <LikeButton memeId={FAKE_MEME} userId={props.userId} liked likes={4} />
@@ -177,13 +177,13 @@ export default function DesignSystem(props: { memes: MemeCard[]; userId: string 
       <Section title="Tags" note="Hover a chip for its vote arrows (always shown on touch screens). Zero or below reads as unconfirmed.">
         <Themed>
           <div className={ds.row}>
-            <Labeled label="votable">
+            <Labeled label="Votable">
               <TagChip tag={{ id: FAKE_MEME, name: 'cat', score: 3 }} onVote={noVote} />
             </Labeled>
-            <Labeled label="your own">
+            <Labeled label="Your own">
               <TagChip tag={{ id: FAKE_MEME, name: 'loaf', score: 1 }} onVote={noVote} disableVote />
             </Labeled>
-            <Labeled label="unconfirmed">
+            <Labeled label="Unconfirmed">
               <TagChip tag={{ id: FAKE_MEME, name: 'dog', score: 0 }} onVote={noVote} />
             </Labeled>
           </div>
@@ -216,16 +216,16 @@ export default function DesignSystem(props: { memes: MemeCard[]; userId: string 
       <Section title="Navigation bits">
         <Themed>
           <div className={ds.row}>
-            <Labeled label="back">
+            <Labeled label="Back">
               <BackButton to="/admin/design" text="Back" />
             </Labeled>
-            <Labeled label="layout toggle (live: sets your gallery layout)">
+            <Labeled label="Layout toggle (live: sets your gallery layout)">
               <FeedViewToggle view="grid" />
             </Labeled>
-            <Labeled label="theme toggle (live)">
+            <Labeled label="Theme toggle (live)">
               <ThemeToggle />
             </Labeled>
-            <Labeled label="pager">
+            <Labeled label="Pager">
               <span className={`${main['button']} ${main['button-secondary']}`}>Older memes</span>
             </Labeled>
           </div>

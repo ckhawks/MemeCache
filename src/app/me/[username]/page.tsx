@@ -18,10 +18,6 @@ const ROLE_BADGES: Record<string, string> = {
   moderator: 'Moderator',
 };
 
-function plural(count: number, one: string, many: string) {
-  return `${count.toLocaleString()} ${count === 1 ? one : many}`;
-}
-
 export default async function Profile(props: {
   params: Promise<{ username: string }>;
   searchParams: Promise<{ cursor?: string }>;
@@ -50,10 +46,10 @@ export default async function Profile(props: {
   const badge = ROLE_BADGES[stats.role];
 
   const statItems = [
-    { value: stats.uploads, label: stats.uploads === 1 ? 'upload' : 'uploads' },
-    { value: stats.likesReceived, label: stats.likesReceived === 1 ? 'like received' : 'likes received' },
-    { value: stats.tagsAdded, label: stats.tagsAdded === 1 ? 'tag added' : 'tags added' },
-    { value: stats.transcriptions, label: stats.transcriptions === 1 ? 'transcription' : 'transcriptions' },
+    { value: stats.uploads, label: 'Uploads' },
+    { value: stats.likesReceived, label: 'Likes received' },
+    { value: stats.tagsAdded, label: 'Tags added' },
+    { value: stats.transcriptions, label: 'Transcriptions' },
   ];
 
   return (
@@ -88,8 +84,8 @@ export default async function Profile(props: {
             <dl className={p.stats}>
               {statItems.map((item) => (
                 <div key={item.label} className={p.stat}>
-                  <dt className={p.statValue}>{item.value.toLocaleString()}</dt>
-                  <dd className={p.statLabel}>{item.label}</dd>
+                  <dt className={p.statLabel}>{item.label}</dt>
+                  <dd className={p.statValue}>{item.value.toLocaleString()}</dd>
                 </div>
               ))}
             </dl>
@@ -123,7 +119,7 @@ export default async function Profile(props: {
 
           <div className={styles['feed-header']}>
             <h2 className={p.sectionTitle}>
-              Uploads <span className={p.count}>{plural(total, 'meme', 'memes')}</span>
+              Uploads <span className={p.count}>{total.toLocaleString()}</span>
             </h2>
             <FeedViewToggle view={view} />
           </div>

@@ -2,49 +2,50 @@
 
 import { login } from '@/auth/actions';
 import { useActionState } from 'react';
-
-import styles from '../main.module.scss';
-import { Alert, Form } from 'react-bootstrap';
 import Link from 'next/link';
 import { ArrowRight } from 'react-feather';
+import styles from '../main.module.scss';
+import f from '@/components/AuthForm.module.scss';
 
 const initialState = {
   message: '',
 };
 
 export default function LoginComponent() {
-  const [state, loginAction] = useActionState(login, initialState);
+  const [state, loginAction, pending] = useActionState(login, initialState);
 
   return (
-    <form action={loginAction}>
+    <form action={loginAction} className={f.form}>
       {state?.message && (
-        <div aria-live="polite">
-          <Alert variant="danger" style={{ fontSize: '0.9rem' }}>
-            {state?.message}
-          </Alert>
+        <div className={f.error} aria-live="polite">
+          {state.message}
         </div>
       )}
-      <Form.Group className="mb-3" controlId="login-email">
-        <Form.Label>Email address</Form.Label>
-        <Form.Control type="email" name="email" autoComplete="email" />
-      </Form.Group>
-      <Form.Group className="mb-3" controlId="login-password">
-        <Form.Label>Password</Form.Label>
-        <Form.Control type="password" name="password" autoComplete="current-password" />
-      </Form.Group>
-      <br />
-      <div className={styles['login-buttons']}>
-        <button type="submit" className={styles['button']}>
-          Log in{' '}
-          <ArrowRight size={18} />
-        </button>
-        <Link
-          href="/register"
-          className={`${styles['button']} ${styles['button-secondary']}`}
-        >
-          Register
-        </Link>
+      <div className={f.field}>
+        <label htmlFor="login-email" className={f.label}>
+          Email
+        </label>
+        <input id="login-email" className={f.input} type="email" name="email" autoComplete="email" required />
       </div>
+      <div className={f.field}>
+        <label htmlFor="login-password" className={f.label}>
+          Password
+        </label>
+        <input
+          id="login-password"
+          className={f.input}
+          type="password"
+          name="password"
+          autoComplete="current-password"
+          required
+        />
+      </div>
+      <button type="submit" className={`${styles['button']} ${f.submit}`} disabled={pending}>
+        {pending ? 'Logging in…' : 'Log in'} {!pending && <ArrowRight size={16} />}
+      </button>
+      <p className={f.switch}>
+        No account yet? <Link href="/register">Register</Link>
+      </p>
     </form>
   );
 }

@@ -1,0 +1,194 @@
+// Signed out: the hero over the meme wall.
+.hero {
+  position: relative;
+  min-height: 440px;
+  margin-bottom: 40px;
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+
+  @media (max-width: 700px) {
+    min-height: 380px;
+    border-radius: 14px;
+  }
+}
+
+.heroText {
+  position: relative;
+  padding: 40px;
+  color: #fff;
+  max-width: 620px;
+
+  @media (max-width: 700px) {
+    padding: 20px;
+  }
+}
+
+.heroTitle {
+  margin: 0;
+  font-size: 64px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+
+  @media (max-width: 700px) {
+    font-size: 42px;
+  }
+}
+
+.heroTagline {
+  margin: 14px 0 0;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.7);
+  font-size: 18px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.88);
+
+  @media (max-width: 700px) {
+    font-size: 15px;
+  }
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.heroPrimary,
+.heroSecondary {
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  text-decoration: none;
+  transition: transform 0.15s ease-in-out, background-color 0.15s ease-in-out;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.heroPrimary {
+  background-color: #fff;
+  color: #111;
+}
+
+.heroSecondary {
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background-color: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(4px);
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.16);
+  }
+}
+
+// Signed in.
+.greeting {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.greetingTitle {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 40px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.action {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out,
+    transform 0.15s ease-in-out;
+
+  &:hover {
+    border-color: var(--border-color-hover);
+    box-shadow: rgba(100, 100, 111, 0.1) 0 7px 24px 0;
+    transform: translateY(-1px);
+  }
+}
+
+.actionPrimary {
+  background-color: var(--button-primary-bg-color);
+  border-color: var(--button-primary-bg-color);
+  color: var(--button-primary-color);
+
+  .actionNote {
+    color: inherit;
+    opacity: 0.7;
+  }
+
+  &:hover {
+    border-color: var(--button-primary-bg-color);
+  }
+}
+
+.actionIcon {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.actionLabel {
+  font-weight: 600;
+}
+
+.actionNote {
+  font-size: 13px;
+  color: var(--sub-text-color);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.seeAll {
+  font-size: 14px;
+  color: var(--sub-text-color);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--text-color);
+  }
+}

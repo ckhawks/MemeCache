@@ -1,27 +1,34 @@
 'use client';
 
-import styles from '../app/main.module.scss';
+import Link from 'next/link';
 import footerStyles from './FooterBar.module.scss';
 import ThemeToggle from './ThemeToggle';
 
+// The first memes went up in 2024.
+const SINCE = 2024;
+
 export default function FooterBar() {
+  const year = new Date().getFullYear();
 
   return (
-    <div className={footerStyles['wrapper']}>
+    <footer className={footerStyles['wrapper']}>
       <div className={footerStyles['footer']}>
         <div className={footerStyles['footer-left']}>
-          Stellaric — © {new Date().getFullYear()}
+          <Link href="/" className={footerStyles['wordmark']}>
+            MemeCache
+          </Link>
+          <span className={footerStyles['credit']}>
+            © {SINCE === year ? year : `${SINCE}–${year}`} · made by{' '}
+            <Link href="/me/Stellaric" className={footerStyles['footer-link']}>
+              Stellaric
+            </Link>
+          </span>
         </div>
-
-        <div className={footerStyles['footer-center']}>
-          {/* A Content Policy link goes here once the page exists (TODO.md Phase 7). */}
-        </div>
+        {/* A Content Policy link goes in this row once the page exists (TODO.md Phase 7). */}
         <div className={footerStyles['footer-right']}>
           <ThemeToggle />
         </div>
       </div>
-    </div>
+    </footer>
   );
 }
-
-// TODO make footer sticky

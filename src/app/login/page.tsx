@@ -1,50 +1,20 @@
-'use server';
-
-import styles from '../main.module.scss';
-import { getUserFromAccessToken } from '@/auth/lib';
-import LoginComponent from './LoginComponent';
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
+import { getUserFromAccessToken } from '@/auth/lib';
+import AuthLayout from '@/components/AuthLayout';
+import LoginComponent from './LoginComponent';
+
+export const metadata = {
+  title: 'Log in · MemeCache',
+};
 
 export default async function LoginPage() {
-  const user = await getUserFromAccessToken();
-  // console.log("session", session);
-
-  if (user) {
+  if (await getUserFromAccessToken()) {
     redirect('/');
   }
 
   return (
-    <div className={styles.wrapper}>
-      <main className={`${styles.main} ${styles.narrow}`}>
-        <div className={styles.description}>
-          <Link href="/" style={{ textDecoration: 'unset' }}>
-            <div style={{ display: 'flex', justifyContent: 'center' }}></div>
-
-            <h1>MemeCache</h1>
-          </Link>
-          {/* <p className={styles.subtext}>
-            You&apos;re making progress; track it!
-          </p> */}
-        </div>
-        <div
-          className={`${styles.row} ${styles.content}`}
-          style={{ marginTop: '24px' }}
-        ></div>
-
-        <div style={{ width: '100%' }}>
-          <h4 style={{ marginBottom: '24px' }}>Login</h4>
-          {!user && <LoginComponent />}
-
-          {/* {session && (
-        <form action={logout}>
-          <button type="submit">Logout</button>
-        </form>
-      )} */}
-
-          {/* <pre>Session: {JSON.stringify(session, null, 2)}</pre> */}
-        </div>
-      </main>
-    </div>
+    <AuthLayout title="Welcome back" subtitle="Log in to your MemeCache.">
+      <LoginComponent />
+    </AuthLayout>
   );
 }

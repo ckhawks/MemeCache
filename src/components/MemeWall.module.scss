@@ -1,0 +1,62 @@
+// Always a background layer: fills its positioned parent. Setting this here rather than in
+// each page's styles avoids two modules fighting over position (whichever loads last wins).
+.wall {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background-color: #111;
+}
+
+// The columns sit on a slight angle and overscan the box so the tilt shows no edges.
+.tilt {
+  position: absolute;
+  inset: -20% -15%;
+  display: flex;
+  gap: 14px;
+  transform: rotate(-8deg);
+}
+
+.column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation-name: drift;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+
+  &.reverse {
+    animation-direction: reverse;
+  }
+}
+
+.tile {
+  width: 100%;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  user-select: none;
+}
+
+// Darkens the wall so text on top of it stays readable, heaviest at the bottom.
+.shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.55) 60%, rgba(0, 0, 0, 0.85) 100%);
+}
+
+// Each column holds its memes twice; moving it up by half lands on an identical frame.
+@keyframes drift {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .column {
+    animation: none;
+  }
+}
