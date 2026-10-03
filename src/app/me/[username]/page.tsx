@@ -58,7 +58,7 @@ export default async function Profile(props: {
 
   return (
     <>
-      <NavigationBar username={user?.username ?? ''} />
+      <NavigationBar />
       <main className={styles.main}>
         <div className={styles.content}>
           <section className={p.header}>

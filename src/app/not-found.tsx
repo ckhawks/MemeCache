@@ -11,7 +11,7 @@ export default async function NotFound() {
 
   return (
     <>
-      <NavigationBar username={user?.username ?? ''} />
+      <NavigationBar />
       <main className={styles.main}>
         <div className={styles.content}>
           <div className={styles.description}>

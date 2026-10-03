@@ -17,7 +17,7 @@ export default async function Admin() {
 
   return (
     <>
-      <NavigationBar username={user.username} />
+      <NavigationBar />
       <main className={styles.main}>
         <div className={styles.content}>
           <div className={styles.description}>

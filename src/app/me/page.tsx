@@ -10,7 +10,7 @@ export default async function Profile() {
 
   return (
     <>
-      <NavigationBar username={(user && user?.username) || ''} />
+      <NavigationBar />
       <main className={styles.main}>
         <div className={styles.content}>
           <div className={styles.description}>

@@ -104,7 +104,6 @@ export default function UploadComponent() {
       setNote('Shared from another app. Check it over, then upload.');
     })().catch((err) => console.error('Could not read the shared file:', err));
     // selectFile only sets state, so running this once on mount is enough.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleUpload = async () => {

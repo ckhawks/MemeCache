@@ -28,7 +28,7 @@ export default async function Library(props: { searchParams: Promise<{ cursor?: 
 
   return (
     <>
-      <NavigationBar username={user.username} />
+      <NavigationBar />
       <main className={styles.main}>
         <div className={styles.content}>
           <div className={styles.description}>

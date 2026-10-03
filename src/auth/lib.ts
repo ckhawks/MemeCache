@@ -7,6 +7,7 @@
 
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
+import { cache } from 'react';
 import { getSessionState, touchLastActive } from '@/db/queries/users';
 
 export interface UserPayload {
@@ -100,16 +101,12 @@ export async function checkPassword(
   return bcrypt.compareSync(input, hash);
 }
 
-export async function getUserFromAccessToken() {
+// cache(): once per request. The page and the navigation bar both ask for the session user,
+// and without it each would verify the token and query the database separately.
+export const getUserFromAccessToken = cache(async (): Promise<UserPayload | undefined> => {
   const accessToken = (await cookies()).get('accessToken')?.value;
   if (!accessToken) {
     return undefined;
   }
-
-  const user = await validateAccessToken(accessToken);
-  if (user) {
-    // Token is valid, attach user to the request
-    return user;
-  }
-  return undefined;
-}
+  return (await validateAccessToken(accessToken)) ?? undefined;
+});
