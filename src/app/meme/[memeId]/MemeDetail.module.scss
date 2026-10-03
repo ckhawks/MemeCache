@@ -1,11 +1,8 @@
-// Desktop: the meme and its details side by side, as one centered unit. The meme's column
-// takes the image's own width (up to about two-thirds of the page) and the details sit right
-// next to it, so a small or narrow meme does not leave a gap between itself and its panel.
-// Phones: stacked.
+// Desktop: the meme fills the left column (scaled up when small, see DetailMedia) with the
+// details beside it. Phones: stacked.
 .layout {
   display: grid;
-  grid-template-columns: fit-content(60%) minmax(340px, 460px);
-  justify-content: center;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 440px);
   gap: 56px;
   align-items: start;
 
@@ -15,44 +12,73 @@
   }
 }
 
+// Centers a tall meme, which stops short of the column's width.
 .frame {
+  display: flex;
+  justify-content: center;
   min-width: 0;
-
-  img,
-  video {
-    display: block;
-    max-width: 100%;
-    max-height: 80vh;
-    width: auto;
-    height: auto;
-    border-radius: 12px;
-  }
-
-  // Phones: center a meme narrower than the screen.
-  @media (max-width: 900px) {
-    display: flex;
-    justify-content: center;
-  }
 }
 
-// No card around it: the details sit straight on the page beside the meme. Sticks beside
-// a tall meme while scrolling on desktop.
+.media {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 80vh;
+  // Safety net before the shape is known: never distort, at worst letterbox.
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+// The details column: a soft filled panel (no border), its sections divided by thin rules.
+// Sticks beside a tall meme while scrolling on desktop.
 .panel {
   display: flex;
   flex-direction: column;
-  gap: 28px;
-  padding-top: 4px;
+  padding: 8px 20px;
+  border-radius: 16px;
+  background-color: var(--hover-background-color);
+
+  & > * {
+    padding: 16px 0;
+  }
+
+  & > * + * {
+    border-top: 1px solid var(--border-color);
+  }
 
   @media (min-width: 901px) {
     position: sticky;
     top: 16px;
   }
+
+  @media (max-width: 900px) {
+    padding: 4px 16px;
+  }
 }
 
+// Who posted it: a small card inside the panel, linking to their profile.
 .uploader {
+  // Overrides the panel's section padding: the card carries its own.
+  padding: 0 !important;
+  margin: 12px 0;
+  border-top: none !important;
+}
+
+.uploaderCard {
   display: flex;
   align-items: center;
   gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  text-decoration: none;
+  transition: border-color 0.15s ease-in-out;
+
+  &:hover {
+    border-color: var(--border-color-hover);
+  }
 }
 
 .avatar {
@@ -69,29 +95,28 @@
   min-width: 0;
 }
 
-.uploaderName {
-  font-weight: 600;
-  color: var(--text-color);
-  text-decoration: none;
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
-
-.when {
-  font-size: 13px;
+.uploaderLabel {
+  font-size: 12px;
   color: var(--sub-text-color);
 }
 
-// The actions as one toolbar between two rules; delete pushed to the far end.
+.uploaderName {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.uploaderChevron {
+  margin-left: auto;
+  color: var(--sub-text-color);
+}
+
+// The actions as one toolbar; delete pushed to the far end.
 .actions {
   display: flex;
   align-items: center;
   gap: 22px;
-  padding: 14px 0;
-  border-top: 1px solid var(--border-color);
-  border-bottom: 1px solid var(--border-color);
 
   // The shared icon-button wrapper pushes itself right with margin-left: auto;
   // in this toolbar they sit in order instead.
@@ -102,4 +127,10 @@
 
 .deleteSlot {
   margin-left: auto !important;
+}
+
+// The posted date, at the bottom of the panel.
+.posted {
+  font-size: 13px;
+  color: var(--sub-text-color);
 }

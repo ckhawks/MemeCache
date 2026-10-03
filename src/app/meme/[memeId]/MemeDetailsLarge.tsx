@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Download } from 'react-feather';
+import { ChevronRight, Download } from 'react-feather';
 import d from './MemeDetail.module.scss';
 import DeleteMemeButton from '@/components/DeleteMemeButton';
 import LikeButton from '@/components/LikeButton';
@@ -13,7 +13,7 @@ import { getRelativeTimeString, getServerSideRelativeTime } from '@/util/datetim
 import type { MemeCard } from '@/db/queries/memes';
 import type { UserPayload } from '@/auth/lib';
 
-// The top of the meme page's side panel: who posted it and when, then the actions.
+// The top of the meme page's side panel: who posted it, then the actions.
 export function MemeDetailsLarge(props: {
   meme: MemeCard;
   user: UserPayload | undefined;
@@ -21,28 +21,25 @@ export function MemeDetailsLarge(props: {
   canDelete: boolean;
 }) {
   const { meme } = props;
-  const when =
-    typeof window === 'undefined'
-      ? getServerSideRelativeTime(new Date(meme.createdAt))
-      : getRelativeTimeString(new Date(meme.createdAt));
 
   return (
     <>
       <div className={d.uploader}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={'/api/resource/avatar/' + encodeURIComponent(meme.username)}
-          alt=""
-          width={40}
-          height={40}
-          className={d.avatar}
-        />
-        <div className={d.uploaderText}>
-          <Link href={'/me/' + encodeURIComponent(meme.username)} className={d.uploaderName}>
-            {meme.username}
-          </Link>
-          <span className={d.when}>Posted {when}</span>
-        </div>
+        <Link href={'/me/' + encodeURIComponent(meme.username)} className={d.uploaderCard}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={'/api/resource/avatar/' + encodeURIComponent(meme.username)}
+            alt=""
+            width={40}
+            height={40}
+            className={d.avatar}
+          />
+          <span className={d.uploaderText}>
+            <span className={d.uploaderLabel}>Posted by</span>
+            <span className={d.uploaderName}>{meme.username}</span>
+          </span>
+          <ChevronRight size={16} className={d.uploaderChevron} />
+        </Link>
       </div>
 
       <div className={d.actions}>
@@ -61,5 +58,25 @@ export function MemeDetailsLarge(props: {
         )}
       </div>
     </>
+  );
+}
+
+// The bottom of the panel: when it was posted, as a date and as a relative time.
+export function MemePosted(props: { createdAt: Date }) {
+  const date = new Date(props.createdAt);
+  // UTC on both server and browser, so the rendered date cannot differ between them.
+  const exact = date.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+  const relative =
+    typeof window === 'undefined' ? getServerSideRelativeTime(date) : getRelativeTimeString(date);
+
+  return (
+    <div className={d.posted}>
+      Posted {exact} · {relative}
+    </div>
   );
 }

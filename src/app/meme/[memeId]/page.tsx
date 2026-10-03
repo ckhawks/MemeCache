@@ -4,10 +4,10 @@ import d from './MemeDetail.module.scss';
 import NavigationBar from '@/components/NavigationBar';
 import FooterBar from '@/components/FooterBar';
 import BackButton from '@/components/BackButton';
-import MemeMediaRenderer from '@/components/MemeMediaRenderer';
+import DetailMedia from './DetailMedia';
 import MemeTranscriptionEditor from '@/components/MemeTranscriptionEditor';
 import MemeTagsEditor from '@/components/MemeTagsEditor';
-import { MemeDetailsLarge } from './MemeDetailsLarge';
+import { MemeDetailsLarge, MemePosted } from './MemeDetailsLarge';
 import { getUserFromAccessToken } from '@/auth/lib';
 import { isModerator } from '@/auth/role';
 import { getMeme } from '@/db/queries/memes';
@@ -44,7 +44,7 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
           </div>
           <div className={d.layout}>
             <div className={d.frame}>
-              <MemeMediaRenderer meme={meme} />
+              <DetailMedia meme={meme} />
             </div>
             <aside className={d.panel}>
               <MemeDetailsLarge
@@ -64,6 +64,7 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
                 }
               />
               <MemeTagsEditor memeId={meme.id} userId={user?.id || ''} initial={tags} />
+              <MemePosted createdAt={meme.createdAt} />
             </aside>
           </div>
         </div>
