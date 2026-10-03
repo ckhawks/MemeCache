@@ -7,41 +7,41 @@
     padding: 2px 12px;
     padding-right: 12px;
     font-size: 12px;
-    color: rgb(107, 107, 107);
+    color: var(--sub-text-color);
     width: fit-content;
     text-decoration: none;
-  
+
     & > svg {
-      color: rgb(177, 177, 177);
+      color: var(--sub-text-color);
     }
-  
+
     transition: width 0.2s ease-in-out, border 0.2s ease-in-out,
       padding 0.2s ease-in-out;
-  
+
     .tag-action-icon {
       transform: scaleX(0);
       transition: transform 0.2s ease-in-out;
       // display: none;
       max-width: 0px;
     }
-  
+
     &:hover {
       border: 1px solid var(--border-color-hover);
       cursor: pointer;
       padding-right: 8px;
-  
+
       .tag-action-icon {
         transform: scaleX(1);
         display: block;
         max-width: unset;
       }
     }
-  
+
     &.active {
       // background-color: rgb(230, 255, 230);
       // border: 1px solid rgb(141, 197, 141);
       // color: rgb(77, 164, 77);
-  
+
       background-color: rgb(240, 240, 240);
       border: 1px solid rgb(203, 203, 203);
       color: rgb(91, 91, 91);
@@ -50,3 +50,32 @@
       }
     }
   }
+
+.tag-actions {
+  display: flex;
+  align-items: center;
+}
+
+.tag-action {
+  display: flex;
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+}
+
+.unconfirmed {
+  opacity: 0.55;
+}
+
+// Touch screens never hover, so the vote arrows would never appear. Show them always.
+@media (hover: none) {
+  .tag-chip .tag-action-icon {
+    transform: scaleX(1);
+    max-width: unset;
+  }
+
+  .tag-action {
+    padding: 4px;
+  }
+}

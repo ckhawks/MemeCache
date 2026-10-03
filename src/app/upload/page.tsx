@@ -3,6 +3,7 @@ import NavigationBar from '@/components/NavigationBar';
 import UploadComponent from './UploadComponent';
 import { getUserFromAccessToken } from '@/auth/lib';
 import { redirect } from 'next/navigation';
+import FooterBar from '@/components/FooterBar';
 
 export default async function Upload() {
   const user = await getUserFromAccessToken();
@@ -22,6 +23,7 @@ export default async function Upload() {
           </div>
         </div>
       </main>
+      <FooterBar />
     </>
   );
 }

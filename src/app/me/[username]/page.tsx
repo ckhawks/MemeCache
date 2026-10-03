@@ -3,6 +3,7 @@
 import { getProfile } from '@/db/queries/users';
 import { countMemes, listMemes } from '@/db/queries/memes';
 import styles from '../../main.module.scss';
+import { notFound } from 'next/navigation';
 import NavigationBar from '@/components/NavigationBar';
 import { getUserFromAccessToken } from '@/auth/lib';
 
@@ -24,42 +25,14 @@ export default async function Profile(props: {
   //   redirect('/login');
   // }
 
-  if (params.username === null) {
-    return (
-      <>
-        <NavigationBar username={(user && user.username) || ''} />
-        <main className={styles.main}>
-          <div className={styles.content}>
-            <div className={styles.description}>
-              {/* <h1>MemeCache</h1> */}
-              <h1>404</h1>
-              <p>Please enter a profile name.</p>
-            </div>
-          </div>
-        </main>
-      </>
-    );
+  if (!params.username) {
+    notFound();
   }
 
   const userFromDb = await getProfile(params.username);
 
   if (!userFromDb) {
-    return (
-      <>
-        <NavigationBar username={(user && user.username) || ''} />
-        <main className={styles.main}>
-          <div className={styles.content}>
-            <div className={styles.description}>
-              {/* <h1>MemeCache</h1> */}
-              <h1>404</h1>
-              <p>
-                Couldn&apos;t find a profile for <b>{params.username}</b>.
-              </p>
-            </div>
-          </div>
-        </main>
-      </>
-    );
+    notFound();
   }
 
   const filter = { viewerId: user?.id, uploaderId: userFromDb.id };
@@ -127,6 +100,7 @@ export default async function Profile(props: {
             />
             </div>
           )}
+          {total === 0 && <p style={{ color: 'var(--sub-text-color)' }}>No memes uploaded yet.</p>}
           <FeedPager
             basePath={'/me/' + encodeURIComponent(userFromDb.username)}
             nextCursor={page.nextCursor}

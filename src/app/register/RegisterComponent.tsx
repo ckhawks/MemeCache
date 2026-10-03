@@ -18,27 +18,27 @@ export default function RegisterComponent() {
   return (
     <form action={registerAction}>
       {state?.message && (
-        <p aria-live="polite">
+        <div aria-live="polite">
           <Alert variant="danger" style={{ fontSize: '0.9rem' }}>
             {state?.message}
           </Alert>
-        </p>
+        </div>
       )}
-      <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
+      <Form.Group className="mb-3" controlId="register-username">
         <Form.Label>Username</Form.Label>
-        <Form.Control type="name" name="username" placeholder="" />
+        <Form.Control type="text" name="username" autoComplete="username" />
       </Form.Group>
-      <Form.Group className="mb-3" controlId="exampleForm.ControlInput2">
+      <Form.Group className="mb-3" controlId="register-email">
         <Form.Label>Email address</Form.Label>
-        <Form.Control type="email" name="email" placeholder="" />
+        <Form.Control type="email" name="email" autoComplete="email" />
       </Form.Group>
-      <Form.Group className="mb-3" controlId="exampleForm.ControlInput3">
+      <Form.Group className="mb-3" controlId="register-password">
         <Form.Label>Password</Form.Label>
-        <Form.Control type="password" name="password" placeholder="" />
+        <Form.Control type="password" name="password" autoComplete="new-password" />
       </Form.Group>
-      <Form.Group className="mb-3" controlId="exampleForm.ControlInput4">
+      <Form.Group className="mb-3" controlId="register-access_code">
         <Form.Label>Access Code</Form.Label>
-        <Form.Control type="name" name="access_code" placeholder="" />
+        <Form.Control type="text" name="access_code" autoComplete="off" />
       </Form.Group>
       <br />
       <div className={styles['login-buttons']}>
@@ -50,7 +50,7 @@ export default function RegisterComponent() {
           href="/login"
           className={`${styles['button']} ${styles['button-secondary']}`}
         >
-          Login
+          Log in
         </Link>
       </div>
     </form>

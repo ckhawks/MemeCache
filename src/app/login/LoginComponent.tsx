@@ -18,24 +18,24 @@ export default function LoginComponent() {
   return (
     <form action={loginAction}>
       {state?.message && (
-        <p aria-live="polite">
+        <div aria-live="polite">
           <Alert variant="danger" style={{ fontSize: '0.9rem' }}>
             {state?.message}
           </Alert>
-        </p>
+        </div>
       )}
-      <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
+      <Form.Group className="mb-3" controlId="login-email">
         <Form.Label>Email address</Form.Label>
-        <Form.Control type="email" name="email" placeholder="" />
+        <Form.Control type="email" name="email" autoComplete="email" />
       </Form.Group>
-      <Form.Group className="mb-3" controlId="exampleForm.ControlInput2">
+      <Form.Group className="mb-3" controlId="login-password">
         <Form.Label>Password</Form.Label>
-        <Form.Control type="password" name="password" placeholder="" />
+        <Form.Control type="password" name="password" autoComplete="current-password" />
       </Form.Group>
       <br />
       <div className={styles['login-buttons']}>
         <button type="submit" className={styles['button']}>
-          {/* <FontAwesomeIcon icon={faPlus} />  */} Login{' '}
+          Log in{' '}
           <ArrowRight size={18} />
         </button>
         <Link

@@ -15,7 +15,7 @@ export default async function Profile() {
         <div className={styles.content}>
           <div className={styles.description}>
             <h1>404</h1>
-            <p>Please profile a profile name.</p>
+            <p>Please enter a profile name.</p>
           </div>
         </div>
       </main>

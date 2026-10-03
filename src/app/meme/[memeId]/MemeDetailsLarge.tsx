@@ -8,6 +8,7 @@ import LikeButton from '@/components/LikeButton';
 import SendMemeButton from '@/components/SendMemeButton';
 import Tooltip from '@/components/Tooltip';
 import { Download } from 'react-feather';
+import likeStyles from '@/components/LikeButton.module.scss';
 import {
   getRelativeTimeString,
   getServerSideRelativeTime,
@@ -26,6 +27,15 @@ export function MemeDetailsLarge(props: {
       <MemeMediaRenderer meme={props.meme} large />
       <div className={styles['meme-body']}>
         <div className={styles['meme-body-title']}>
+          <div className={styles['meme-body-date']}>
+            {typeof window === 'undefined'
+              ? getServerSideRelativeTime(new Date(props.meme.createdAt))
+              : getRelativeTimeString(new Date(props.meme.createdAt))}{' '}
+            by{' '}
+            <Link href={'/me/' + props.meme.username} className={styles['meme-username']}>
+              {props.meme.username}
+            </Link>
+          </div>
           <div
             style={{
               display: 'flex',
@@ -44,11 +54,10 @@ export function MemeDetailsLarge(props: {
               <a
                 href={`/api/resource/${props.meme.id}`}
                 download
-                style={{
-                  color: 'gray',
-                }}
+                aria-label="Download"
+                className={likeStyles['wrapper']}
               >
-                <Download size={14} />
+                <Download size={14} className={likeStyles['icon']} />
               </a>
             </Tooltip>
             <SendMemeButton memeId={props.meme.id} contentType={props.meme.contentType} />
@@ -59,19 +68,6 @@ export function MemeDetailsLarge(props: {
               likes={props.meme.likeCount}
             />
           </div>
-        </div>
-        <div className={styles['meme-body-date']}>
-          {typeof window === 'undefined'
-            ? getServerSideRelativeTime(new Date(props.meme.createdAt))
-            : getRelativeTimeString(new Date(props.meme.createdAt))}{' '}
-          by{' '}
-          <Link
-            href={'/me/' + props.meme.username}
-            className={styles['meme-username']}
-          >
-            {props.meme.username}
-          </Link>
-          {/* {meme.createdAt.toISOString()} */}
         </div>
       </div>
     </div>

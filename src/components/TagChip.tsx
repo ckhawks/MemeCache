@@ -1,17 +1,3 @@
-// import { Plus } from 'react-feather';
-// import styles from '../app/main.module.scss';
-
-// export function TagChip(props: { tag: string }) {
-//   //  ${styles.active} goes on tag-chip
-
-//   return (
-//     <div className={`${styles['tag-chip']}`}>
-//       <span>{props.tag}</span>
-//       <Plus size={12} className={`${styles['tag-action-icon']}`} />
-//     </div>
-//   );
-// }
-
 import { ArrowUp, ArrowDown } from 'react-feather';
 import styles from './TagChip.module.scss';
 import Link from 'next/link';
@@ -29,33 +15,42 @@ interface TagChipProps {
 }
 
 export function TagChip({ tag, onVote, disableVote }: TagChipProps) {
+  const vote = (event: React.MouseEvent, value: number) => {
+    // The chip is a link to the tag page. Without preventDefault a vote also navigates.
+    event.preventDefault();
+    event.stopPropagation();
+    onVote(tag.id, value);
+  };
+
   return (
-    <Link href={`/t/${tag.name}`} className={`${styles['tag-chip']}`}>
+    <Link
+      href={`/t/${encodeURIComponent(tag.name)}`}
+      // A tag at 0 or below does not list this meme on its tag page, so it reads as
+      // unconfirmed rather than as a dead end.
+      className={`${styles['tag-chip']} ${tag.score <= 0 ? styles['unconfirmed'] : ''}`}
+    >
       <span>
         {tag.name} {tag.score}
       </span>
       {!disableVote && (
-        <div className={styles['tag-actions']}>
-          <ArrowUp
-            size={12}
-            className={styles['tag-action-icon']}
-            onClick={(e) => {
-              // The chip is a link to the tag page. Without preventDefault a vote also navigates.
-              e.preventDefault();
-              e.stopPropagation();
-              onVote(tag.id, 1);
-            }}
-          />
-          <ArrowDown
-            size={12}
-            className={styles['tag-action-icon']}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onVote(tag.id, -1);
-            }}
-          />
-        </div>
+        <span className={styles['tag-actions']}>
+          <button
+            type="button"
+            className={styles['tag-action']}
+            aria-label={`Upvote ${tag.name}`}
+            onClick={(e) => vote(e, 1)}
+          >
+            <ArrowUp size={12} className={styles['tag-action-icon']} />
+          </button>
+          <button
+            type="button"
+            className={styles['tag-action']}
+            aria-label={`Downvote ${tag.name}`}
+            onClick={(e) => vote(e, -1)}
+          >
+            <ArrowDown size={12} className={styles['tag-action-icon']} />
+          </button>
+        </span>
       )}
     </Link>
   );

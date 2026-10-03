@@ -32,6 +32,7 @@ export default async function Explore(props: { searchParams: Promise<{ cursor?: 
               currentUserId={user?.id || ''}
             />
           </div>
+          {total === 0 && <p style={{ color: 'var(--sub-text-color)' }}>No memes yet. Be the first to upload one.</p>}
           <FeedPager basePath="/explore" nextCursor={page.nextCursor} />
         </div>
       </main>

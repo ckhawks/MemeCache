@@ -1,7 +1,7 @@
 .BackButton {
   font-size: 14px;
-  background-color: white;
-  color: rgb(156, 156, 156);
+  background-color: transparent;
+  color: var(--sub-text-color);
   text-decoration: none;
   align-items: center;
   justify-content: center;
@@ -18,12 +18,12 @@
 
 .BackButton:active,
 .BackButton:visited {
-  color: rgb(156, 156, 156);
+  color: var(--sub-text-color);
 }
 
 .BackButton:hover {
-  background-color: rgb(236, 236, 236);
-  color: rgb(116, 116, 116);
+  background-color: var(--hover-background-color);
+  color: var(--mostly-text-color);
 }
 
 .BackButton > svg {

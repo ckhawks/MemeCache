@@ -14,6 +14,12 @@ const LightThemeContext = createContext<ThemeContextProps>({
 
 export const useTheme = () => useContext(LightThemeContext);
 
+// Our styles read data-theme; Bootstrap's components read data-bs-theme.
+function applyTheme(theme: string) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.documentElement.setAttribute('data-bs-theme', theme);
+}
+
 export const LightThemeProvider = ({
   children,
   initialTheme,
@@ -32,7 +38,7 @@ export const LightThemeProvider = ({
     if (savedTheme) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setTheme(savedTheme);
-      document.documentElement.setAttribute('data-theme', savedTheme);
+      applyTheme(savedTheme);
     } else {
       // Detect system theme preference
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
@@ -40,14 +46,14 @@ export const LightThemeProvider = ({
         ? 'dark'
         : 'light';
       setTheme(systemTheme);
-      document.documentElement.setAttribute('data-theme', systemTheme);
+      applyTheme(systemTheme);
     }
   }, []);
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
-    document.documentElement.setAttribute('data-theme', newTheme);
+    applyTheme(newTheme);
     localStorage.setItem('theme', newTheme);
     document.cookie = `theme=${newTheme}; path=/; max-age=31536000; SameSite=Lax`;
   };

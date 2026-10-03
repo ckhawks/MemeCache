@@ -57,7 +57,7 @@ export default function LikeButton(props: {
   return (
     // The like sits at the right edge of a card, so its label anchors to the right.
     <Tooltip label={label} align="end">
-      <div onClick={onToggleLike} className={styles['wrapper']}>
+      <button type="button" onClick={onToggleLike} className={styles['wrapper']} aria-label={label}>
         <Heart
           size={14}
           className={`${styles['icon']} ${liked ? styles['liked'] : ''}`}
@@ -70,7 +70,7 @@ export default function LikeButton(props: {
         ) : (
           <span className={`${styles['likes']} ${liked ? styles['liked'] : ''}`}>{likes}</span>
         )}
-      </div>
+      </button>
     </Tooltip>
   );
 }

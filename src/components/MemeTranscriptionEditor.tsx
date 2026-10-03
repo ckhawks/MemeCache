@@ -80,7 +80,7 @@ export default function MemeTranscriptionEditor({
                 </p>
                 { transcriptionData?.editedByUsername && <div className={styles['transcription-author']}>
                   Last updated by{' '}
-                  <span style={{ color: 'black', fontWeight: '500' }}>
+                  <span style={{ color: 'var(--text-color)', fontWeight: '500' }}>
                     {transcriptionData?.editedByUsername}
                   </span>
                 </div>}
@@ -123,7 +123,7 @@ export default function MemeTranscriptionEditor({
             </button>
           </div>
           {error && (
-            <div style={{ color: 'red', marginTop: '0.5rem' }}>{error}</div>
+            <div style={{ color: 'var(--danger-color)', marginTop: '0.5rem' }}>{error}</div>
           )}
         </div>
       )}

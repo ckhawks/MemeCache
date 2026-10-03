@@ -1,3 +1,5 @@
+'use client';
+
 import { Image } from 'react-bootstrap';
 import styles from '../app/main.module.scss';
 import {
@@ -6,7 +8,7 @@ import {
 } from '@/constants/mimeTypes';
 
 export default function MemeMediaRenderer(props: {
-  meme: { id: string; contentType: string };
+  meme: { id: string; contentType: string; username?: string };
   large?: boolean;
 }) {
   if (supportedImageTypes.indexOf(props.meme?.contentType) > -1) {
@@ -16,7 +18,7 @@ export default function MemeMediaRenderer(props: {
       >
         <Image
           src={'/api/resource/' + props.meme.id}
-          alt=":("
+          alt={props.meme.username ? `Meme by ${props.meme.username}` : 'Meme'}
           className={`${styles['meme-media-item']} ${
             props.large ? styles.large : ''
           }`}
@@ -30,15 +32,20 @@ export default function MemeMediaRenderer(props: {
       <div
         className={`${styles['meme-media']} ${props.large ? styles.large : ''}`}
       >
+        {/* preload + #t=0.1 shows the first frame instead of a blank box. Clicks on the
+            controls stay here: a feed card navigates on click, which made play open the
+            meme page. */}
         <video
           controls
+          preload="metadata"
+          onClick={(e) => e.stopPropagation()}
           className={`${styles['meme-media-item']} ${
             props.large ? styles.large : ''
           }`}
           loop
           style={{ display: 'block' }}
         >
-          <source src={'/api/resource/' + props.meme.id} />
+          <source src={'/api/resource/' + props.meme.id + '#t=0.1'} />
         </video>
       </div>
     );

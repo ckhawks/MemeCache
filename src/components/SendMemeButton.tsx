@@ -63,18 +63,18 @@ export default function SendMemeButton(props: {
 
   return (
     <Tooltip label={copied ? 'Link copied' : 'Send'}>
-      <div
+      <button
+        type="button"
         onClick={onSend}
         className={localStyles['wrapper']}
-        role="button"
-        aria-label="Send meme"
+        aria-label={copied ? 'Link copied' : 'Send'}
       >
         {copied ? (
           <Check size={14} className={localStyles['icon']} />
         ) : (
           <Send size={14} className={localStyles['icon']} />
         )}
-      </div>
+      </button>
     </Tooltip>
   );
 }

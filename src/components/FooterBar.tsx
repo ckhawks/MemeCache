@@ -1,15 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import styles from '../app/main.module.scss';
 import footerStyles from './FooterBar.module.scss';
-import { usePathname } from 'next/navigation';
 import ThemeToggle from './ThemeToggle';
 
 export default function FooterBar() {
-  const pathname = usePathname();
-  // return <p>Current pathname: {pathname}</p>;
-  // console.log(pathname);
 
   return (
     <div className={footerStyles['wrapper']}>
@@ -19,15 +14,7 @@ export default function FooterBar() {
         </div>
 
         <div className={footerStyles['footer-center']}>
-          <Link
-            href={'/'}
-            className={`
-              ${footerStyles['footer-link']}
-              ${pathname === '/' ? footerStyles['active'] : ''}
-            `}
-          >
-            Content Policy
-          </Link>
+          {/* A Content Policy link goes here once the page exists (TODO.md Phase 7). */}
         </div>
         <div className={footerStyles['footer-right']}>
           <ThemeToggle />

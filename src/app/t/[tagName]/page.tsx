@@ -45,6 +45,7 @@ export default async function TagDetails(props: {
               currentUserId={user?.id || ''}
             />
           </div>
+          {total === 0 && <p style={{ color: 'var(--sub-text-color)' }}>No memes carry this tag yet.</p>}
           <FeedPager
             basePath={`/t/${encodeURIComponent(tagName)}`}
             nextCursor={page.nextCursor}

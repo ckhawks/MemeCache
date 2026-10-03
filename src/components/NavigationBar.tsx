@@ -4,7 +4,7 @@ import Link from 'next/link';
 import styles from '../app/main.module.scss';
 import navStyles from './NavigationBar.module.scss';
 import { usePathname } from 'next/navigation';
-import { Compass, Grid, LogOut, PlusSquare, User } from 'react-feather';
+import { Compass, Grid, Home, LogIn, LogOut, PlusSquare, User } from 'react-feather';
 
 interface NavItem {
   href: string;
@@ -44,6 +44,25 @@ export default function NavigationBar(props: { username: string }) {
     },
   ];
   const visible = items.filter((item) => !item.private || props.username);
+
+  // The phone tab bar also needs Home, and a way to log in when signed out.
+  const tabs: NavItem[] = [
+    {
+      href: '/',
+      label: 'Home',
+      icon: <Home size={20} />,
+    },
+    ...visible,
+    ...(props.username
+      ? []
+      : [
+          {
+            href: '/login',
+            label: 'Log in',
+            icon: <LogIn size={20} />,
+          },
+        ]),
+  ];
 
   return (
     <>
@@ -104,7 +123,7 @@ export default function NavigationBar(props: { username: string }) {
             )}
             {!props.username && (
               <Link href={'/login'} className={`${styles['button']} ${styles['button-small']}`}>
-                Login
+                Log in
               </Link>
             )}
           </div>
@@ -113,7 +132,7 @@ export default function NavigationBar(props: { username: string }) {
 
       {/* Phones: a fixed bottom tab bar, where thumbs reach. */}
       <nav className={navStyles['tabbar']} aria-label="Main">
-        {visible.map((item) => (
+        {tabs.map((item) => (
           <Link
             key={item.href}
             href={item.href}

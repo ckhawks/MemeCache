@@ -69,6 +69,22 @@ Done 2026-10-03. Checked in a 390px browser: one column, tab bar, no sideways sc
 manifest and icons served. Not yet checked on real devices: install, the Android share
 target, and Send into iMessage. The service worker only registers in production builds.
 
+## Audit fixes (2026-10-03)
+
+A screenshot audit (desktop, phone, dark, signed out) found 25 issues; fixed in one pass:
+Bootstrap overriding our styles (load order), dark mode (hardcoded colors, Bootstrap never
+told the theme, unreadable modal), feed videos (blank box, play opened the meme page), a
+styled `not-found.tsx` with real 404s, tag voting on touch screens, icon controls as real
+buttons with labels and phone-sized targets, the meme page on one row, Home and Log in
+tabs on phones, alt text, stacked upload and avatar forms, center-cropped avatars, empty
+states, a link to the uploaded meme, and wording.
+
+Still open, needing a decision:
+
+- [ ] Library and your own profile list the same memes. Make Library liked or saved
+      memes, or merge it into the profile.
+- [ ] The meme page Back button always goes to Explore, even from a tag or profile page.
+
 ## Phase B: design pass (with architecture step 6)
 
 7. [ ] Drop Bootstrap and restyle on the existing SCSS variables (step 6 already plans

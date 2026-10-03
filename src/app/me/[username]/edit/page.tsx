@@ -2,6 +2,7 @@
 
 import { getProfile } from '@/db/queries/users';
 import styles from '../../../main.module.scss';
+import { notFound } from 'next/navigation';
 import NavigationBar from '@/components/NavigationBar';
 import { getUserFromAccessToken } from '@/auth/lib';
 
@@ -19,52 +20,20 @@ export default async function Profile(props: { params: Promise<{ username: strin
   //   redirect('/login');
   // }
 
-  if (params.username === null) {
-    return (
-      <>
-        <NavigationBar username={(user && user.username) || ''} />
-        <main className={styles.main}>
-          <div className={styles.content}>
-            <div className={styles.description}>
-              {/* <h1>MemeCache</h1> */}
-              <h1>404</h1>
-              <p>Please enter a profile name.</p>
-            </div>
-          </div>
-        </main>
-      </>
-    );
+  if (!params.username) {
+    notFound();
   }
 
   const userFromDb = await getProfile(params.username);
 
   if (!userFromDb) {
-    return (
-      <>
-        <NavigationBar username={(user && user.username) || ''} />
-        <main className={styles.main}>
-          <div className={styles.content}>
-            <div className={styles.description}>
-              {/* <h1>MemeCache</h1> */}
-              <h1>404</h1>
-              <p>
-                Couldn&apos;t find a profile for <b>{params.username}</b>.
-              </p>
-            </div>
-          </div>
-        </main>
-      </>
-    );
+    notFound();
   }
 
   const isCurrentUser = user?.id === userFromDb.id;
+  // Someone else's edit page does not exist as far as this visitor is concerned.
   if (!isCurrentUser) {
-    return (
-      <>
-        <h1>404</h1>
-        <p>Couldn&apos;t find that page.</p>
-      </>
-    );
+    notFound();
   }
 
   const timeStamp = new Date().getTime();
@@ -77,20 +46,22 @@ export default async function Profile(props: { params: Promise<{ username: strin
           <div className={styles.description}>
             {/* <h1>MemeCache</h1> */}
             <BackButton to={'/me/' + user?.username} text="Back" />
-            <h3>Edit profile</h3>
-            <br />
+            <h1>Edit profile</h1>
             <div className={'card'}>
+              {/* Wraps on phones, so the preview drops below instead of squeezing the form. */}
               <Row
                 style={{
                   justifyContent: 'space-between',
                   flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  rowGap: '16px',
                 }}
               >
-                <Col>
+                <Col style={{ minWidth: '240px' }}>
                   <h5>Avatar</h5>
                   <p style={{ fontSize: '14px' }}>
-                    Your profile picture must be square in dimensions, and
-                    128x128 pixels or less.
+                    Any image up to 2MB. It is cropped to a square from the
+                    center and shown at 128x128.
                   </p>
                   <EditAvatarComponent />
                 </Col>

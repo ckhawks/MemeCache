@@ -2,18 +2,19 @@
 
 import { supportedImageTypes } from '@/constants/mimeTypes';
 import React, { useState } from 'react';
-import { Col, Form, Row } from 'react-bootstrap';
+import { Form } from 'react-bootstrap';
+import { useRouter } from 'next/navigation';
 
 import styles from '../../../main.module.scss';
 import { api } from '@/util/api';
 
 export default function EditAvatarComponent() {
+  const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
-  const [contentType, setContentType] = useState<string>('');
   const [submitEnabled, setSubmitEnabled] = useState(false);
   const [message, setMessage] = useState('');
 
-  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 1MB in bytes
+  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -32,7 +33,6 @@ export default function EditAvatarComponent() {
       }
 
       setFile(selectedFile);
-      setContentType(selectedFile.type);
       setSubmitEnabled(supportedImageTypes.indexOf(selectedFile.type) > -1);
     }
   };
@@ -51,13 +51,17 @@ export default function EditAvatarComponent() {
           return;
         }
 
-        const width = 128;
-        const height = 128;
+        // Center-crop to a square, then scale to 128x128. This used to stretch any
+        // image to 128x128, squashing non-square photos.
+        const size = 128;
+        const side = Math.min(img.width, img.height);
+        const sx = (img.width - side) / 2;
+        const sy = (img.height - side) / 2;
 
-        canvas.width = width;
-        canvas.height = height;
+        canvas.width = size;
+        canvas.height = size;
 
-        ctx.drawImage(img, 0, 0, width, height);
+        ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
 
         canvas.toBlob((blob) => {
           if (blob) {
@@ -98,8 +102,9 @@ export default function EditAvatarComponent() {
 
       await api('/api/user/avatar', { body: formData });
       setMessage('Avatar changed.');
+      // Re-render the page so the preview (and the nav avatar) pick up the new image.
+      router.refresh();
       setFile(null);
-      setContentType('');
       setSubmitEnabled(false);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Failed to upload avatar.');
@@ -108,25 +113,20 @@ export default function EditAvatarComponent() {
 
   return (
     <div>
-      <Form>
-        <Row>
-          <Col>
-            <Form.Control type="file" onChange={handleFileChange} />
-            <span>{contentType}</span>
-          </Col>
-          <Col>
-            <button
-              type="button"
-              onClick={handleUpload}
-              disabled={!submitEnabled}
-              className={`${styles['button']}`}
-            >
-              Upload
-            </button>
-          </Col>
-        </Row>
-        {message && <p>{message}</p>}
-      </Form>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <Form.Control type="file" aria-label="Avatar image" onChange={handleFileChange} />
+        <div>
+          <button
+            type="button"
+            onClick={handleUpload}
+            disabled={!submitEnabled}
+            className={`${styles['button']}`}
+          >
+            Upload
+          </button>
+        </div>
+        {message && <p style={{ margin: 0 }}>{message}</p>}
+      </div>
     </div>
   );
 }

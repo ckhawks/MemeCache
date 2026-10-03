@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
-import './globals.scss';
-
+// Bootstrap first and our globals after: at equal specificity the later sheet wins, and
+// the other way round Bootstrap overrode our link colors, buttons and heading sizes.
 import 'bootstrap/dist/css/bootstrap.min.css';
+import './globals.scss';
 import { LightThemeProvider } from '@/contexts/LightThemeContext';
 import { getInitialLightTheme } from '@/contexts/getInitialLightTheme';
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
@@ -37,7 +38,7 @@ export default async function RootLayout({
   const initialTheme = await getInitialLightTheme();
 
   return (
-    <html lang="en" data-theme={initialTheme}>
+    <html lang="en" data-theme={initialTheme} data-bs-theme={initialTheme}>
       <body className={inter.className}>
         <LightThemeProvider initialTheme={initialTheme}>
           {children}

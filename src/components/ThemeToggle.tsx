@@ -11,6 +11,7 @@ export default function ThemeToggle() {
   return (
     <Button
       onClick={toggleTheme}
+      aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
       className={`${styles['button-secondary']} ${localStyles['wrapper']}`}
     >
       <Sun

@@ -52,9 +52,14 @@ export default function DeleteMemeButton(props: {
   return (
     <>
       <Tooltip label={props.asModerator ? 'Delete as moderator' : 'Delete'}>
-        <div onClick={handleShow} className={localStyles['wrapper']}>
+        <button
+          type="button"
+          onClick={handleShow}
+          className={localStyles['wrapper']}
+          aria-label={props.asModerator ? 'Delete as moderator' : 'Delete'}
+        >
           <Trash size={14} className={`${localStyles['icon']}`} />
-        </div>
+        </button>
       </Tooltip>
       <Modal show={show} onHide={handleClose} centered>
         <div onClick={(e) => e.stopPropagation()}>
@@ -63,7 +68,7 @@ export default function DeleteMemeButton(props: {
           </Modal.Header>
           <Modal.Body>
             <div>Are you sure you want to delete this meme?</div>
-            {error && <div style={{ color: 'red', marginTop: '0.5rem' }}>{error}</div>}
+            {error && <div style={{ color: 'var(--danger-color)', marginTop: '0.5rem' }}>{error}</div>}
           </Modal.Body>
           <Modal.Footer>
             <Button

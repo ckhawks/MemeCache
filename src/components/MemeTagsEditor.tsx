@@ -90,7 +90,7 @@ export default function MemeTagsEditor({
     <div style={{ marginTop: '1rem' }}>
       <h6>Tags</h6>
       {loading && <p>Loading...</p>}
-      {error && <div style={{ color: 'red' }}>{error}</div>}
+      {error && <div style={{ color: 'var(--danger-color)' }}>{error}</div>}
       <div className={styles['tags-list']}>
         {tagsData?.tags && tagsData.tags.length > 0 ? (
           tagsData.tags.map((tag) => (
@@ -107,23 +107,28 @@ export default function MemeTagsEditor({
         )}
       </div>
       { (userId !== '' && userId != null ) && (
-        <div className={styles['tag-actions']} style={{ marginTop: '1rem' }}>
-        <input
-            id="new-tag-input"
-          type="text"
-          placeholder="Add a new tag"
-          value={newTag}
-          onChange={(e) => setNewTag(e.target.value)}
-          className={styles['tag-input']}
-        />
-        <button
-          className={globals.button}
-          onClick={handleAddTag}
-          disabled={loading}
+        // A form, so Enter in the field adds the tag.
+        <form
+          className={styles['tag-actions']}
+          style={{ marginTop: '1rem' }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleAddTag();
+          }}
         >
-          Add Tag
-        </button>
-      </div>
+          <input
+            id="new-tag-input"
+            type="text"
+            placeholder="Add a new tag"
+            aria-label="New tag"
+            value={newTag}
+            onChange={(e) => setNewTag(e.target.value)}
+            className={styles['tag-input']}
+          />
+          <button type="submit" className={globals.button} disabled={loading}>
+            Add tag
+          </button>
+        </form>
       )}
 
     </div>

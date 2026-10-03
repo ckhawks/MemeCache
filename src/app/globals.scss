@@ -2,6 +2,8 @@
   --background-color: #ffffff;
   --full-background-color: #ffffff;
   --hover-background-color: #f2f2f2;
+  --button-secondary-color-hover: #171717;
+  --danger-color: #c62828;
 
   --border-color: #ececec;
   --border-color-hover: #d0d0d0;
@@ -23,6 +25,8 @@
   --background-color: #121212;
   --full-background-color: #000000;
   --hover-background-color: #1d1d1d;
+  --button-secondary-color-hover: #ffffff;
+  --danger-color: #ef7070;
 
   --border-color-hover: #4d4d4d;
   --border-color: #343434;
@@ -53,7 +57,6 @@ body {
   overflow-x: hidden;
   overflow-y: visible;
   scrollbar-gutter: stable;
-  margin-right: -20px;
 
   display: flex;
   flex-direction: column;
@@ -191,7 +194,7 @@ input[type='number']::-webkit-outer-spin-button {
 
 .modal-content {
   border: none;
-  color: black;
+  color: var(--text-color);
   background-color: var(--background-color) !important;
 }
 

@@ -15,6 +15,7 @@ import MemeMediaRenderer from './MemeMediaRenderer';
 import DeleteMemeButton from './DeleteMemeButton';
 import SendMemeButton from './SendMemeButton';
 import Tooltip from './Tooltip';
+import likeStyles from './LikeButton.module.scss';
 import type { MemeCard } from '@/db/queries/memes';
 
 // Memes arrive newest first from the query.
@@ -86,14 +87,13 @@ export function GalleryMasonry(props: {
                         <a
                           href={`/api/resource/${meme.id}`}
                           download
-                          style={{
-                            color: 'gray',
-                          }}
+                          aria-label="Download"
+                          className={likeStyles['wrapper']}
                           onClick={(e) => {
                             e.stopPropagation();
                           }}
                         >
-                          <Download size={14} />
+                          <Download size={14} className={likeStyles['icon']} />
                         </a>
                       </Tooltip>
                       <SendMemeButton memeId={meme.id} contentType={meme.contentType} />
