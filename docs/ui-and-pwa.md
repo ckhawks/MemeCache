@@ -81,8 +81,10 @@ states, a link to the uploaded meme, and wording.
 
 Still open, needing a decision:
 
-- [ ] Library and your own profile list the same memes. Make Library liked or saved
-      memes, or merge it into the profile.
+- [x] Library and your own profile listed the same memes. Library is now saved memes
+      (migration 003, a private bookmark on each meme); uploads stay on the profile. The
+      old caches never were collections: one per user, every meme in its uploader's cache.
+      `scripts/pull-sample.mjs` should copy `meme_save` rows once production has 003.
 - [ ] The meme page Back button always goes to Explore, even from a tag or profile page.
 
 ## Phase B: design pass (with architecture step 6)

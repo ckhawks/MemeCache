@@ -14,6 +14,7 @@ import LikeButton from './LikeButton';
 import MemeMediaRenderer from './MemeMediaRenderer';
 import DeleteMemeButton from './DeleteMemeButton';
 import SendMemeButton from './SendMemeButton';
+import SaveMemeButton from './SaveMemeButton';
 import Tooltip from './Tooltip';
 import likeStyles from './LikeButton.module.scss';
 import type { MemeCard } from '@/db/queries/memes';
@@ -97,6 +98,9 @@ export function GalleryMasonry(props: {
                         </a>
                       </Tooltip>
                       <SendMemeButton memeId={meme.id} contentType={meme.contentType} />
+                      {props.currentUserId && (
+                        <SaveMemeButton memeId={meme.id} saved={meme.hasSaved} />
+                      )}
                       <LikeButton
                         memeId={meme.id}
                         userId={props.currentUserId}

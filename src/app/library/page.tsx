@@ -16,7 +16,8 @@ export default async function Library(props: { searchParams: Promise<{ cursor?: 
     redirect('/login');
   }
 
-  const filter = { viewerId: user.id, uploaderId: user.id };
+  // Library is the memes you saved. Your own uploads are on your profile.
+  const filter = { viewerId: user.id, savedBy: user.id };
   const [page, total] = await Promise.all([
     listMemes(filter, searchParams.cursor),
     countMemes(filter),
@@ -28,15 +29,22 @@ export default async function Library(props: { searchParams: Promise<{ cursor?: 
       <main className={styles.main}>
         <div className={styles.content}>
           <div className={styles.description}>
-            <h1>Library of {user.username}</h1>
-            <p>{total} items</p>
+            <h1>Library</h1>
+            <p>
+              {total} saved {total === 1 ? 'meme' : 'memes'}
+            </p>
           </div>
           {page.memes.length > 0 && (
             <div className={styles['memes-masonry']}>
               <GalleryMasonry memes={page.memes} currentUserId={user.id} />
             </div>
           )}
-          {total === 0 && <p>No memes found.</p>}
+          {total === 0 && (
+            <p style={{ color: 'var(--sub-text-color)' }}>
+              Nothing saved yet. Use the bookmark on any meme to keep it here. Your own uploads
+              are on your profile.
+            </p>
+          )}
           <FeedPager basePath="/library" nextCursor={page.nextCursor} />
         </div>
       </main>

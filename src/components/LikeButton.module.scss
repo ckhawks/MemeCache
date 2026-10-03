@@ -12,6 +12,10 @@
   color: #e26f6f;
 }
 
+.icon.saved {
+  color: var(--text-color);
+}
+
 // Shared by the card and meme-page icon buttons (like, send, delete, download).
 .wrapper {
   display: flex;

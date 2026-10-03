@@ -90,7 +90,9 @@ export default async function Profile(props: {
 
             </div>
 
-            <p>{total} total items</p>
+            <p>
+              {total} {total === 1 ? 'upload' : 'uploads'}
+            </p>
           </div>
           {page.memes.length > 0 && (
             <div className={styles['memes-masonry']}>

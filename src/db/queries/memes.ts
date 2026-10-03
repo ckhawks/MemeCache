@@ -9,6 +9,8 @@ export interface MemeCard {
   username: string;
   likeCount: number;
   hasLiked: boolean;
+  // Whether the viewer saved it to their Library. Saves are private, so no count.
+  hasSaved: boolean;
 }
 
 export interface MemePage {
@@ -23,6 +25,8 @@ export interface MemeFilter {
   uploaderId?: string;
   // Memes carrying this tag with a net score of at least 1.
   tagName?: string;
+  // Memes this user saved: their Library.
+  savedBy?: string;
 }
 
 export const FEED_PAGE_SIZE = 60;
@@ -38,15 +42,24 @@ const CARD_COLUMNS = `
   (SELECT count(*)::int FROM meme_like l WHERE l.meme_id = m.id) AS "likeCount",
   EXISTS (
     SELECT 1 FROM meme_like l WHERE l.meme_id = m.id AND l.user_id = $1::uuid
-  ) AS "hasLiked"
+  ) AS "hasLiked",
+  EXISTS (
+    SELECT 1 FROM meme_save s WHERE s.meme_id = m.id AND s.user_id = $1::uuid
+  ) AS "hasSaved"
 `;
 
 // Shared by the feed and its count, which number their parameters differently. Postgres
 // refuses a parameter the SQL never mentions, so each query passes only what it uses.
-function filterSql(uploaderParam: string, tagParam: string) {
+function filterSql(uploaderParam: string, tagParam: string, savedByParam: string) {
   return `
     m.deleted_at IS NULL
     AND (${uploaderParam}::uuid IS NULL OR m.uploader_id = ${uploaderParam}::uuid)
+    AND (
+      ${savedByParam}::uuid IS NULL
+      OR EXISTS (
+        SELECT 1 FROM meme_save s WHERE s.meme_id = m.id AND s.user_id = ${savedByParam}::uuid
+      )
+    )
     AND (
       ${tagParam}::text IS NULL
       OR EXISTS (
@@ -69,6 +82,7 @@ function filterParams(filter: MemeFilter) {
   return [
     isUuid(filter.uploaderId) ? filter.uploaderId : null,
     filter.tagName ?? null,
+    isUuid(filter.savedBy) ? filter.savedBy : null,
   ];
 }
 
@@ -104,10 +118,10 @@ export async function listMemes(
             m.created_at::text || '~' || m.id AS "sortKey"
        FROM meme m
        JOIN app_user u ON u.id = m.uploader_id
-      WHERE ${filterSql('$2', '$3')}
-        AND ($4::timestamptz IS NULL OR (m.created_at, m.id) < ($4::timestamptz, $5::uuid))
+      WHERE ${filterSql('$2', '$3', '$4')}
+        AND ($5::timestamptz IS NULL OR (m.created_at, m.id) < ($5::timestamptz, $6::uuid))
       ORDER BY m.created_at DESC, m.id DESC
-      LIMIT $6`,
+      LIMIT $7`,
     [viewerParam(filter.viewerId), ...filterParams(filter), cursorCreatedAt, cursorId, limit + 1]
   );
 
@@ -124,7 +138,7 @@ export async function countMemes(filter: MemeFilter): Promise<number> {
   const [row] = await db<{ count: number }>(
     `SELECT count(*)::int AS count
        FROM meme m
-      WHERE ${filterSql('$1', '$2')}`,
+      WHERE ${filterSql('$1', '$2', '$3')}`,
     filterParams(filter)
   );
   return row.count;

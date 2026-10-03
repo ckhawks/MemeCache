@@ -6,6 +6,7 @@ import Link from 'next/link';
 import DeleteMemeButton from '@/components/DeleteMemeButton';
 import LikeButton from '@/components/LikeButton';
 import SendMemeButton from '@/components/SendMemeButton';
+import SaveMemeButton from '@/components/SaveMemeButton';
 import Tooltip from '@/components/Tooltip';
 import { Download } from 'react-feather';
 import likeStyles from '@/components/LikeButton.module.scss';
@@ -61,6 +62,7 @@ export function MemeDetailsLarge(props: {
               </a>
             </Tooltip>
             <SendMemeButton memeId={props.meme.id} contentType={props.meme.contentType} />
+            {props.user && <SaveMemeButton memeId={props.meme.id} saved={props.meme.hasSaved} />}
             <LikeButton
               memeId={props.meme.id}
               userId={props.user?.id || ''}
