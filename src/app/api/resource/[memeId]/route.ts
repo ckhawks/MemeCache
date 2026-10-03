@@ -36,7 +36,7 @@ export async function GET(
 
     const data = await s3Client.send(getObjectCommand);
 
-    return new NextResponse(data.Body as unknown as Buffer, {
+    return new NextResponse(data.Body?.transformToWebStream(), {
       status: 200,
       headers: {
         'Content-Type': data.ContentType!,
