@@ -41,23 +41,17 @@
   }
 }
 
-// Sticks beside a tall meme while scrolling on desktop.
+// No card around it: the details sit straight on the page beside the meme. Sticks beside
+// a tall meme while scrolling on desktop.
 .panel {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 20px;
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  background-color: var(--background-color);
+  padding-top: 4px;
 
   @media (min-width: 901px) {
     position: sticky;
     top: 16px;
-  }
-
-  @media (max-width: 900px) {
-    padding: 16px;
   }
 }
 
