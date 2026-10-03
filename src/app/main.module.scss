@@ -335,6 +335,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  // The space the count paragraph's own margin used to give before it moved in here.
+  margin-bottom: 1rem;
 
   p {
     margin: 0;
