@@ -3,6 +3,10 @@
 Ordered plan for picking the project back up (assessed 2026-08-09, last commit 2025-10-06).
 Phases 0-4 are sequenced deliberately; later phases are a backlog.
 
+**Update 2026-10-02:** the next round of work is planned in `docs/`:
+`architecture-plan.md` (tech debt first; supersedes open items in Phases 1, 6 and 8),
+`product-ideas.md` (ordered take on Phase 9) and `known-bugs.md`.
+
 Target infrastructure:
 
 - **Postgres** — Dallas box `extravm-puckvps-1` (216.146.25.22), port **7465** (not 5432),
@@ -71,9 +75,8 @@ instance and in query string literals; nothing has ever been committed.
       Verified end to end against a throwaway local Postgres: `db/schema.sql` restores
       into an empty database, `001` applies and is idempotent, and the new
       `user_username_lower_key` correctly rejects `Alice` against an existing `alice`.
-- [ ] **Migration 001 has not been applied to the live database yet.** It cannot be, with
-      the current credentials — see the role note in Phase 2. Apply it during the Dallas
-      restore, or grant CREATE first if you want the index speedup on Neon before then.
+- [x] **Migration 001 applied to the live database** on Dallas, 2026-08-09 09:01 CDT
+      (`_migration` table, checked 2026-10-03).
 - [ ] ~~Add `Meme.status`~~ — not needed. `deletedAt` columns **already exist** on `Meme`,
       `Like` and `User` and are simply never used. Phase 7 soft delete is a code change,
       not a schema change.
@@ -127,8 +130,7 @@ much smaller than it sounds.
 - [x] One shared `Pool` at module scope, cached on `globalThis` so Next's dev-server hot
       reload does not leak a pool per reload. The old code built a fresh client per call.
 - [x] Externalise `pg-native` in `next.config.mjs` alongside `bcrypt`.
-- [ ] Remove `@neondatabase/serverless` from `package.json` once the cutover is done and
-      there is no chance of needing to point back at Neon.
+- [x] Removed `@neondatabase/serverless` from `package.json`, 2026-10-03.
 - [x] `pg_dump` the data from Neon, restore to Dallas, verify. **Done 2026-08-09** as a
       staged restore — Neon remains the live database and is unmodified. The `memecache`
       database and `memecache_app` role exist on Dallas with the data in place, migration
@@ -141,11 +143,12 @@ much smaller than it sounds.
       `/32`, and Vercel egresses from a wide dynamic range. Allowing it would mean
       `0.0.0.0/0` on a cluster holding 8 other databases, or Vercel's paid static egress.
       Phase 3 moves the app onto the box anyway.
-- [ ] Confirm the nightly Chicago backup picks up the new database. The `pg_hba` rule is
-      `host all user_does_backups <ip>/32 md5` and `user_does_backups` holds cluster-level
+- [x] Confirm the nightly Chicago backup picks up the new database. Verified 2026-10-03:
+      a `memecache` dump every night since 2026-08-10, uploaded to S3 each time. The
+      `pg_hba` rule is `host all user_does_backups <ip>/32 md5` and `user_does_backups` holds cluster-level
       `pg_read_all_data`, so it should be automatic — but verify rather than assume, since
       `pg_hba.conf` is per-database per-host and that is the thing that bites.
-- [ ] Keep the Neon instance alive read-only for a week before tearing it down.
+- [ ] Tear down Neon. Rollback window long over; deleting it by hand (2026-10-03).
 
 ## Phase 3 — Vercel to the Dallas VPS — DONE 2026-08-09
 
@@ -162,9 +165,9 @@ No deploy key was needed: the repository is public, so the box clones over HTTPS
 
 Still open from this phase:
 
-- [ ] Confirm a `memecache` dump appears in the Chicago backup tomorrow morning.
-- [ ] Decommission the Vercel project — it no longer receives traffic.
-- [ ] Tear down Neon after a week. It is the rollback until then.
+- [x] Confirm a `memecache` dump appears in the Chicago backup. Verified 2026-10-03.
+- [x] Decommissioned the Vercel project, 2026-10-03.
+- [ ] Tear down Neon (being deleted by hand, 2026-10-03).
 
 ### Original plan, for reference
 
@@ -186,7 +189,7 @@ Follow the conventions already established on that box (see the puckstats deploy
 - [ ] Builds run on-box with `nice -n 19`. `next build` saturates all 4 cores and degrades
       in-progress LiveKit calls, so avoid deploying during a scheduled DJ broadcast.
 - [ ] Verify middleware behaves the same self-hosted as it did on Vercel's edge runtime.
-- [ ] DNS cutover, then decommission the Vercel project.
+- [x] DNS cutover, then decommission the Vercel project.
 
 ## Phase 4 — S3 to Cloudflare R2
 
@@ -377,7 +380,7 @@ Core to a product named *cache*, and increasingly necessary once bulk upload lan
 ## Medium
 
 - profile bio
-- add contribution score to profile (transcription = 5 pts, each new tag = 2pts, rate tag = 1pt)
+- XP, levels and ranks — planned in `docs/xp-levels.md`
 - view likes
 - follow tag
 - following feed

@@ -6,7 +6,7 @@ on port **7465** (not 5432 — connecting without `-p` fails with "connection re
 ## Status: CUTOVER COMPLETE, 2026-08-09
 
 `memecache.me` is served from Dallas against Dallas Postgres. Steps 1 to 5 are done.
-Steps 6 and 7 — confirming the Chicago backup and decommissioning Neon — remain.
+Step 6 (backups) was verified 2026-10-03. Step 7, decommissioning Neon, remains.
 
 **No data was lost.** Neon was compared against the dump after cutover and came back
 byte-identical on all 10 tables, so nothing was written to it between the dump at 08:57 and
@@ -268,6 +268,7 @@ Verify with `systemctl is-active memecache-nextjs` and
 
 ### Still open
 
-- Confirm a `memecache` dump appears in the Chicago backup the morning after cutover.
-- Decommission the Vercel project — it no longer receives traffic.
-- Tear down Neon after a week.
+- [x] Confirm a `memecache` dump appears in the Chicago backup. Verified 2026-10-03:
+  nightly since 2026-08-10, `pg_restore --list` shows all 11 tables, uploaded to S3.
+- [x] Decommissioned the Vercel project, 2026-10-03.
+- [ ] Tear down Neon (being deleted by hand, 2026-10-03).
