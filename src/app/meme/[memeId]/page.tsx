@@ -44,7 +44,7 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
           </div>
           <div className={d.layout}>
             <div className={d.frame}>
-              <MemeMediaRenderer meme={meme} large />
+              <MemeMediaRenderer meme={meme} />
             </div>
             <aside className={d.panel}>
               <MemeDetailsLarge
