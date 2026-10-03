@@ -10,11 +10,14 @@
     "typecheck": "tsc --noEmit",
     "db:migrate": "node scripts/migrate.mjs",
     "db:migrate:status": "node scripts/migrate.mjs --status",
-    "db:migrate:dry": "node scripts/migrate.mjs --dry-run"
+    "db:migrate:dry": "node scripts/migrate.mjs --dry-run",
+    "db:pull-sample": "node scripts/pull-sample.mjs",
+    "db:seed": "node scripts/seed.mjs",
+    "dev:up": "docker compose up -d --wait",
+    "dev:down": "docker compose down"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1106.0",
-    "@neondatabase/serverless": "^0.9.4",
     "bcrypt": "^6.0.0",
     "bootstrap": "^5.3.3",
     "browser-image-compression": "^2.0.2",

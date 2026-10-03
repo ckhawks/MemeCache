@@ -31,6 +31,9 @@ yarn-error.log*
 *.dump
 *.dump.gz
 
+# real memes and usernames pulled from production by scripts/pull-sample.mjs
+/db/seed/sample/
+
 # local env files
 .env*.local
 

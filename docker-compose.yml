@@ -1,0 +1,44 @@
+# Local development stack. Production runs on the Dallas box; nothing here talks to it.
+#
+#   npm run dev:up      start Postgres and SeaweedFS (S3)
+#   npm run db:seed     load schema, migrations and the sample into them
+#   npm run dev:down    stop (data is kept in the named volumes)
+
+services:
+  postgres:
+    # Matches Dallas (17.5).
+    image: postgres:17
+    environment:
+      POSTGRES_USER: memecache
+      POSTGRES_PASSWORD: memecache
+      POSTGRES_DB: memecache
+    # 5433 rather than 5432 so it does not collide with a Postgres already installed locally.
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U memecache -d memecache
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  s3:
+    # S3-compatible stand-in for the production bucket. MinIO stopped publishing images, so
+    # this is SeaweedFS. With no identities configured it skips auth, so any key works.
+    image: chrislusf/seaweedfs:latest
+    command:
+      - server
+      - -s3
+      - -dir=/data
+      - -ip.bind=0.0.0.0
+    ports:
+      - '8333:8333'
+    volumes:
+      - s3-data:/data
+
+volumes:
+  postgres-data:
+  s3-data:
