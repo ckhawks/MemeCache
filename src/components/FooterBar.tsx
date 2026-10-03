@@ -18,10 +18,15 @@ export default function FooterBar() {
             MemeCache
           </Link>
           <span className={footerStyles['credit']}>
-            © {SINCE === year ? year : `${SINCE}–${year}`} · made by{' '}
-            <Link href="/me/Stellaric" className={footerStyles['footer-link']}>
+            © {SINCE === year ? year : `${SINCE}–${year}`}{' '}
+            <a
+              href="https://stellaric.pw"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={footerStyles['footer-link']}
+            >
               Stellaric
-            </Link>
+            </a>
           </span>
         </div>
         {/* A Content Policy link goes in this row once the page exists (TODO.md Phase 7). */}
