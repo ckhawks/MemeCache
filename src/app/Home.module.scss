@@ -65,16 +65,16 @@
   font-weight: 600;
   font-size: 15px;
   text-decoration: none;
-  transition: transform 0.15s ease-in-out, background-color 0.15s ease-in-out;
-
-  &:hover {
-    transform: translateY(-1px);
-  }
+  transition: background-color 0.15s ease-in-out;
 }
 
 .heroPrimary {
   background-color: #fff;
   color: #111;
+
+  &:hover {
+    background-color: #e8e8e8;
+  }
 }
 
 .heroSecondary {
@@ -122,15 +122,15 @@
   background-color: var(--background-color);
   color: var(--text-color);
   text-decoration: none;
+  // No movement on hover: a card that lifts slides out from under the cursor at its edge
+  // and flickers, and the shift blurs its text.
   transition:
     border-color 0.15s ease-in-out,
-    box-shadow 0.15s ease-in-out,
-    transform 0.15s ease-in-out;
+    background-color 0.15s ease-in-out;
 
   &:hover {
     border-color: var(--border-color-hover);
-    box-shadow: rgba(100, 100, 111, 0.1) 0 7px 24px 0;
-    transform: translateY(-1px);
+    background-color: var(--hover-background-color);
   }
 }
 
@@ -145,7 +145,8 @@
   }
 
   &:hover {
-    border-color: var(--button-primary-bg-color);
+    border-color: var(--button-primary-bg-color-hover);
+    background-color: var(--button-primary-bg-color-hover);
   }
 }
 
