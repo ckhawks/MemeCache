@@ -64,7 +64,7 @@ export default function CropEditor(props: {
 
   return (
     <div
-      style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}
+      style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
       // The detected snap lines, for inspecting what the crop will snap to.
       data-snap-rows={edges?.rows.map((r) => r.toFixed(3)).join(' ')}
       data-snap-cols={edges?.cols.map((c) => c.toFixed(3)).join(' ')}

@@ -142,10 +142,36 @@ Guardrails:
 
 ## 3. Better upload
 
+Done 2026-10-03: a drop zone that takes drag-and-drop, paste (Ctrl+V) or a click, a crop
+tool whose edges snap to lines in the image, and a done state linking to the new meme.
+
 - Drag-and-drop for multiple files, with a queue (TODO.md 9c).
 - Duplicate warning from the perceptual hash stored by the media pipeline (TODO.md 9e).
 - Enrichment from section 1 runs after upload, and the uploader sees the suggested tags
   and transcription to confirm.
+
+### Import from a link, and from other sites
+
+Most memes are seen somewhere else first. Saving one should not mean download, find the
+file, upload.
+
+- **Paste a link.** The upload page takes a URL as well as a file. The server fetches the
+  page, finds the media (Open Graph `og:image`/`og:video`, or the URL itself when it is
+  already an image or video), downloads it and opens it in the normal preview and crop
+  step. Covers most image hosts, Reddit, Discord CDN links and plain image URLs.
+- **Video sites** (TikTok, Instagram Reels, X/Twitter, YouTube Shorts) do not expose the
+  file in their page tags. `yt-dlp` on the Dallas box handles all of them; run it from the
+  import endpoint with a size and duration cap. It breaks whenever those sites change, so
+  keep it updated and fail with a clear message.
+- **Browser extension.** A "Save to MemeCache" item in the right-click menu on any image or
+  video, sending the media URL (or the image bytes, for pages that need login) to the same
+  import endpoint with the user's session. Chrome and Firefox share most of the code
+  (WebExtensions). Small, and the fastest path of all on desktop.
+- **Phone:** the Android share target already covers "share to MemeCache" from other apps
+  (`docs/ui-and-pwa.md`). Sharing a link (rather than a file) should go through the same
+  link import.
+- Safety: the fetch runs server-side, so guard against SSRF (no private IP ranges, no
+  redirects into them), cap download size, and check the content type before storing.
 
 ## 4. Discord slash command
 

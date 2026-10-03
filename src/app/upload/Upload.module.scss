@@ -1,0 +1,153 @@
+.upload {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 760px;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.muted {
+  color: var(--sub-text-color);
+  font-size: 14px;
+}
+
+// The empty state: one big target for drop, click or keyboard.
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 280px;
+  padding: 32px 16px;
+  border: 2px dashed var(--border-color-hover);
+  border-radius: 12px;
+  background-color: var(--background-color);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease-in-out,
+    background-color 0.15s ease-in-out;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--sub-text-color);
+    background-color: var(--hover-background-color);
+    outline: none;
+  }
+
+  &.dragging {
+    border-color: var(--text-color);
+    background-color: var(--hover-background-color);
+  }
+
+  @media (max-width: 600px) {
+    min-height: 200px;
+  }
+}
+
+.dropIcon {
+  color: var(--sub-text-color);
+  margin-bottom: 4px;
+}
+
+.dropTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.linkish {
+  color: var(--text-color);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.hint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--sub-text-color);
+}
+
+// The selected file, its preview and the actions.
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background-color: var(--background-color);
+}
+
+.fileRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fileInfo {
+  min-width: 0;
+}
+
+.fileName {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.note {
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background-color: var(--hover-background-color);
+}
+
+.previewArea {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.media {
+  max-width: 100%;
+  max-height: 70vh;
+  align-self: flex-start;
+  border-radius: 6px;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.error {
+  color: var(--danger-color);
+  font-size: 14px;
+}
+
+.done {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-color);
+}
+
+.doneTitle {
+  font-size: 18px;
+  font-weight: 600;
+}

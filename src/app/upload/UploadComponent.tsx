@@ -1,59 +1,89 @@
 'use client';
 
-import {
-  supportedImageTypes,
-  supportedVideoTypes,
-} from '@/constants/mimeTypes';
+import { supportedImageTypes, supportedTypes, supportedVideoTypes } from '@/constants/mimeTypes';
 import React, { useEffect, useRef, useState } from 'react';
-import { Form } from 'react-bootstrap';
 import Link from 'next/link';
-import styles from '../main.module.scss';
+import { CheckCircle, UploadCloud } from 'react-feather';
 import imageCompression from 'browser-image-compression';
+import styles from '../main.module.scss';
+import u from './Upload.module.scss';
 import { api } from '@/util/api';
 import { cropFile } from '@/util/cropImage';
 import type { Box } from '@/util/imageEdges';
 import CropEditor from './CropEditor';
 
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 30 * 1024 * 1024;
+
+function formatSize(bytes: number) {
+  if (bytes < 1024 * 1024) {
+    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatType(type: string) {
+  return (type.split('/')[1] ?? type).toUpperCase().replace('JPEG', 'JPG');
+}
+
+// Pick (drop, paste or browse) -> preview and crop -> upload -> done.
 export default function UploadComponent() {
   const [file, setFile] = useState<File | null>(null);
-  const [submitEnabled, setSubmitEnabled] = useState(false);
-  const [message, setMessage] = useState('');
-  // The meme just uploaded, so the success message can link to it.
-  const [uploadedId, setUploadedId] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   // The crop chosen in the preview, as fractions of the image. Null means the whole image.
   const [crop, setCrop] = useState<Box | null>(null);
+  const [error, setError] = useState('');
+  const [note, setNote] = useState('');
+  const [uploading, setUploading] = useState(false);
+  // The meme just uploaded: switches the page to the done state.
+  const [uploadedId, setUploadedId] = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const selectFile = (file: File) => {
-    if (file.type.startsWith('image/')) {
-      setMediaType('image');
-    } else if (file.type.startsWith('video/')) {
-      setMediaType('video');
-    } else {
-      setMediaType(null);
-      setPreview(null);
+  const isImage = !!file && supportedImageTypes.includes(file.type);
+  const isVideo = !!file && supportedVideoTypes.includes(file.type);
+  const isGif = file?.type === 'image/gif';
+
+  const selectFile = (next: File) => {
+    setError('');
+    setNote('');
+    setUploadedId(null);
+    if (!supportedTypes.includes(next.type)) {
+      setError(
+        `${next.type ? formatType(next.type) : 'That file'} isn't supported. Use PNG, JPG, GIF, WebP, MP4 or WebM.`
+      );
       return;
     }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-
-    setFile(file);
+    setFile(next);
     setCrop(null);
-    setSubmitEnabled([...supportedImageTypes, ...supportedVideoTypes].includes(file.type));
+    const reader = new FileReader();
+    reader.onloadend = () => setPreview(reader.result as string);
+    reader.readAsDataURL(next);
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files && event.target.files[0];
-    if (file) {
-      selectFile(file);
+  const reset = () => {
+    setFile(null);
+    setPreview(null);
+    setCrop(null);
+    setError('');
+    setNote('');
+    if (inputRef.current) {
+      inputRef.current.value = '';
     }
   };
+
+  // Paste anywhere on the page: the fastest path from a screenshot to the cache.
+  useEffect(() => {
+    const onPaste = (event: ClipboardEvent) => {
+      const pasted = [...(event.clipboardData?.files ?? [])][0];
+      if (pasted) {
+        event.preventDefault();
+        selectFile(pasted);
+      }
+    };
+    window.addEventListener('paste', onPaste);
+    return () => window.removeEventListener('paste', onPaste);
+  });
 
   // Shared from another app on Android: public/sw.js parked the file in Cache Storage and
   // sent us here with ?shared=1. Take it out once and preselect it.
@@ -71,137 +101,212 @@ export default function UploadComponent() {
       const blob = await response.blob();
       const name = decodeURIComponent(response.headers.get('X-File-Name') ?? 'shared');
       selectFile(new File([blob], name, { type: blob.type }));
-      setMessage('Shared file ready. Check the preview, then upload.');
-    })().catch((error) => console.error('Could not read the shared file:', error));
+      setNote('Shared from another app. Check it over, then upload.');
+    })().catch((err) => console.error('Could not read the shared file:', err));
+    // selectFile only sets state, so running this once on mount is enough.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleUpload = async () => {
     if (!file) {
-      setMessage('Please select a file to upload.');
       return;
     }
+    setError('');
+    setUploading(true);
 
-    let fileToUpload = file;
+    try {
+      let fileToUpload: File = file;
 
-    // For images, always attempt to compress losslessly and downscale if over 1920
-    if (mediaType === 'image') {
-      try {
-        // If GIF, skip compression/conversion to preserve animation
-        if (file.type === 'image/gif') {
-          console.log(
-            'GIF detected; skipping compression to preserve animation.'
-          );
-          // enforce 4MB limit for GIFs
-          if (file.size > 4 * 1024 * 1024) {
-            setMessage(
-              'GIF file is too large. Please select a GIF smaller than 4MB.'
-            );
-            return;
-          }
-        } else {
-          if (crop) {
-            fileToUpload = await cropFile(file, crop);
-          }
-          const options = {
+      if (isImage && !isGif) {
+        if (crop) {
+          fileToUpload = await cropFile(file, crop);
+        }
+        // Downscale past 1920px and recompress at full quality.
+        try {
+          fileToUpload = await imageCompression(fileToUpload, {
             maxWidthOrHeight: 1920,
             useWebWorker: true,
-            initialQuality: 1, // maintain original quality
-          };
-          console.log('Uncompressed file size: ', fileToUpload.size);
-          fileToUpload = await imageCompression(fileToUpload, options);
-          console.log('Compressed file size: ', fileToUpload.size);
-          if (fileToUpload.size > 4 * 1024 * 1024) {
-            // Check if compressed file exceeds 4MB
-            setMessage(
-              'Compressed image file is still larger than 4MB. Please choose a smaller image.'
-            );
-            return;
-          }
+            initialQuality: 1,
+          });
+        } catch (err) {
+          console.error('Image compression failed, uploading the original:', err);
         }
-      } catch (error) {
-        console.error('Image compression error: ', error);
       }
-    } else if (mediaType === 'video') {
-      // Limit video file size to 30MB for now
-      const MAX_VIDEO_SIZE = 30 * 1024 * 1024; // 30 MB
-      if (file.size > MAX_VIDEO_SIZE) {
-        setMessage(
-          'Video file is too large. Please select a video less than 30 MB.'
+
+      const limit = isVideo ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
+      if (fileToUpload.size > limit) {
+        setError(
+          `That's ${formatSize(fileToUpload.size)}. The limit for ${
+            isVideo ? 'videos' : 'images'
+          } is ${formatSize(limit)}.`
         );
         return;
       }
-    }
 
-    const formData = new FormData();
-    // No userId here on purpose -- the server takes the uploader from the session.
-    formData.append('file', fileToUpload);
-
-    try {
+      const formData = new FormData();
+      // No user id here on purpose: the server takes the uploader from the session.
+      formData.append('file', fileToUpload);
       const result = await api<{ id: string }>('/api/upload', { body: formData });
+      reset();
       setUploadedId(result.id);
-      setMessage('Uploaded.');
-      setFile(null);
-      setSubmitEnabled(false);
-      setPreview(null);
-      setMediaType(null);
-      setCrop(null);
-      if (inputRef.current) {
-        inputRef.current.value = '';
-      }
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Failed to upload file.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'The upload failed. Try again.');
+    } finally {
+      setUploading(false);
     }
   };
 
+  const openPicker = () => inputRef.current?.click();
+
   return (
-    <div>
-      {/* Stacked rather than two columns, which squeezed the file input to "No" on phones. */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '480px' }}>
-        <Form.Control
-          type="file"
-          aria-label="Meme file"
-          onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-            setUploadedId(null);
-            handleFileChange(event);
-          }}
-          ref={inputRef}
-        />
-        <div>
-          <button
-            type="button"
-            className={styles['button']}
-            onClick={handleUpload}
-            disabled={!submitEnabled}
-          >
-            Upload
-          </button>
+    <div className={u.upload}>
+      <input
+        ref={inputRef}
+        type="file"
+        accept={supportedTypes.join(',')}
+        className={u.hiddenInput}
+        onChange={(e) => {
+          const picked = e.target.files?.[0];
+          if (picked) {
+            selectFile(picked);
+          }
+        }}
+      />
+
+      {uploadedId && (
+        <div className={u.card}>
+          <div className={u.done}>
+            <CheckCircle size={28} />
+            <div>
+              <div className={u.doneTitle}>Uploaded</div>
+              <div className={u.muted}>It&apos;s in Explore and on your profile.</div>
+            </div>
+          </div>
+          <div className={u.actions}>
+            <button
+              type="button"
+              className={`${styles['button']} ${styles['button-secondary']}`}
+              onClick={() => {
+                setUploadedId(null);
+                openPicker();
+              }}
+            >
+              Upload another
+            </button>
+            <Link href={`/meme/${uploadedId}`} className={styles['button']}>
+              View it
+            </Link>
+          </div>
         </div>
-        {message && (
-          <p style={{ margin: 0 }}>
-            {message}{' '}
-            {uploadedId && <Link href={`/meme/${uploadedId}`}>View it</Link>}
-          </p>
-        )}
-      </div>
-      {preview && mediaType === 'image' && file?.type !== 'image/gif' && (
-        // key: a new file starts with a fresh crop box and a fresh edge analysis.
-        <CropEditor key={preview} src={preview} onChange={setCrop} />
       )}
-      {preview && file?.type === 'image/gif' && (
-        <>
-          <p style={{ color: 'var(--sub-text-color)', fontSize: '14px', margin: '12px 0 8px' }}>
-            GIFs upload as they are. Cropping would keep only the first frame.
-          </p>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={preview} alt="Preview of the selected file" style={{ maxWidth: '100%' }} />
-        </>
+
+      {!file && !uploadedId && (
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label="Choose a meme to upload"
+          className={`${u.dropzone} ${dragging ? u.dragging : ''}`}
+          onClick={openPicker}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              openPicker();
+            }
+          }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragging(false);
+            const dropped = e.dataTransfer.files[0];
+            if (dropped) {
+              selectFile(dropped);
+            }
+          }}
+        >
+          <UploadCloud size={36} className={u.dropIcon} />
+          <div className={u.dropTitle}>{dragging ? 'Drop it' : 'Drop a meme here'}</div>
+          <div className={u.muted}>
+            or <span className={u.linkish}>browse</span>, or paste with Ctrl+V
+          </div>
+          <div className={u.hint}>
+            PNG, JPG, GIF or WebP up to 4 MB. MP4 or WebM up to 30 MB.
+          </div>
+        </div>
       )}
-      {preview && mediaType === 'video' && (
-        <video src={preview} controls style={{ maxWidth: '100%' }} />
+
+      {file && preview && (
+        <div className={u.card}>
+          <div className={u.fileRow}>
+            <div className={u.fileInfo}>
+              <div className={u.fileName}>{file.name}</div>
+              <div className={u.muted}>
+                {formatType(file.type)} · {formatSize(file.size)}
+                {crop && ' · cropped'}
+              </div>
+            </div>
+            <button
+              type="button"
+              className={`${styles['button']} ${styles['button-secondary']} ${styles['button-small']}`}
+              onClick={openPicker}
+              disabled={uploading}
+            >
+              Change
+            </button>
+          </div>
+
+          {note && <div className={u.note}>{note}</div>}
+
+          <div className={u.previewArea}>
+            {isImage && !isGif && (
+              // key: a new file starts with a fresh crop box and a fresh edge analysis.
+              <CropEditor key={preview} src={preview} onChange={setCrop} />
+            )}
+            {isGif && (
+              <>
+                <div className={u.muted}>
+                  GIFs upload as they are. Cropping would keep only the first frame.
+                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={preview} alt="Preview of the selected GIF" className={u.media} />
+              </>
+            )}
+            {isVideo && <video src={preview} controls className={u.media} />}
+          </div>
+
+          <div className={u.footer}>
+            <div className={u.error} role="alert">
+              {error}
+            </div>
+            <div className={u.actions}>
+              <button
+                type="button"
+                className={`${styles['button']} ${styles['button-secondary']}`}
+                onClick={reset}
+                disabled={uploading}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={styles['button']}
+                onClick={handleUpload}
+                disabled={uploading}
+              >
+                {uploading ? 'Uploading…' : 'Upload'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
-      {!preview && (
-        <div style={{ marginTop: '10px', fontStyle: 'italic', color: 'var(--sub-text-color)' }}>
-          No file selected
+
+      {/* Errors from picking a file show under the drop zone. */}
+      {!file && error && (
+        <div className={u.error} role="alert">
+          {error}
         </div>
       )}
     </div>
