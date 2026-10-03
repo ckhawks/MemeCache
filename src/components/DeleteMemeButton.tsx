@@ -5,8 +5,13 @@ import { useState } from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import { usePathname, useRouter } from 'next/navigation';
 import { api } from '@/util/api';
+import Tooltip from './Tooltip';
 
-export default function DeleteMemeButton(props: { memeId: string }) {
+export default function DeleteMemeButton(props: {
+  memeId: string;
+  // Deleting someone else's meme as a moderator. Only changes the label.
+  asModerator?: boolean;
+}) {
   const [show, setShow] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
@@ -46,9 +51,11 @@ export default function DeleteMemeButton(props: { memeId: string }) {
 
   return (
     <>
-      <div onClick={handleShow} className={localStyles['wrapper']}>
-        <Trash size={14} className={`${localStyles['icon']}`} />
-      </div>
+      <Tooltip label={props.asModerator ? 'Delete as moderator' : 'Delete'}>
+        <div onClick={handleShow} className={localStyles['wrapper']}>
+          <Trash size={14} className={`${localStyles['icon']}`} />
+        </div>
+      </Tooltip>
       <Modal show={show} onHide={handleClose} centered>
         <div onClick={(e) => e.stopPropagation()}>
           <Modal.Header closeButton>

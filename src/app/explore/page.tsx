@@ -1,7 +1,6 @@
 import styles from '../main.module.scss';
 import NavigationBar from '@/components/NavigationBar';
 import { getUserFromAccessToken } from '@/auth/lib';
-import { isModerator } from '@/auth/role';
 import { countMemes, listMemes } from '@/db/queries/memes';
 
 import { GalleryMasonry } from '../../components/GalleryMasonry';
@@ -31,7 +30,6 @@ export default async function Explore(props: { searchParams: Promise<{ cursor?: 
             <GalleryMasonry
               memes={page.memes}
               currentUserId={user?.id || ''}
-              canDeleteAny={!!user && isModerator(user)}
             />
           </div>
           <FeedPager basePath="/explore" nextCursor={page.nextCursor} />

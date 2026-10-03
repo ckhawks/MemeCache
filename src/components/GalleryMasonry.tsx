@@ -14,14 +14,13 @@ import LikeButton from './LikeButton';
 import MemeMediaRenderer from './MemeMediaRenderer';
 import DeleteMemeButton from './DeleteMemeButton';
 import SendMemeButton from './SendMemeButton';
+import Tooltip from './Tooltip';
 import type { MemeCard } from '@/db/queries/memes';
 
 // Memes arrive newest first from the query.
 export function GalleryMasonry(props: {
   memes: MemeCard[];
   currentUserId: string;
-  // Moderators can delete anyone's meme, so they get the button on every card.
-  canDeleteAny?: boolean;
 }) {
   const [, forceUpdate] = useState({});
 
@@ -78,21 +77,25 @@ export function GalleryMasonry(props: {
                         marginLeft: 'auto',
                       }}
                     >
-                      {(props.canDeleteAny || props.currentUserId === meme.uploaderId) && (
+                      {/* Only your own memes. Moderators delete others' from the meme page, on purpose,
+                          rather than one stray click away in a feed. */}
+                      {props.currentUserId === meme.uploaderId && (
                         <DeleteMemeButton memeId={meme.id} />
                       )}
-                      <a
-                        href={`/api/resource/${meme.id}`}
-                        download
-                        style={{
-                          color: 'gray',
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                        }}
-                      >
-                        <Download size={14} />
-                      </a>
+                      <Tooltip label="Download">
+                        <a
+                          href={`/api/resource/${meme.id}`}
+                          download
+                          style={{
+                            color: 'gray',
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                          }}
+                        >
+                          <Download size={14} />
+                        </a>
+                      </Tooltip>
                       <SendMemeButton memeId={meme.id} contentType={meme.contentType} />
                       <LikeButton
                         memeId={meme.id}

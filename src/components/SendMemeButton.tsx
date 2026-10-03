@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Check, Send } from 'react-feather';
 import localStyles from './LikeButton.module.scss';
+import Tooltip from './Tooltip';
 
 const EXTENSIONS: Record<string, string> = {
   'image/png': 'png',
@@ -16,11 +17,16 @@ const EXTENSIONS: Record<string, string> = {
 
 // Hands the meme itself to the phone's share sheet (iMessage, Discord, ...). Where the
 // browser cannot share files, which is most desktops, it copies the meme's link instead.
-export default function SendMemeButton(props: { memeId: string; contentType: string }) {
+export default function SendMemeButton(props: {
+  memeId: string;
+  contentType: string;
+}) {
   const [copied, setCopied] = useState(false);
 
   const copyLink = async () => {
-    await navigator.clipboard.writeText(`${window.location.origin}/meme/${props.memeId}`);
+    await navigator.clipboard.writeText(
+      `${window.location.origin}/meme/${props.memeId}`
+    );
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -35,7 +41,9 @@ export default function SendMemeButton(props: { memeId: string; contentType: str
         const response = await fetch(`/api/resource/${props.memeId}`);
         const blob = await response.blob();
         const extension = EXTENSIONS[props.contentType] ?? 'bin';
-        const file = new File([blob], `meme.${extension}`, { type: props.contentType });
+        const file = new File([blob], `meme.${extension}`, {
+          type: props.contentType,
+        });
 
         if (navigator.canShare({ files: [file] })) {
           await navigator.share({ files: [file] });
@@ -54,18 +62,19 @@ export default function SendMemeButton(props: { memeId: string; contentType: str
   };
 
   return (
-    <div
-      onClick={onSend}
-      className={localStyles['wrapper']}
-      title={copied ? 'Link copied' : 'Send'}
-      role="button"
-      aria-label="Send meme"
-    >
-      {copied ? (
-        <Check size={14} className={localStyles['icon']} />
-      ) : (
-        <Send size={14} className={localStyles['icon']} />
-      )}
-    </div>
+    <Tooltip label={copied ? 'Link copied' : 'Send'}>
+      <div
+        onClick={onSend}
+        className={localStyles['wrapper']}
+        role="button"
+        aria-label="Send meme"
+      >
+        {copied ? (
+          <Check size={14} className={localStyles['icon']} />
+        ) : (
+          <Send size={14} className={localStyles['icon']} />
+        )}
+      </div>
+    </Tooltip>
   );
 }

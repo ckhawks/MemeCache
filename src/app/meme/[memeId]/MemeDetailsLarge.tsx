@@ -6,6 +6,7 @@ import Link from 'next/link';
 import DeleteMemeButton from '@/components/DeleteMemeButton';
 import LikeButton from '@/components/LikeButton';
 import SendMemeButton from '@/components/SendMemeButton';
+import Tooltip from '@/components/Tooltip';
 import { Download } from 'react-feather';
 import {
   getRelativeTimeString,
@@ -34,17 +35,22 @@ export function MemeDetailsLarge(props: {
             }}
           >
             {props.canDelete && (
-              <DeleteMemeButton memeId={props.meme.id} />
+              <DeleteMemeButton
+                memeId={props.meme.id}
+                asModerator={props.user?.id !== props.meme.uploaderId}
+              />
             )}
-            <a
-              href={`/api/resource/${props.meme.id}`}
-              download
-              style={{
-                color: 'gray',
-              }}
-            >
-              <Download size={14} />
-            </a>
+            <Tooltip label="Download">
+              <a
+                href={`/api/resource/${props.meme.id}`}
+                download
+                style={{
+                  color: 'gray',
+                }}
+              >
+                <Download size={14} />
+              </a>
+            </Tooltip>
             <SendMemeButton memeId={props.meme.id} contentType={props.meme.contentType} />
             <LikeButton
               memeId={props.meme.id}

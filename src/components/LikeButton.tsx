@@ -4,6 +4,7 @@ import styles from './LikeButton.module.scss';
 import { useState } from 'react';
 import { api } from '@/util/api';
 import Link from 'next/link';
+import Tooltip from './Tooltip';
 
 export default function LikeButton(props: {
   liked: boolean;
@@ -51,24 +52,25 @@ export default function LikeButton(props: {
     }
   };
 
+  const label = props.userId === '' ? 'Log in to like' : liked ? 'Unlike' : 'Like';
+
   return (
-    <div
-      onClick={onToggleLike}
-      className={styles['wrapper']}
-      title={props.userId === '' ? 'Log in to like' : undefined}
-    >
-      <Heart
-        size={14}
-        className={`${styles['icon']} ${liked ? styles['liked'] : ''}`}
-        fill={liked ? '#e26f6f' : 'none'}
-      />
-      {loginPrompt ? (
-        <Link href="/login" className={styles['likes']} onClick={(e) => e.stopPropagation()}>
-          Log in to like
-        </Link>
-      ) : (
-        <span className={`${styles['likes']} ${liked ? styles['liked'] : ''}`}>{likes}</span>
-      )}
-    </div>
+    // The like sits at the right edge of a card, so its label anchors to the right.
+    <Tooltip label={label} align="end">
+      <div onClick={onToggleLike} className={styles['wrapper']}>
+        <Heart
+          size={14}
+          className={`${styles['icon']} ${liked ? styles['liked'] : ''}`}
+          fill={liked ? '#e26f6f' : 'none'}
+        />
+        {loginPrompt ? (
+          <Link href="/login" className={styles['likes']} onClick={(e) => e.stopPropagation()}>
+            Log in to like
+          </Link>
+        ) : (
+          <span className={`${styles['likes']} ${liked ? styles['liked'] : ''}`}>{likes}</span>
+        )}
+      </div>
+    </Tooltip>
   );
 }

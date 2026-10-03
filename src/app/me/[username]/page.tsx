@@ -5,7 +5,6 @@ import { countMemes, listMemes } from '@/db/queries/memes';
 import styles from '../../main.module.scss';
 import NavigationBar from '@/components/NavigationBar';
 import { getUserFromAccessToken } from '@/auth/lib';
-import { isModerator } from '@/auth/role';
 
 import FooterBar from '@/components/FooterBar';
 import Link from 'next/link';
@@ -125,7 +124,6 @@ export default async function Profile(props: {
               <GalleryMasonry
               memes={page.memes}
               currentUserId={user?.id || ''}
-              canDeleteAny={!!user && isModerator(user)}
             />
             </div>
           )}
