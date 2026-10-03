@@ -244,6 +244,12 @@ hardcoded. `MemoryMax=768M` and `--max-old-space-size=512` are set because this 
 on roughly 1.7 GiB available with Postgres serving nine databases and LiveKit alongside.
 `OOMScoreAdjust=200` makes this app a more attractive kill target than the database.
 
+**Loopback only is enforced by `-H 127.0.0.1` in `ExecStart`** (added 2026-10-03). Without
+it `next start` listens on every interface, and with `ufw` inactive the app answered plain
+HTTP on the public IP at :3007, bypassing nginx and TLS. The table above said loopback only
+from the start; nothing actually made it so. nginx proxies to `127.0.0.1:3007`, so the
+host flag must stay `127.0.0.1`, not `localhost` (which can resolve to `::1`).
+
 `client_max_body_size 50m` in the vhost is load-bearing — nginx defaults to 1 MB, which
 would reject the 30 MB video uploads at the proxy before the route ever ran.
 
