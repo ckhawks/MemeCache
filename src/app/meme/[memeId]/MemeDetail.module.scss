@@ -1,8 +1,12 @@
-// Desktop: the meme on the left, a panel on the right. Phones: stacked.
+// Desktop: the meme and its details side by side, as one centered unit. The meme's column
+// takes the image's own width (up to about two-thirds of the page) and the details sit right
+// next to it, so a small or narrow meme does not leave a gap between itself and its panel.
+// Phones: stacked.
 .layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr);
-  gap: 24px;
+  grid-template-columns: fit-content(60%) minmax(340px, 460px);
+  justify-content: center;
+  gap: 56px;
   align-items: start;
 
   @media (max-width: 900px) {
@@ -11,12 +15,8 @@
   }
 }
 
-// No surface around the meme: it shows on its own, top-aligned beside the details, at
-// up to 80% of the screen height.
 .frame {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
+  min-width: 0;
 
   img,
   video {
@@ -26,7 +26,12 @@
     width: auto;
     height: auto;
     border-radius: 12px;
-    object-fit: contain;
+  }
+
+  // Phones: center a meme narrower than the screen.
+  @media (max-width: 900px) {
+    display: flex;
+    justify-content: center;
   }
 }
 
@@ -35,7 +40,7 @@
 .panel {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 28px;
   padding-top: 4px;
 
   @media (min-width: 901px) {
@@ -83,8 +88,8 @@
 .actions {
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 10px 0;
+  gap: 22px;
+  padding: 14px 0;
   border-top: 1px solid var(--border-color);
   border-bottom: 1px solid var(--border-color);
 
