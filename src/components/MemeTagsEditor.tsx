@@ -16,7 +16,13 @@ interface Tag {
 
 // The meme's tags as chips, ending in a "+ Add tag" chip that opens an inline field.
 // Rendered with the page's data; after a vote or an add it reloads the list.
-export default function MemeTagsEditor(props: { memeId: string; userId: string; initial: Tag[] }) {
+export default function MemeTagsEditor(props: {
+  memeId: string;
+  userId: string;
+  initial: Tag[];
+  // No section heading.
+  plain?: boolean;
+}) {
   const [tags, setTags] = useState<Tag[]>(props.initial);
   const [adding, setAdding] = useState(false);
   const [newTag, setNewTag] = useState('');
@@ -62,7 +68,7 @@ export default function MemeTagsEditor(props: { memeId: string; userId: string; 
 
   return (
     <section className={styles.section}>
-      <h2 className={styles.title}>Tags</h2>
+      {!props.plain && <h2 className={styles.title}>Tags</h2>}
       <div className={styles['tags-list']}>
         {tags.map((tag) => (
           <TagChip

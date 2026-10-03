@@ -11,6 +11,8 @@ export default function LikeButton(props: {
   likes: number;
   memeId: string;
   userId: string;
+  // A pill with a word, for the meme page, instead of the bare icon used on cards.
+  labeled?: boolean;
 }) {
   const [liked, setLiked] = useState(props.liked);
   const [likes, setLikes] = useState<number>(props.likes);
@@ -53,6 +55,28 @@ export default function LikeButton(props: {
   };
 
   const label = props.userId === '' ? 'Log in to like' : liked ? 'Unlike' : 'Like';
+
+  if (props.labeled) {
+    return (
+      <button
+        type="button"
+        onClick={onToggleLike}
+        className={`${styles['pill']} ${liked ? styles['pillActive'] : ''}`}
+        aria-label={label}
+      >
+        <Heart size={16} className={liked ? styles['liked'] : ''} fill={liked ? '#e26f6f' : 'none'} />
+        {loginPrompt ? (
+          <Link href="/login" onClick={(e) => e.stopPropagation()}>
+            Log in to like
+          </Link>
+        ) : (
+          <>
+            {liked ? 'Liked' : 'Like'} · {likes}
+          </>
+        )}
+      </button>
+    );
+  }
 
   return (
     // The like sits at the right edge of a card, so its label anchors to the right.

@@ -17,6 +17,8 @@ export default function MemeTranscriptionEditor(props: {
   memeId: string;
   userId: string;
   initial: TranscriptionData | null;
+  // No section heading, for layouts where the text reads as the meme's caption.
+  plain?: boolean;
 }) {
   const [current, setCurrent] = useState<TranscriptionData | null>(props.initial);
   const [draft, setDraft] = useState(props.initial?.text ?? '');
@@ -50,14 +52,16 @@ export default function MemeTranscriptionEditor(props: {
 
   return (
     <section className={styles.section}>
-      <div className={styles.header}>
-        <h2 className={styles.title}>Transcription</h2>
-        {signedIn && !isEditing && current && (
-          <button type="button" className={styles.edit} onClick={startEditing}>
-            Edit
-          </button>
-        )}
-      </div>
+      {!props.plain && (
+        <div className={styles.header}>
+          <h2 className={styles.title}>Transcription</h2>
+          {signedIn && !isEditing && current && (
+            <button type="button" className={styles.edit} onClick={startEditing}>
+              Edit
+            </button>
+          )}
+        </div>
+      )}
 
       {isEditing ? (
         <div className={styles.editor}>
@@ -87,9 +91,19 @@ export default function MemeTranscriptionEditor(props: {
         </div>
       ) : current ? (
         <>
-          <p className={styles.text}>{current.text}</p>
-          {current.editedByUsername && (
-            <div className={styles['transcription-author']}>Last edited by {current.editedByUsername}</div>
+          <p className={`${styles.text} ${props.plain ? styles.caption : ''}`}>{current.text}</p>
+          {(current.editedByUsername || (props.plain && signedIn)) && (
+            <div className={styles['transcription-author']}>
+              {current.editedByUsername && <>Transcribed by {current.editedByUsername}</>}
+              {props.plain && signedIn && (
+                <>
+                  {current.editedByUsername && ' · '}
+                  <button type="button" className={styles.inlineEdit} onClick={startEditing}>
+                    Edit
+                  </button>
+                </>
+              )}
+            </div>
           )}
         </>
       ) : (

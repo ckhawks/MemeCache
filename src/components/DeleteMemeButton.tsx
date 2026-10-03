@@ -11,6 +11,7 @@ export default function DeleteMemeButton(props: {
   memeId: string;
   // Deleting someone else's meme as a moderator. Only changes the label.
   asModerator?: boolean;
+  labeled?: boolean;
 }) {
   const [show, setShow] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -51,16 +52,28 @@ export default function DeleteMemeButton(props: {
 
   return (
     <>
-      <Tooltip label={props.asModerator ? 'Delete as moderator' : 'Delete'}>
+      {props.labeled ? (
         <button
           type="button"
           onClick={handleShow}
-          className={localStyles['wrapper']}
+          className={`${localStyles['pill']} ${localStyles['pillDanger']}`}
           aria-label={props.asModerator ? 'Delete as moderator' : 'Delete'}
         >
-          <Trash size={14} className={`${localStyles['icon']}`} />
+          <Trash size={16} />
+          {props.asModerator ? 'Delete (mod)' : 'Delete'}
         </button>
-      </Tooltip>
+      ) : (
+        <Tooltip label={props.asModerator ? 'Delete as moderator' : 'Delete'}>
+          <button
+            type="button"
+            onClick={handleShow}
+            className={localStyles['wrapper']}
+            aria-label={props.asModerator ? 'Delete as moderator' : 'Delete'}
+          >
+            <Trash size={14} className={`${localStyles['icon']}`} />
+          </button>
+        </Tooltip>
+      )}
       <Modal show={show} onHide={handleClose} centered>
         <div onClick={(e) => e.stopPropagation()}>
           <Modal.Header closeButton>

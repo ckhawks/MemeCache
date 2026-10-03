@@ -5,6 +5,7 @@ import NavigationBar from '@/components/NavigationBar';
 import FooterBar from '@/components/FooterBar';
 import BackButton from '@/components/BackButton';
 import DetailMedia from './DetailMedia';
+import { PostActions, PostAuthor } from './PostParts';
 import MemeTranscriptionEditor from '@/components/MemeTranscriptionEditor';
 import MemeTagsEditor from '@/components/MemeTagsEditor';
 import { MemeDetailsLarge, MemePosted } from './MemeDetailsLarge';
@@ -14,8 +15,13 @@ import { getMeme } from '@/db/queries/memes';
 import { getCurrentTranscription } from '@/db/queries/transcriptions';
 import { listTagsForMeme } from '@/db/queries/tags';
 
-export default async function MemeDetails(props: { params: Promise<{ memeId: string }> }) {
+export default async function MemeDetails(props: {
+  params: Promise<{ memeId: string }>;
+  searchParams: Promise<{ layout?: string }>;
+}) {
   const params = await props.params;
+  // Temporary: ?layout=a / ?layout=b to compare layouts on real memes. Default is the panel (c).
+  const layout = (await props.searchParams).layout ?? 'c';
   const user = await getUserFromAccessToken();
   const meme = await getMeme(params.memeId, user?.id);
 
@@ -26,6 +32,7 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
   if (params.memeId !== meme.slug) {
     permanentRedirect(`/meme/${meme.slug}`);
   }
+  const canDelete = !!user && (user.id === meme.uploaderId || isModerator(user));
 
   // Loaded with the page, so the panel is complete on first paint instead of showing
   // "Loading..." while the editors fetch their own data.
@@ -33,6 +40,12 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
     getCurrentTranscription(meme.id),
     listTagsForMeme(meme.id, user?.id),
   ]);
+
+  const initialTranscription = transcription && {
+    text: transcription.text,
+    editedBy: transcription.editedBy,
+    editedByUsername: transcription.editedByUsername,
+  };
 
   return (
     <>
@@ -42,6 +55,35 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
           <div className={styles.description}>
             <BackButton to={'/explore'} text={'Back'} />
           </div>
+          {layout === 'a' && (
+            <div className={d.layoutA}>
+              <div className={d.frame}>
+                <DetailMedia meme={meme} />
+              </div>
+              <div className={d.postColumn}>
+                <PostAuthor username={meme.username} />
+                <PostActions meme={meme} user={user} canDelete={canDelete} />
+                <div className={d.postRule} />
+                <MemeTranscriptionEditor plain memeId={meme.id} userId={user?.id || ''} initial={initialTranscription} />
+                <MemeTagsEditor plain memeId={meme.id} userId={user?.id || ''} initial={tags} />
+                <MemePosted createdAt={meme.createdAt} />
+              </div>
+            </div>
+          )}
+          {layout === 'b' && (
+            <div className={d.layoutB}>
+              <div className={d.frame}>
+                <DetailMedia meme={meme} />
+              </div>
+              <PostActions meme={meme} user={user} canDelete={canDelete} />
+              <div className={d.postRule} />
+              <PostAuthor username={meme.username} />
+              <MemeTranscriptionEditor plain memeId={meme.id} userId={user?.id || ''} initial={initialTranscription} />
+              <MemeTagsEditor plain memeId={meme.id} userId={user?.id || ''} initial={tags} />
+              <MemePosted createdAt={meme.createdAt} />
+            </div>
+          )}
+          {layout !== 'a' && layout !== 'b' && (
           <div className={d.layout}>
             <div className={d.frame}>
               <DetailMedia meme={meme} />
@@ -50,23 +92,18 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
               <MemeDetailsLarge
                 meme={meme}
                 user={user}
-                canDelete={!!user && (user.id === meme.uploaderId || isModerator(user))}
+                canDelete={canDelete}
               />
               <MemeTranscriptionEditor
                 memeId={meme.id}
                 userId={user?.id || ''}
-                initial={
-                  transcription && {
-                    text: transcription.text,
-                    editedBy: transcription.editedBy,
-                    editedByUsername: transcription.editedByUsername,
-                  }
-                }
+                initial={initialTranscription}
               />
               <MemeTagsEditor memeId={meme.id} userId={user?.id || ''} initial={tags} />
               <MemePosted createdAt={meme.createdAt} />
             </aside>
           </div>
+          )}
         </div>
       </main>
       <FooterBar />

@@ -134,3 +134,78 @@
   font-size: 13px;
   color: var(--sub-text-color);
 }
+
+// ---- Layouts A and B (?layout=a, ?layout=b) ----
+
+// A: the meme beside a plain column, no panel.
+.layoutA {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+  gap: 48px;
+  align-items: start;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+.postColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  @media (min-width: 901px) {
+    position: sticky;
+    top: 16px;
+  }
+}
+
+// B: one centered column, the meme on top.
+.layoutB {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.postAuthor {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-color);
+  text-decoration: none;
+
+  &:hover .postAuthorName {
+    text-decoration: underline;
+  }
+}
+
+.postAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 100%;
+  object-fit: cover;
+  border: 1px solid var(--border-color);
+}
+
+.postAuthorName {
+  font-weight: 600;
+}
+
+.postActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.postDelete {
+  margin-left: auto;
+}
+
+.postRule {
+  height: 1px;
+  background-color: var(--border-color);
+}

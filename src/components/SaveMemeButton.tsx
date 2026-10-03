@@ -8,7 +8,7 @@ import { api } from '@/util/api';
 
 // Saves a meme to your Library. Private, unlike a like, so there is no count. Only shown
 // to signed-in users.
-export default function SaveMemeButton(props: { memeId: string; saved: boolean }) {
+export default function SaveMemeButton(props: { memeId: string; saved: boolean; labeled?: boolean }) {
   const [saved, setSaved] = useState(props.saved);
   const [pending, setPending] = useState(false);
 
@@ -33,6 +33,20 @@ export default function SaveMemeButton(props: { memeId: string; saved: boolean }
   };
 
   const label = saved ? 'Remove from Library' : 'Save to Library';
+
+  if (props.labeled) {
+    return (
+      <button
+        type="button"
+        onClick={onToggle}
+        className={`${styles['pill']} ${saved ? styles['pillActive'] : ''}`}
+        aria-label={label}
+      >
+        <Bookmark size={16} fill={saved ? 'currentColor' : 'none'} />
+        {saved ? 'Saved' : 'Save'}
+      </button>
+    );
+  }
 
   return (
     <Tooltip label={label}>

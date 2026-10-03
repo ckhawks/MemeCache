@@ -22,6 +22,7 @@ export default function SendMemeButton(props: {
   // For the copied link: /meme/<slug>.
   slug: string;
   contentType: string;
+  labeled?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -62,6 +63,15 @@ export default function SendMemeButton(props: {
       await copyLink().catch(() => undefined);
     }
   };
+
+  if (props.labeled) {
+    return (
+      <button type="button" onClick={onSend} className={localStyles['pill']} aria-label={copied ? 'Link copied' : 'Send'}>
+        {copied ? <Check size={16} /> : <Send size={16} />}
+        {copied ? 'Link copied' : 'Send'}
+      </button>
+    );
+  }
 
   return (
     <Tooltip label={copied ? 'Link copied' : 'Send'}>

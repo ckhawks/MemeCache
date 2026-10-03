@@ -46,3 +46,38 @@
     color: var(--mostly-text-color);
   }
 }
+
+// The labeled variant: a pill with icon and word, for the meme page's action bar.
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 0;
+  padding: 7px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 100px;
+  background-color: var(--background-color);
+  color: var(--mostly-text-color);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out;
+
+  &:hover {
+    background-color: var(--hover-background-color);
+    border-color: var(--border-color-hover);
+  }
+
+  &.pillActive {
+    color: var(--text-color);
+    border-color: var(--border-color-hover);
+  }
+
+  &.pillDanger:hover {
+    color: var(--danger-color);
+    border-color: var(--danger-color);
+  }
+}
