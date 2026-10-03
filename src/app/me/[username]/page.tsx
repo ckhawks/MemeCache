@@ -9,6 +9,8 @@ import { getUserFromAccessToken } from '@/auth/lib';
 
 import FooterBar from '@/components/FooterBar';
 import Link from 'next/link';
+import FeedViewToggle from '@/components/FeedViewToggle';
+import { getFeedView } from '@/server/feedView';
 import { GalleryMasonry } from '@/components/GalleryMasonry';
 import FeedPager from '@/components/FeedPager';
 
@@ -19,6 +21,7 @@ export default async function Profile(props: {
   const params = await props.params;
   const searchParams = await props.searchParams;
   const user = await getUserFromAccessToken();
+  const view = await getFeedView();
   // console.log("session", session);
 
   // if (!session) {
@@ -90,13 +93,16 @@ export default async function Profile(props: {
 
             </div>
 
-            <p>
-              {total} {total === 1 ? 'upload' : 'uploads'}
-            </p>
+            <div className={styles['feed-header']}>
+              <p>
+                {total} {total === 1 ? 'upload' : 'uploads'}
+              </p>
+              <FeedViewToggle view={view} />
+            </div>
           </div>
           {page.memes.length > 0 && (
             <div className={styles['memes-masonry']}>
-              <GalleryMasonry
+              <GalleryMasonry view={view}
               memes={page.memes}
               currentUserId={user?.id || ''}
             />

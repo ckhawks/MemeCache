@@ -3,6 +3,8 @@ import NavigationBar from '@/components/NavigationBar';
 import { getUserFromAccessToken } from '@/auth/lib';
 import { countMemes, listMemes } from '@/db/queries/memes';
 
+import FeedViewToggle from '@/components/FeedViewToggle';
+import { getFeedView } from '@/server/feedView';
 import { GalleryMasonry } from '../../components/GalleryMasonry';
 import FooterBar from '@/components/FooterBar';
 import FeedPager from '@/components/FeedPager';
@@ -10,6 +12,7 @@ import FeedPager from '@/components/FeedPager';
 export default async function Explore(props: { searchParams: Promise<{ cursor?: string }> }) {
   const searchParams = await props.searchParams;
   const user = await getUserFromAccessToken();
+  const view = await getFeedView();
 
   const filter = { viewerId: user?.id };
   const [page, total] = await Promise.all([
@@ -24,10 +27,13 @@ export default async function Explore(props: { searchParams: Promise<{ cursor?: 
         <div className={styles.content}>
           <div className={styles.description}>
             <h1>Explore</h1>
-            <p>{total} items</p>
+            <div className={styles['feed-header']}>
+              <p>{total} items</p>
+              <FeedViewToggle view={view} />
+            </div>
           </div>
           <div className={styles['memes-masonry']}>
-            <GalleryMasonry
+            <GalleryMasonry view={view}
               memes={page.memes}
               currentUserId={user?.id || ''}
             />

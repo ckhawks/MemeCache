@@ -244,6 +244,9 @@
   width: 100%;
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
+  // Tall screenshots stop at 80% of the screen; the rest is letterboxed, not cropped.
+  max-height: 80vh;
+  object-fit: contain;
 
   &.large {
     max-height: calc(80vh - 75px);
@@ -306,4 +309,34 @@
 .tags-extra {
   font-size: 11px;
   color: rgb(107, 107, 107);
+}
+
+// Single-column layout (FeedViewToggle): centered, one meme at a time.
+.feed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+
+  .meme {
+    width: 100%;
+    max-width: 640px;
+    margin-bottom: 0;
+  }
+}
+
+.meme-meta-separator {
+  margin: 0 6px;
+}
+
+// Page header row: the count on the left, the layout toggle on the right.
+.feed-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  p {
+    margin: 0;
+  }
 }

@@ -3,6 +3,8 @@ import NavigationBar from '@/components/NavigationBar';
 import { getUserFromAccessToken } from '@/auth/lib';
 import FooterBar from '@/components/FooterBar';
 import BackButton from '@/components/BackButton';
+import FeedViewToggle from '@/components/FeedViewToggle';
+import { getFeedView } from '@/server/feedView';
 import { GalleryMasonry } from '@/components/GalleryMasonry';
 import FeedPager from '@/components/FeedPager';
 import { countMemes, listMemes } from '@/db/queries/memes';
@@ -14,6 +16,7 @@ export default async function TagDetails(props: {
   const params = await props.params;
   const searchParams = await props.searchParams;
   const user = await getUserFromAccessToken();
+  const view = await getFeedView();
   // Dynamic segments arrive still percent-encoded ("dog%20pile").
   let tagName = params.tagName;
   try {
@@ -37,10 +40,13 @@ export default async function TagDetails(props: {
           <div className={styles.description}>
             <BackButton to={'/explore'} text={'Back'} />
             <h1>{tagName}</h1>
-            <p>{total} items</p>
+            <div className={styles['feed-header']}>
+              <p>{total} items</p>
+              <FeedViewToggle view={view} />
+            </div>
           </div>
           <div className={styles['memes-masonry']}>
-            <GalleryMasonry
+            <GalleryMasonry view={view}
               memes={page.memes}
               currentUserId={user?.id || ''}
             />

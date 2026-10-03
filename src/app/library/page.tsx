@@ -4,6 +4,8 @@ import { getUserFromAccessToken } from '@/auth/lib';
 import { redirect } from 'next/navigation';
 import { countMemes, listMemes } from '@/db/queries/memes';
 
+import FeedViewToggle from '@/components/FeedViewToggle';
+import { getFeedView } from '@/server/feedView';
 import { GalleryMasonry } from '../../components/GalleryMasonry';
 import FooterBar from '@/components/FooterBar';
 import FeedPager from '@/components/FeedPager';
@@ -11,6 +13,7 @@ import FeedPager from '@/components/FeedPager';
 export default async function Library(props: { searchParams: Promise<{ cursor?: string }> }) {
   const searchParams = await props.searchParams;
   const user = await getUserFromAccessToken();
+  const view = await getFeedView();
 
   if (!user) {
     redirect('/login');
@@ -30,13 +33,16 @@ export default async function Library(props: { searchParams: Promise<{ cursor?: 
         <div className={styles.content}>
           <div className={styles.description}>
             <h1>Library</h1>
-            <p>
-              {total} saved {total === 1 ? 'meme' : 'memes'}
-            </p>
+            <div className={styles['feed-header']}>
+              <p>
+                {total} saved {total === 1 ? 'meme' : 'memes'}
+              </p>
+              <FeedViewToggle view={view} />
+            </div>
           </div>
           {page.memes.length > 0 && (
             <div className={styles['memes-masonry']}>
-              <GalleryMasonry memes={page.memes} currentUserId={user.id} />
+              <GalleryMasonry view={view} memes={page.memes} currentUserId={user.id} />
             </div>
           )}
           {total === 0 && (

@@ -1,0 +1,38 @@
+.toggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--background-color);
+
+  // Phones show one column either way, so there is nothing to choose.
+  @media (max-width: 600px) {
+    display: none;
+  }
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--sub-text-color);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease-in-out,
+    color 0.15s ease-in-out;
+
+  &:hover {
+    color: var(--text-color);
+  }
+
+  &.active {
+    background-color: var(--hover-background-color);
+    color: var(--text-color);
+  }
+}
