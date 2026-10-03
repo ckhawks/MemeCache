@@ -26,7 +26,11 @@ export const LightThemeProvider = ({
   useEffect(() => {
     // Check for saved user preference
     const savedTheme = localStorage.getItem('theme');
+    // Syncing from localStorage and the OS preference on mount is the external-system
+    // case effects exist for; the server cannot know either. docs/ui-and-pwa.md phase B
+    // replaces this with a prefers-color-scheme default in CSS.
     if (savedTheme) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTheme(savedTheme);
       document.documentElement.setAttribute('data-theme', savedTheme);
     } else {

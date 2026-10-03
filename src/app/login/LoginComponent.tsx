@@ -1,7 +1,7 @@
 'use client';
 
 import { login } from '@/auth/actions';
-import { useFormState } from 'react-dom';
+import { useActionState } from 'react';
 
 import styles from '../main.module.scss';
 import { Alert, Form } from 'react-bootstrap';
@@ -13,7 +13,7 @@ const initialState = {
 };
 
 export default function LoginComponent() {
-  const [state, loginAction] = useFormState(login, initialState);
+  const [state, loginAction] = useActionState(login, initialState);
 
   return (
     <form action={loginAction}>

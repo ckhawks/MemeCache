@@ -26,8 +26,8 @@ import {
 // session and the user appeared logged out.
 const ACCESS_TOKEN_MAX_AGE = ACCESS_TOKEN_TTL_SECONDS;
 
-function setSessionCookie(accessToken: string) {
-  cookies().set('accessToken', accessToken, {
+async function setSessionCookie(accessToken: string) {
+  (await cookies()).set('accessToken', accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
@@ -81,7 +81,7 @@ export async function register(prevState: any, formData: FormData) {
     passwordHash: await hashPassword(password),
   });
 
-  setSessionCookie(await createAccessToken(user));
+  await setSessionCookie(await createAccessToken(user));
 
   redirect('/');
 }
@@ -103,15 +103,16 @@ export async function login(prevState: any, formData: FormData) {
     return { message: 'No account was found with that information.' };
   }
 
-  setSessionCookie(await createAccessToken(user));
+  await setSessionCookie(await createAccessToken(user));
 
   redirect('/');
 }
 
 export async function logout() {
-  cookies().set('accessToken', '', { maxAge: 0 });
+  const cookieStore = await cookies();
+  cookieStore.set('accessToken', '', { maxAge: 0 });
   // Sessions before migration 002 also carried a refresh token cookie. Clear it too.
-  cookies().set('refreshToken', '', { maxAge: 0 });
+  cookieStore.set('refreshToken', '', { maxAge: 0 });
 
   redirect('/login');
 }

@@ -9,13 +9,9 @@ import { Col, Row } from 'react-bootstrap';
 import FooterBar from '@/components/FooterBar';
 import EditAvatarComponent from './EditAvatarComponent';
 import BackButton from '@/components/BackButton';
-import Image from 'next/image';
 
-export default async function Profile({
-  params,
-}: {
-  params: { username: string };
-}) {
+export default async function Profile(props: { params: Promise<{ username: string }> }) {
+  const params = await props.params;
   const user = await getUserFromAccessToken();
   // console.log("session", session);
 
@@ -99,18 +95,16 @@ export default async function Profile({
                   <EditAvatarComponent />
                 </Col>
                 <div style={{ marginLeft: 'auto', width: 'unset' }}>
-                  <Image
-                    src={
-                      '/api/resource/avatar/' +
-                      userFromDb.username +
-                      '?timeStamp=' +
-                      timeStamp
-                    }
+                  {/* A plain img: the query string busts the cache after an avatar change,
+                      and Next 16's image optimizer rejects query strings it has not been
+                      told about. Optimizing a per-user dynamic avatar gains nothing. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={'/api/resource/avatar/' + userFromDb.username + '?timeStamp=' + timeStamp}
                     width={128}
                     height={128}
                     style={{ borderRadius: '100%' }}
                     alt=""
-                    // className={}
                   />
                 </div>
               </Row>

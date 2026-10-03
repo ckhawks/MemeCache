@@ -1,7 +1,7 @@
 'use client';
 
 import { register } from '@/auth/actions';
-import { useFormState } from 'react-dom';
+import { useActionState } from 'react';
 
 import styles from '../main.module.scss';
 import { Alert, Form } from 'react-bootstrap';
@@ -13,7 +13,7 @@ const initialState = {
 };
 
 export default function RegisterComponent() {
-  const [state, registerAction] = useFormState(register, initialState);
+  const [state, registerAction] = useActionState(register, initialState);
 
   return (
     <form action={registerAction}>

@@ -12,11 +12,8 @@ import MemeTagsEditor from '@/components/MemeTagsEditor';
 import { getMeme } from '@/db/queries/memes';
 import { isModerator } from '@/auth/role';
 
-export default async function MemeDetails({
-  params,
-}: {
-  params: { memeId: string };
-}) {
+export default async function MemeDetails(props: { params: Promise<{ memeId: string }> }) {
+  const params = await props.params;
   const user = await getUserFromAccessToken();
   const meme = await getMeme(params.memeId, user?.id);
 
@@ -46,11 +43,8 @@ export default async function MemeDetails({
   );
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { memeId: string };
-}) {
+export async function generateMetadata(props: { params: Promise<{ memeId: string }> }) {
+  const params = await props.params;
   // Read straight from the database. This used to fetch the app's own API over HTTP.
   const meme = await getMeme(params.memeId);
   if (!meme) {

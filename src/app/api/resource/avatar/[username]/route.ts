@@ -7,8 +7,9 @@ import { NextResponse } from 'next/server';
 
 export async function GET(
   request: Request,
-  { params }: { params: { username: string } }
+  props: { params: Promise<{ username: string }> }
 ) {
+  const params = await props.params;
   if (params.username === null) {
     return new NextResponse('Please provide a username.', { status: 404 });
   }

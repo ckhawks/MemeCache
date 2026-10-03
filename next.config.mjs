@@ -1,12 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  webpack: (config) => {
-    // Both are native/optional server-side modules webpack should not try to bundle.
-    // pg only requires pg-native if you explicitly use pg.native, which this app does
-    // not, but webpack resolves the require statically and warns when it is absent.
-    config.externals = [...config.externals, 'bcrypt', 'pg-native'];
-    return config;
-  },
+  // Native or optional server-side modules the bundler should leave to Node. Both are on
+  // Next's built-in list already; named here so the intent survives a list change. This
+  // replaced a webpack externals hook, which Turbopack (the default since Next 16) ignores.
+  serverExternalPackages: [
+    'bcrypt',
+    'pg',
+  ],
 };
 
 export default nextConfig;

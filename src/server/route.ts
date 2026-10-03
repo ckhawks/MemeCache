@@ -39,8 +39,9 @@ export function route<A extends AuthMode, S extends ZodType | undefined = undefi
   // Return a plain object to send it as JSON, or a Response to send that as-is.
   handler: (ctx: RouteContext<A, S>) => Promise<unknown>;
 }) {
-  return async (request: Request, { params }: { params: Record<string, string> }) => {
+  return async (request: Request, context: { params: Promise<Record<string, string>> }) => {
     try {
+      const params = await context.params;
       const user = await getUserFromAccessToken();
       if (options.auth === 'required' && !user) {
         throw new HttpError(401, 'You need to be logged in.');

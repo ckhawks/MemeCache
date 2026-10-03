@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import globals from '../app/main.module.scss';
 import styles from './MemeTagsEditor.module.scss';
 import { TagChip } from './TagChip';
@@ -28,23 +28,36 @@ export default function MemeTagsEditor({
 }: MemeTagsEditorProps) {
   const [tagsData, setTagsData] = useState<TagsData | null>(null);
   const [newTag, setNewTag] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
+  // Starts true: the first load begins on mount. Actions set it again themselves.
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
 
-  const fetchTags = async () => {
-    setLoading(true);
-    try {
-      setTagsData(await api<TagsData>(`/api/meme/${memeId}/tags`));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load tags.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Bumped after an add or a vote to load the list again.
+  const [reloadKey, setReloadKey] = useState(0);
+  const fetchTags = () => setReloadKey((key) => key + 1);
 
   useEffect(() => {
-    fetchTags();
-  }, [memeId]);
+    let cancelled = false;
+    api<TagsData>(`/api/meme/${memeId}/tags`)
+      .then((data) => {
+        if (!cancelled) {
+          setTagsData(data);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load tags.');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [memeId, reloadKey]);
 
   const handleAddTag = async () => {
     if (!newTag.trim()) return; // do nothing if empty

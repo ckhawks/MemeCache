@@ -12,13 +12,12 @@ import Link from 'next/link';
 import { GalleryMasonry } from '@/components/GalleryMasonry';
 import FeedPager from '@/components/FeedPager';
 
-export default async function Profile({
-  params,
-  searchParams,
-}: {
-  params: { username: string };
-  searchParams: { cursor?: string };
+export default async function Profile(props: {
+  params: Promise<{ username: string }>;
+  searchParams: Promise<{ cursor?: string }>;
 }) {
+  const params = await props.params;
+  const searchParams = await props.searchParams;
   const user = await getUserFromAccessToken();
   // console.log("session", session);
 

@@ -8,13 +8,12 @@ import { GalleryMasonry } from '@/components/GalleryMasonry';
 import FeedPager from '@/components/FeedPager';
 import { countMemes, listMemes } from '@/db/queries/memes';
 
-export default async function TagDetails({
-  params,
-  searchParams,
-}: {
-  params: { tagName: string };
-  searchParams: { cursor?: string };
+export default async function TagDetails(props: {
+  params: Promise<{ tagName: string }>;
+  searchParams: Promise<{ cursor?: string }>;
 }) {
+  const params = await props.params;
+  const searchParams = await props.searchParams;
   const user = await getUserFromAccessToken();
   // Dynamic segments arrive still percent-encoded ("dog%20pile").
   let tagName = params.tagName;

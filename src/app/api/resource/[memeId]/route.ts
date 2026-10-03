@@ -7,8 +7,9 @@ import { getMemeMedia } from '@/db/queries/memes';
 
 export async function GET(
   request: Request,
-  { params }: { params: { memeId: string } }
+  props: { params: Promise<{ memeId: string }> }
 ) {
+  const params = await props.params;
   if (params.memeId === null) {
     return new NextResponse('Please provide an id.', { status: 404 });
   }

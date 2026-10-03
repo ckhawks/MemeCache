@@ -9,7 +9,6 @@ import { Pool } from 'pg';
 // int (`count(*)::int`) so they arrive as numbers.
 
 declare global {
-  // eslint-disable-next-line no-var
   var __memecachePool: Pool | undefined;
 }
 

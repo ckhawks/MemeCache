@@ -8,11 +8,8 @@ import { GalleryMasonry } from '../../components/GalleryMasonry';
 import FooterBar from '@/components/FooterBar';
 import FeedPager from '@/components/FeedPager';
 
-export default async function Library({
-  searchParams,
-}: {
-  searchParams: { cursor?: string };
-}) {
+export default async function Library(props: { searchParams: Promise<{ cursor?: string }> }) {
+  const searchParams = await props.searchParams;
   const user = await getUserFromAccessToken();
 
   if (!user) {
