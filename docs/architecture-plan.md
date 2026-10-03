@@ -94,15 +94,36 @@ still TODO.md Phase 8. Vitest tests for the query functions run against a separa
 Today there are API routes, server actions, and several `// change this to be a server
 action` comments.
 
-- [ ] **Server actions** for every UI write: like, add tag, vote, transcription, delete,
-      avatar, profile edits. Each one reads the user from the session and validates input
-      with zod.
-- [ ] **Route handlers** only where something needs a URL: upload (until presigned
-      uploads in step 5), media (until the CDN), OG data.
-- [ ] `notFound()` for missing memes, users and tags instead of crashing on `undefined`.
-- [ ] One error shape for actions, so the UI can show a message instead of failing
-      silently.
-- [ ] Remove the `/api/management` one-off script.
+**Decision (2026-10-03): route handlers, not server actions.** The original plan here was
+server actions for every write. Reversed because:
+
+- The Discord command, the PWA share target and anything else outside this React app need
+  real URLs. Server actions are only callable from the app itself.
+- Upload can never be an action (1 MB body default, 30 MB videos), so actions never get to
+  be the one pattern anyway.
+- Every `'use server'` export is a public endpoint that does not look like one. This repo
+  already shipped that mistake once (Phase 0, `auth/lib.ts`).
+- Action IDs change every build, so a tab left open across a deploy fails until reloaded.
+  Route URLs are stable.
+- Routes can be exercised with `curl`.
+
+Server actions stay only for login, register and logout: plain forms that submit and
+redirect.
+
+- [x] A `route()` wrapper: resolves the session user (required or optional), parses the
+      body with a zod schema, and turns thrown errors into one JSON shape,
+      `{ error: string }` with the right status. Each handler holds only its own logic.
+- [x] Every write goes through it: like, add tag, vote, transcription, delete, avatar,
+      upload. JSON bodies, except the two file uploads.
+- [x] A small client `api()` helper that sends JSON and throws the server's error message,
+      so components show failures instead of swallowing them.
+
+Done 2026-10-03: `src/server/route.ts` and `src/util/api.ts`. Writes live under
+`/api/meme/[memeId]/...` (`DELETE` the meme, `like`, `tags`, `tags/[tagId]/vote`,
+`transcription`), plus `/api/upload` and `/api/user/avatar`. The dead bio and username
+stubs on the profile edit page were removed rather than wired up.
+- [x] `notFound()` for missing memes instead of crashing on `undefined` (done in step 3).
+- [x] Remove the `/api/management` one-off script (done in step 3).
 
 ## 5. Media pipeline
 
@@ -121,6 +142,11 @@ action` comments.
 - [ ] Upgrade Next 14 to the current major and React 19. The 5 remaining high advisories
       only clear on that upgrade, and it changes route params and caching defaults. Do it
       right after step 3, when there is less code to touch.
+- [ ] Land on a patched release, not just the current major. React 19's Server Components
+      protocol had a pre-auth RCE in December 2025 (CVE-2025-55182, "React2Shell") that hit
+      App Router apps whether or not they defined server actions. Avoiding actions in step 4
+      shrinks surprise surface but is not a defense; keeping React and Next patched is.
+      Next 14.2 on React 18 was outside the affected range.
 - [ ] Drop Bootstrap (TODO.md Phase 6) in the same pass. Usage is shallow: `Button`,
       `Form`, `Row`/`Col`, `Image`, one `Modal`.
 - [ ] `<Link>` for gallery cards instead of `window.location.href`, responsive masonry

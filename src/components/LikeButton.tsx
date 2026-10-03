@@ -2,6 +2,7 @@ import { Heart } from 'react-feather';
 
 import styles from './LikeButton.module.scss';
 import { useState } from 'react';
+import { api } from '@/util/api';
 
 export default function LikeButton(props: {
   liked: boolean;
@@ -11,54 +12,37 @@ export default function LikeButton(props: {
 }) {
   const [liked, setLiked] = useState(props.liked);
   const [likes, setLikes] = useState<number>(props.likes);
+  const [pending, setPending] = useState(false);
 
-  const onToggleLike = async (event: any) => {
+  const onToggleLike = async (event: React.MouseEvent) => {
     event.stopPropagation();
+
+    // Clicking used to do nothing at all when logged out.
     if (props.userId === '') {
+      window.location.href = '/login';
+      return;
+    }
+    if (pending) {
       return;
     }
 
-    setLiked(!liked);
-
-    // this condition is reversed because the value hasn't really changed yet
-    if (!liked) {
-      setLikes(props.likes);
-    } else {
-      setLikes(props.likes);
-    }
-    await handleChangeLikeState();
-  };
-
-  const handleChangeLikeState = async () => {
-    // No userId here on purpose -- the server takes the liker from the session.
-    const formData = new FormData();
-    formData.append('memeId', props.memeId);
-    formData.append('status', (!liked).toString());
+    // Optimistic: flip now, settle on the server's count, roll back on failure.
+    const next = !liked;
+    setLiked(next);
+    setLikes(likes + (next ? 1 : -1));
+    setPending(true);
 
     try {
-      const response = await fetch('/api/like', {
-        method: 'POST',
-        body: formData,
+      const result = await api<{ likeCount: number }>(`/api/meme/${props.memeId}/like`, {
+        body: { liked: next },
       });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        setLikes(result.newLikeCount);
-        // console.log()
-        // setMessage(result.message);
-      } else {
-        console.log(
-          'Failed to change like to ' +
-            liked +
-            ', ' +
-            (result.error || 'Something went wrong')
-        );
-        // setMessage(result.error || 'Something went wrong');
-      }
+      setLikes(result.likeCount);
     } catch (error) {
-      console.log('failed to change like status, ' + error);
-      // setMessage('Failed to upload file');
+      setLiked(!next);
+      setLikes(likes);
+      console.error('Failed to change like:', error);
+    } finally {
+      setPending(false);
     }
   };
 

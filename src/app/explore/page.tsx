@@ -1,6 +1,7 @@
 import styles from '../main.module.scss';
 import NavigationBar from '@/components/NavigationBar';
 import { getUserFromAccessToken } from '@/auth/lib';
+import { isModerator } from '@/auth/role';
 import { countMemes, listMemes } from '@/db/queries/memes';
 
 import { GalleryMasonry } from '../../components/GalleryMasonry';
@@ -30,7 +31,11 @@ export default async function Explore({
             <p>{total} items</p>
           </div>
           <div className={styles['memes-masonry']}>
-            <GalleryMasonry memes={page.memes} currentUserId={user?.id || ''} />
+            <GalleryMasonry
+              memes={page.memes}
+              currentUserId={user?.id || ''}
+              canDeleteAny={!!user && isModerator(user)}
+            />
           </div>
           <FeedPager basePath="/explore" nextCursor={page.nextCursor} />
         </div>

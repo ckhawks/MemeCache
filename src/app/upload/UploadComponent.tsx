@@ -7,6 +7,7 @@ import {
 import React, { useRef, useState } from 'react';
 import { Button, Col, Form, Row } from 'react-bootstrap';
 import imageCompression from 'browser-image-compression';
+import { api } from '@/util/api';
 
 export default function UploadComponent() {
   const [file, setFile] = useState<File | null>(null);
@@ -109,28 +110,18 @@ export default function UploadComponent() {
     formData.append('file', fileToUpload);
 
     try {
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        setMessage(result.message);
-        setFile(null);
-        setContentType('');
-        setSubmitEnabled(false);
-        setPreview(null);
-        setMediaType(null);
-        if (inputRef.current) {
-          inputRef.current.value = '';
-        }
-      } else {
-        setMessage(result.error || 'Something went wrong');
+      await api('/api/upload', { body: formData });
+      setMessage('Uploaded.');
+      setFile(null);
+      setContentType('');
+      setSubmitEnabled(false);
+      setPreview(null);
+      setMediaType(null);
+      if (inputRef.current) {
+        inputRef.current.value = '';
       }
     } catch (error) {
-      setMessage('Failed to upload file');
+      setMessage(error instanceof Error ? error.message : 'Failed to upload file.');
     }
   };
 

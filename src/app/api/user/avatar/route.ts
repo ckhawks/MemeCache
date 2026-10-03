@@ -1,94 +1,60 @@
-import { NextResponse } from 'next/server';
-import {
-  DeleteObjectCommand,
-  PutObjectCommand,
-  PutObjectCommandInput,
-} from '@aws-sdk/client-s3';
-import getS3Client from '@/util/s3/GetS3Client';
-
+import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
-import { getAvatarKey, setAvatarKey } from '@/db/queries/users';
-import { getUserFromAccessToken } from '@/auth/lib';
 import { revalidatePath } from 'next/cache';
+import getS3Client from '@/util/s3/GetS3Client';
 import { supportedImageTypes } from '@/constants/mimeTypes';
+import { getAvatarKey, setAvatarKey } from '@/db/queries/users';
+import { HttpError, route } from '@/server/route';
 
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 
-// change this to be a server action
-
-export async function POST(request: Request) {
-  const s3Client = getS3Client();
-
-  try {
-    // if user has an avatar already, delete it from S3
-    // upload new file to s3
-    // write new avatar s3 key to user in db
-
-    // The avatar owner is taken from the session, never from the request body.
-    const user = await getUserFromAccessToken();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+// POST multipart { file }: replaces the session user's avatar.
+export const POST = route({
+  auth: 'required',
+  handler: async ({ user, request }) => {
     const formData = await request.formData();
-    const file = formData.get('file') as File;
+    const file = formData.get('file');
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    if (!(file instanceof File)) {
+      throw new HttpError(400, 'No file provided.');
     }
 
     if (!supportedImageTypes.includes(file.type)) {
-      return NextResponse.json(
-        { error: `Unsupported file type: ${file.type}` },
-        { status: 415 }
-      );
+      throw new HttpError(415, `Unsupported file type: ${file.type || 'unknown'}.`);
     }
 
     if (file.size > MAX_AVATAR_BYTES) {
-      return NextResponse.json(
-        { error: 'Avatar is too large. Limit is 2MB.' },
-        { status: 413 }
+      throw new HttpError(413, 'Avatar is too large. Limit is 2MB.');
+    }
+
+    const s3 = getS3Client();
+    const newAvatarKey = `avatars/${user.username}-${crypto.randomUUID()}`;
+
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: process.env.MC_AWS_S3_BUCKET,
+        Key: newAvatarKey,
+        Body: Buffer.from(await file.arrayBuffer()),
+        ContentType: file.type,
+      })
+    );
+
+    // Swap the row first, then remove the old file, so a failure part way leaves an
+    // orphaned file rather than a user pointing at a deleted one.
+    const oldAvatarKey = await getAvatarKey(user.id);
+    await setAvatarKey(user.id, newAvatarKey);
+    if (oldAvatarKey) {
+      await s3.send(
+        new DeleteObjectCommand({
+          Bucket: process.env.MC_AWS_S3_BUCKET,
+          Key: oldAvatarKey,
+        })
       );
     }
 
-    // Null when the user has not had an avatar before
-    const currentAvatarKey = await getAvatarKey(user.id);
-    if (currentAvatarKey) {
-      // delete existing avatar from S3
-      const command = new DeleteObjectCommand({
-        Bucket: process.env.MC_AWS_S3_BUCKET,
-        Key: currentAvatarKey,
-      });
-      await s3Client.send(command);
-    }
-    // generate a file name for the new avatar
-    let uuid = crypto.randomUUID();
-    const newAvatarKey = 'avatars/' + user.username + '-' + uuid;
+    revalidatePath('/api/resource/avatar/' + user.username);
+    revalidatePath('/me/' + user.username + '/edit');
 
-    const uploadParams = {
-      Bucket: process.env.MC_AWS_S3_BUCKET,
-      Key: newAvatarKey,
-      Body: await file.arrayBuffer(),
-      ContentType: file.type,
-    } as PutObjectCommandInput;
-
-    const command = new PutObjectCommand(uploadParams);
-    await s3Client.send(command);
-
-    await setAvatarKey(user.id, newAvatarKey);
-
-    revalidatePath('/api/resource/avatar/' + user?.username);
-    revalidatePath('/me/' + user?.username + '/edit');
-
-    return NextResponse.json(
-      { message: 'Avatar changed successfully' },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error('Error updating avatar:', error);
-    return NextResponse.json(
-      { error: 'Failed to update avatar' },
-      { status: 500 }
-    );
-  }
-}
+    return { ok: true };
+  },
+});

@@ -18,6 +18,9 @@ these go away as part of `architecture-plan.md`; the step that fixes each one is
 - Avatar lookup was case-sensitive.
 - The home page selected every user column, password hashes included.
 - `generateMetadata` fetched the app's own API over HTTP.
+- Moderators had no delete button, the grid did not refresh after a delete, the delete
+  modal's close handler never ran, and a logged-out like click did nothing (fixed with
+  step 4 the same day; logged-out likes now go to the login page).
 - New in this pass: `/api/users/online` returned every online user's email address to
   anyone, and `/api/resource/<key>` served any key in the bucket, including deleted memes.
 
@@ -30,11 +33,6 @@ these go away as part of `architecture-plan.md`; the step that fixes each one is
 
 ## Permissions and UI
 
-- Moderators get no delete button although the API allows them (`GalleryMasonry.tsx:66`,
-  `MemeDetailsLarge.tsx:29`).
-- After deleting a meme the grid does not refresh (`DeleteMemeButton.tsx:35-39`), and
-  `onHide={() => handleClose}` (line 59) never calls `handleClose`.
-- Logged-out like clicks do nothing with no feedback (`LikeButton.tsx:17`).
 - The default avatar response has no caching or error handling
   (`avatar/[username]/route.ts`).
 - Footer "Content Policy" links to `/` (`FooterBar.tsx:22-29`).

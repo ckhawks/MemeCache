@@ -8,8 +8,6 @@ import { getUserFromAccessToken } from '@/auth/lib';
 import { Col, Row } from 'react-bootstrap';
 import FooterBar from '@/components/FooterBar';
 import EditAvatarComponent from './EditAvatarComponent';
-import EditUsernameComponent from './EditUsernameComponent';
-import EditBioComponent from './EditBioComponent';
 import BackButton from '@/components/BackButton';
 import Image from 'next/image';
 
@@ -98,7 +96,7 @@ export default async function Profile({
                     Your profile picture must be square in dimensions, and
                     128x128 pixels or less.
                   </p>
-                  <EditAvatarComponent userId={user?.id || ''} />
+                  <EditAvatarComponent />
                 </Col>
                 <div style={{ marginLeft: 'auto', width: 'unset' }}>
                   <Image
@@ -115,48 +113,6 @@ export default async function Profile({
                     // className={}
                   />
                 </div>
-              </Row>
-            </div>
-            <br />
-            <div className={'card'}>
-              <Row
-                style={{
-                  justifyContent: 'space-between',
-                  flexDirection: 'row',
-                }}
-              >
-                <Col>
-                  <h5>Username - WIP</h5>
-                  <p style={{ fontSize: '14px' }}>
-                    Do not include explicit language in your username. Your
-                    username is case sensitive.
-                  </p>
-                  <EditUsernameComponent
-                    userId={user?.id || ''}
-                    username={user?.username || ''}
-                  />
-                </Col>
-              </Row>
-            </div>
-            <br />
-            <div className={'card'}>
-              <Row
-                style={{
-                  justifyContent: 'space-between',
-                  flexDirection: 'row',
-                }}
-              >
-                <Col>
-                  <h5>Bio - WIP</h5>
-                  <p style={{ fontSize: '14px' }}>
-                    Your bio is limited to 153 characters. Please follow our{' '}
-                    <span className="external-link">Content Policy</span>.
-                  </p>
-                  <EditBioComponent
-                    userId={user?.id || ''}
-                    // userBio={}
-                  />
-                </Col>
               </Row>
             </div>
           </div>

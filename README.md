@@ -89,8 +89,13 @@ db/               schema, migrations, backups, and notes on all three
 
 Two invariants worth knowing before changing anything under `src/`:
 
-**Identity always comes from the session.** Route handlers call `getUserFromAccessToken()`
-and derive the acting user from the access token. No endpoint accepts a `userId` from the
+**Every API route goes through `route()` in `src/server/route.ts`.** It resolves the
+session user, validates the JSON body with zod, and returns errors as `{ error }`. The
+client calls routes with `api()` from `src/util/api.ts`. Writes are route handlers, not
+server actions; see `docs/architecture-plan.md` step 4 for why.
+
+**Identity always comes from the session.** The `route()` wrapper hands each handler the
+user from the access token. No endpoint accepts a `userId` from the
 request body; if you add one that does, that is a bug.
 
 **`src/auth/lib.ts` deliberately does not carry `'use server'`.** That directive turns every

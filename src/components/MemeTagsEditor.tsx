@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import globals from '../app/main.module.scss';
 import styles from './MemeTagsEditor.module.scss';
 import { TagChip } from './TagChip';
+import { api } from '@/util/api';
 
 interface MemeTagsEditorProps {
   memeId: string;
@@ -33,15 +34,9 @@ export default function MemeTagsEditor({
   const fetchTags = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/meme/${memeId}/tags`);
-      if (res.ok) {
-        const data = await res.json();
-        setTagsData(data);
-      } else {
-        console.error('Failed to load tags');
-      }
+      setTagsData(await api<TagsData>(`/api/meme/${memeId}/tags`));
     } catch (err) {
-      console.error(err);
+      setError(err instanceof Error ? err.message : 'Failed to load tags.');
     } finally {
       setLoading(false);
     }
@@ -56,23 +51,12 @@ export default function MemeTagsEditor({
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`/api/meme/${memeId}/tags`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        // Send tagName instead of tagId for backend to check/create the tag
-        body: JSON.stringify({ tagName: newTag.trim() }),
-      });
-      if (res.ok) {
-        setNewTag('');
-        // Refresh the tag list after a successful add.
-        fetchTags();
-      } else {
-        const data = await res.json();
-        setError(data.error || 'Failed to add tag.');
-      }
+      // The server finds the tag by name, or creates it.
+      await api(`/api/meme/${memeId}/tags`, { body: { name: newTag.trim() } });
+      setNewTag('');
+      fetchTags();
     } catch (err) {
-      console.error(err);
-      setError('Failed to add tag.');
+      setError(err instanceof Error ? err.message : 'Failed to add tag.');
     }
     setLoading(false);
   };
@@ -81,21 +65,10 @@ export default function MemeTagsEditor({
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`/api/meme/${memeId}/tags`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tagId, vote }),
-      });
-      if (res.ok) {
-        // Refresh tags after vote
-        fetchTags();
-      } else {
-        const data = await res.json();
-        setError(data.error || 'Failed to record vote.');
-      }
+      await api(`/api/meme/${memeId}/tags/${tagId}/vote`, { body: { vote } });
+      fetchTags();
     } catch (err) {
-      console.error(err);
-      setError('Failed to record vote.');
+      setError(err instanceof Error ? err.message : 'Failed to record vote.');
     }
     setLoading(false);
   };

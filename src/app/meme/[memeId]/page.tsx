@@ -10,6 +10,7 @@ import { MemeDetailsLarge } from './MemeDetailsLarge';
 import MemeTranscriptionEditor from '@/components/MemeTranscriptionEditor';
 import MemeTagsEditor from '@/components/MemeTagsEditor';
 import { getMeme } from '@/db/queries/memes';
+import { isModerator } from '@/auth/role';
 
 export default async function MemeDetails({
   params,
@@ -31,7 +32,11 @@ export default async function MemeDetails({
           <div className={styles.description}>
             <BackButton to={'/explore'} text={'Back'} />
           </div>
-          <MemeDetailsLarge meme={meme} user={user} />
+          <MemeDetailsLarge
+            meme={meme}
+            user={user}
+            canDelete={!!user && (user.id === meme.uploaderId || isModerator(user))}
+          />
           <MemeTranscriptionEditor memeId={meme.id} userId={user?.id || ''} />
           <MemeTagsEditor memeId={meme.id} userId={user?.id || ''} />
         </div>

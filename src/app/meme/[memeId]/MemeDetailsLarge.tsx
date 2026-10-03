@@ -16,6 +16,8 @@ import type { UserPayload } from '@/auth/lib';
 export function MemeDetailsLarge(props: {
   meme: MemeCard;
   user: UserPayload | undefined;
+  // The uploader, or a moderator.
+  canDelete: boolean;
 }) {
   return (
     <div key={props.meme.id} className={`${styles['meme']} ${styles.large}`}>
@@ -30,7 +32,7 @@ export function MemeDetailsLarge(props: {
               marginLeft: 'auto',
             }}
           >
-            {props.user?.id === props.meme.uploaderId && (
+            {props.canDelete && (
               <DeleteMemeButton memeId={props.meme.id} />
             )}
             <a

@@ -16,7 +16,12 @@ import DeleteMemeButton from './DeleteMemeButton';
 import type { MemeCard } from '@/db/queries/memes';
 
 // Memes arrive newest first from the query.
-export function GalleryMasonry(props: { memes: MemeCard[]; currentUserId: string }) {
+export function GalleryMasonry(props: {
+  memes: MemeCard[];
+  currentUserId: string;
+  // Moderators can delete anyone's meme, so they get the button on every card.
+  canDeleteAny?: boolean;
+}) {
   const [, forceUpdate] = useState({});
 
   useEffect(() => {
@@ -57,7 +62,7 @@ export function GalleryMasonry(props: { memes: MemeCard[]; currentUserId: string
                         marginLeft: 'auto',
                       }}
                     >
-                      {props.currentUserId === meme.uploaderId && (
+                      {(props.canDeleteAny || props.currentUserId === meme.uploaderId) && (
                         <DeleteMemeButton memeId={meme.id} />
                       )}
                       <a

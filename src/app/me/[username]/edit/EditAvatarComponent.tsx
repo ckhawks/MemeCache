@@ -5,8 +5,9 @@ import React, { useState } from 'react';
 import { Col, Form, Row } from 'react-bootstrap';
 
 import styles from '../../../main.module.scss';
+import { api } from '@/util/api';
 
-export default function EditAvatarComponent(props: { userId: string }) {
+export default function EditAvatarComponent() {
   const [file, setFile] = useState<File | null>(null);
   const [contentType, setContentType] = useState<string>('');
   const [submitEnabled, setSubmitEnabled] = useState(false);
@@ -91,27 +92,17 @@ export default function EditAvatarComponent(props: { userId: string }) {
         return;
       }
 
+      // No user id here on purpose -- the server takes the owner from the session.
       const formData = new FormData();
       formData.append('file', resizedFile);
-      formData.append('userId', props.userId);
 
-      const response = await fetch('/api/user/avatar', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        setMessage(result.message);
-        setFile(null);
-        setContentType('');
-        setSubmitEnabled(false);
-      } else {
-        setMessage(result.error || 'Something went wrong');
-      }
+      await api('/api/user/avatar', { body: formData });
+      setMessage('Avatar changed.');
+      setFile(null);
+      setContentType('');
+      setSubmitEnabled(false);
     } catch (error) {
-      setMessage('Failed to upload file');
+      setMessage(error instanceof Error ? error.message : 'Failed to upload avatar.');
     }
   };
 

@@ -55,14 +55,6 @@ export async function findOrCreateTag(name: string, createdBy: string): Promise<
   return tag.id;
 }
 
-export async function tagExists(id: string): Promise<boolean> {
-  if (!isUuid(id)) {
-    return false;
-  }
-  const rows = await db(`SELECT 1 FROM tag WHERE id = $1`, [id]);
-  return rows.length === 1;
-}
-
 // Who added this tag to this meme, or null if the meme does not carry it.
 export async function getTagAdder(memeId: string, tagId: string): Promise<string | null> {
   if (!isUuid(memeId) || !isUuid(tagId)) {

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import globals from '../app/main.module.scss';
 import styles from './MemeTranscriptionEditor.module.scss';
+import { api } from '@/util/api';
 
 interface MemeTranscriptionEditorProps {
   memeId: string;
@@ -30,21 +31,18 @@ export default function MemeTranscriptionEditor({
     async function fetchTranscription() {
       setLoading(true);
       try {
-        const res = await fetch(`/api/meme/${memeId}/transcription`);
-        if (res.ok) {
-          const data = await res.json();
-          setTranscriptionData(data || {});
-          setTranscription(data.text || '');
-        } else {
-          console.error('Failed to load transcription');
-        }
+        const data = await api<{ transcription: TranscriptionData | null }>(
+          `/api/meme/${memeId}/transcription`
+        );
+        setTranscriptionData(data.transcription);
+        setTranscription(data.transcription?.text || '');
       } catch (err) {
-        console.error(err);
+        setError(err instanceof Error ? err.message : 'Failed to load transcription.');
       } finally {
         setLoading(false);
       }
     }
-    
+
     fetchTranscription();
     // setLoading(false);
   }, [memeId]);
@@ -53,23 +51,15 @@ export default function MemeTranscriptionEditor({
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`/api/meme/${memeId}/transcription`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        // No edited_by here on purpose -- the server takes the editor from the session.
-        body: JSON.stringify({ text: transcription }),
-      });
-      if (res.ok) {
-        setIsEditing(false);
-        const data = await res.json();
-        setTranscriptionData(data.transcription || {});
-      } else {
-        const data = await res.json();
-        setError(data.error || 'Failed to save transcription.');
-      }
+      // No editor here on purpose -- the server takes the editor from the session.
+      const data = await api<{ transcription: TranscriptionData }>(
+        `/api/meme/${memeId}/transcription`,
+        { body: { text: transcription } }
+      );
+      setIsEditing(false);
+      setTranscriptionData(data.transcription);
     } catch (err) {
-      console.error(err);
-      setError('Failed to save transcription.');
+      setError(err instanceof Error ? err.message : 'Failed to save transcription.');
     }
     setLoading(false);
   };
