@@ -273,8 +273,12 @@
 
 .meme-body-date {
   color: var(--sub-text-color);
-  // display: flex;
-  // gap: 4px;
+  font-weight: 400;
+  // Shares a row with the action icons on gallery cards, so it gives way first.
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .meme-username {

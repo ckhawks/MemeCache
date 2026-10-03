@@ -54,9 +54,24 @@ export function GalleryMasonry(props: {
               >
                 <MemeMediaRenderer meme={meme} />
                 <div className={styles['meme-body']}>
+                  {/* One row: who and when on the left, actions on the right. */}
                   <div className={styles['meme-body-title']}>
+                    <div className={styles['meme-body-date']}>
+                      {typeof window === 'undefined'
+                        ? getServerSideRelativeTime(new Date(meme.createdAt))
+                        : getRelativeTimeString(new Date(meme.createdAt))}{' '}
+                      by{' '}
+                      <Link
+                        href={'/me/' + meme.username}
+                        className={styles['meme-username']}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {meme.username}
+                      </Link>
+                    </div>
                     <div
                       style={{
+                        flexShrink: 0,
                         display: 'flex',
                         flexDirection: 'row',
                         gap: '8px',
@@ -86,19 +101,6 @@ export function GalleryMasonry(props: {
                         likes={meme.likeCount}
                       />
                     </div>
-                  </div>
-                  <div className={styles['meme-body-date']}>
-                    {typeof window === 'undefined'
-                      ? getServerSideRelativeTime(new Date(meme.createdAt))
-                      : getRelativeTimeString(new Date(meme.createdAt))}{' '}
-                    by{' '}
-                    <Link
-                      href={'/me/' + meme.username}
-                      className={styles['meme-username']}
-                    >
-                      {meme.username}
-                    </Link>
-                    {/* {meme.createdAt.toISOString()} */}
                   </div>
                   {/* <div className={styles['tag-chips']}>
                     <TagChip tag={'brakence'} />
