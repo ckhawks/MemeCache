@@ -107,3 +107,28 @@ describe('transcriptions', () => {
     expect(current?.editedBy).toBe(bob);
   });
 });
+
+describe('profile stats', () => {
+  it('counts uploads, likes received from others, tags and transcribed memes', async () => {
+    const { getProfileStats } = await import('@/db/queries/users');
+    const alice = await makeUser('alice');
+    const bob = await makeUser('bob');
+    const meme = await makeMeme(alice);
+    await makeMeme(alice);
+    await setLike(meme, bob, true);
+    await setLike(meme, alice, true); // a self-like does not count as received
+    await addTagToMeme(meme, await findOrCreateTag('cats', alice), alice);
+    await addTranscription(meme, 'one', alice);
+    await addTranscription(meme, 'two', alice); // the same meme twice counts once
+
+    const stats = await getProfileStats(alice);
+    expect(stats).toMatchObject({
+      uploads: 2,
+      likesReceived: 1,
+      tagsAdded: 1,
+      transcriptions: 1,
+      role: 'user',
+    });
+    expect(stats.memberSince).not.toBeNull();
+  });
+});

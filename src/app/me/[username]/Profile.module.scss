@@ -1,0 +1,140 @@
+// Profile header. Desktop: avatar left across two rows, name over stats in the middle,
+// actions right. Phones: avatar beside the name, then stats and actions full width.
+.header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    'avatar identity actions'
+    'avatar stats stats';
+  gap: 12px 24px;
+  align-items: start;
+  padding: 24px;
+  margin-bottom: 32px;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background-color: var(--background-color);
+
+  // Phones: avatar and name side by side, actions on their own row below.
+  @media (max-width: 700px) {
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      'avatar identity'
+      'stats stats'
+      'actions actions';
+    gap: 16px;
+    padding: 16px;
+  }
+}
+
+.avatar {
+  grid-area: avatar;
+  width: 96px;
+  height: 96px;
+  border-radius: 100%;
+  object-fit: cover;
+  border: 1px solid var(--border-color);
+
+  @media (max-width: 700px) {
+    width: 64px;
+    height: 64px;
+  }
+}
+
+.identity {
+  grid-area: identity;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.name {
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+
+  @media (max-width: 700px) {
+    font-size: 24px;
+  }
+}
+
+.badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 100px;
+  border: 1px solid var(--border-color-hover);
+  color: var(--mostly-text-color);
+}
+
+.since {
+  font-size: 14px;
+  color: var(--sub-text-color);
+}
+
+.stats {
+  grid-area: stats;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 0;
+
+  // Phones: two by two instead of one long wrapping row.
+  @media (max-width: 700px) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 16px;
+  }
+}
+
+.stat {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.statValue {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-color);
+}
+
+.statLabel {
+  margin: 0;
+  font-size: 14px;
+  color: var(--sub-text-color);
+}
+
+.actions {
+  grid-area: actions;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+
+  @media (max-width: 700px) {
+    justify-content: flex-start;
+  }
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.count {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--sub-text-color);
+  margin-left: 6px;
+}

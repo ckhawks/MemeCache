@@ -114,3 +114,39 @@ export async function getAvatarKey(userId: string): Promise<string | null> {
 export async function setAvatarKey(userId: string, key: string) {
   await db(`UPDATE app_user SET avatar_s3_key = $1 WHERE id = $2`, [key, userId]);
 }
+
+export interface ProfileStats {
+  uploads: number;
+  likesReceived: number;
+  tagsAdded: number;
+  transcriptions: number;
+  // When they joined, or their first upload for accounts created before that was recorded.
+  memberSince: Date | null;
+  role: string;
+}
+
+// The numbers on a profile header. Counts are subqueries so none multiplies another.
+export async function getProfileStats(userId: string): Promise<ProfileStats> {
+  const [row] = await db<ProfileStats>(
+    `SELECT
+       (SELECT count(*)::int FROM meme m WHERE m.uploader_id = u.id AND m.deleted_at IS NULL) AS uploads,
+       (SELECT count(*)::int
+          FROM meme_like l
+          JOIN meme m ON m.id = l.meme_id
+         WHERE m.uploader_id = u.id AND m.deleted_at IS NULL AND l.user_id <> u.id) AS "likesReceived",
+       (SELECT count(*)::int
+          FROM meme_tag mt
+          JOIN meme m ON m.id = mt.meme_id
+         WHERE mt.added_by = u.id AND m.deleted_at IS NULL) AS "tagsAdded",
+       (SELECT count(DISTINCT t.meme_id)::int
+          FROM meme_transcription t
+          JOIN meme m ON m.id = t.meme_id
+         WHERE t.edited_by = u.id AND m.deleted_at IS NULL) AS transcriptions,
+       COALESCE(u.created_at, (SELECT min(m.created_at) FROM meme m WHERE m.uploader_id = u.id)) AS "memberSince",
+       u.role
+     FROM app_user u
+     WHERE u.id = $1`,
+    [userId]
+  );
+  return row;
+}
