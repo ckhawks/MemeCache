@@ -1,22 +1,69 @@
-.tags-list {
-    display: flex;
-    flex-direction: row;
-    gap: 4px;
-    flex-wrap: wrap;
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.tag-actions {
-    display: flex;
-    gap: 8px;
-    align-items: center;
+.title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sub-text-color);
+}
+
+.tags-list {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+// Matches the tag chips, dashed to read as "add one".
+.add-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 12px;
+  font-size: 12px;
+  color: var(--sub-text-color);
+  background: none;
+  border: 1px dashed var(--border-color-hover);
+  border-radius: 30px;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text-color);
+    border-color: var(--sub-text-color);
+  }
+}
+
+.add-form {
+  display: inline-flex;
 }
 
 .tag-input {
-    display: flex;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    padding: 8px 16px;
-    font-size: 14px;
-    background-color: var(--background-color);
-    color: var(--text-color);
+  width: 140px;
+  padding: 3px 12px;
+  font-size: 12px;
+  border: 1px solid var(--text-color);
+  border-radius: 30px;
+  background-color: var(--background-color);
+  color: var(--text-color);
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.empty {
+  font-size: 14px;
+  color: var(--sub-text-color);
+}
+
+.error {
+  font-size: 14px;
+  color: var(--danger-color);
 }

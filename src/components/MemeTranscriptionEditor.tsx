@@ -1,14 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import globals from '../app/main.module.scss';
 import styles from './MemeTranscriptionEditor.module.scss';
 import { api } from '@/util/api';
-
-interface MemeTranscriptionEditorProps {
-  memeId: string;
-  userId: string;
-}
 
 interface TranscriptionData {
   text: string;
@@ -16,117 +11,101 @@ interface TranscriptionData {
   editedByUsername?: string;
 }
 
-export default function MemeTranscriptionEditor({
-  memeId,
-  userId,
-}: MemeTranscriptionEditorProps) {
-  const [transcriptionData, setTranscriptionData] =
-    useState<TranscriptionData | null>(null);
-  const [transcription, setTranscription] = useState<string>('');
-  const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
+// The meme's text, as written on it. Rendered with the page's data, so there is no loading
+// state; editing saves a new version and the newest one is shown.
+export default function MemeTranscriptionEditor(props: {
+  memeId: string;
+  userId: string;
+  initial: TranscriptionData | null;
+}) {
+  const [current, setCurrent] = useState<TranscriptionData | null>(props.initial);
+  const [draft, setDraft] = useState(props.initial?.text ?? '');
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const signedIn = props.userId !== '';
 
-  useEffect(() => {
-    async function fetchTranscription() {
-      setLoading(true);
-      try {
-        const data = await api<{ transcription: TranscriptionData | null }>(
-          `/api/meme/${memeId}/transcription`
-        );
-        setTranscriptionData(data.transcription);
-        setTranscription(data.transcription?.text || '');
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load transcription.');
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchTranscription();
-    // setLoading(false);
-  }, [memeId]);
+  const startEditing = () => {
+    setDraft(current?.text ?? '');
+    setError('');
+    setIsEditing(true);
+  };
 
   const handleSave = async () => {
-    setLoading(true);
+    setSaving(true);
     setError('');
     try {
-      // No editor here on purpose -- the server takes the editor from the session.
-      const data = await api<{ transcription: TranscriptionData }>(
-        `/api/meme/${memeId}/transcription`,
-        { body: { text: transcription } }
-      );
+      // No editor here on purpose: the server takes the editor from the session.
+      const data = await api<{ transcription: TranscriptionData }>(`/api/meme/${props.memeId}/transcription`, {
+        body: { text: draft },
+      });
+      setCurrent(data.transcription);
       setIsEditing(false);
-      setTranscriptionData(data.transcription);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save transcription.');
+      setError(err instanceof Error ? err.message : 'Failed to save the transcription.');
+    } finally {
+      setSaving(false);
     }
-    setLoading(false);
   };
 
   return (
-    <div style={{ marginTop: '1rem' }}>
-      <h6>Transcription</h6>
-      {!isEditing ? (
-        <div>
-          <div className={styles['transcription-text']}>
-            {loading && <p>Loading...</p>}
-            {!loading && (
-              <>
-                <p>
-                  {transcriptionData?.text || (
-                    <i>No transcription submitted.</i>
-                  )}
-                </p>
-                { transcriptionData?.editedByUsername && <div className={styles['transcription-author']}>
-                  Last updated by{' '}
-                  <span style={{ color: 'var(--text-color)', fontWeight: '500' }}>
-                    {transcriptionData?.editedByUsername}
-                  </span>
-                </div>}
-              </>
-            )}
-          </div>
+    <section className={styles.section}>
+      <div className={styles.header}>
+        <h2 className={styles.title}>Transcription</h2>
+        {signedIn && !isEditing && current && (
+          <button type="button" className={styles.edit} onClick={startEditing}>
+            Edit
+          </button>
+        )}
+      </div>
 
-          { (userId !== '' && userId !== null ) && <div className={styles['action-buttons']}>
-            <button
-              className={globals.button}
-              onClick={() => setIsEditing(true)}
-              disabled={loading}
-            >
-              Edit
-            </button>
-          </div>}
-        </div>
-      ) : (
-        <div>
+      {isEditing ? (
+        <div className={styles.editor}>
           <textarea
             className={styles['transcription-area']}
-            value={transcription}
-            onChange={(e) => setTranscription(e.target.value)}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
             rows={4}
+            autoFocus
+            aria-label="Transcription"
+            placeholder="Type the text on the meme, top to bottom."
           />
+          {error && <div className={styles.error}>{error}</div>}
           <div className={styles['action-buttons']}>
             <button
-              className={globals.button}
-              onClick={handleSave}
-              disabled={loading}
-            >
-              Save
-            </button>
-            <button
-              className={`${globals.button} ${globals['button-secondary']}`}
+              type="button"
+              className={`${globals.button} ${globals['button-secondary']} ${globals['button-small']}`}
               onClick={() => setIsEditing(false)}
-              disabled={loading}
+              disabled={saving}
             >
               Cancel
             </button>
+            <button type="button" className={`${globals.button} ${globals['button-small']}`} onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving…' : 'Save'}
+            </button>
           </div>
-          {error && (
-            <div style={{ color: 'var(--danger-color)', marginTop: '0.5rem' }}>{error}</div>
+        </div>
+      ) : current ? (
+        <>
+          <p className={styles.text}>{current.text}</p>
+          {current.editedByUsername && (
+            <div className={styles['transcription-author']}>Last edited by {current.editedByUsername}</div>
+          )}
+        </>
+      ) : (
+        <div className={styles.empty}>
+          <span>No transcription yet. Adding the text on the meme is what lets search find it.</span>
+          {signedIn && (
+            <button
+              type="button"
+              className={`${globals.button} ${globals['button-secondary']} ${globals['button-small']}`}
+              onClick={startEditing}
+            >
+              Add transcription
+            </button>
           )}
         </div>
       )}
-    </div>
+    </section>
   );
 }

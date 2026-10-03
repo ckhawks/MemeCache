@@ -1,77 +1,65 @@
 'use client';
 
-import styles from '../../main.module.scss';
-import MemeMediaRenderer from '@/components/MemeMediaRenderer';
 import Link from 'next/link';
+import { Download } from 'react-feather';
+import d from './MemeDetail.module.scss';
 import DeleteMemeButton from '@/components/DeleteMemeButton';
 import LikeButton from '@/components/LikeButton';
 import SendMemeButton from '@/components/SendMemeButton';
 import SaveMemeButton from '@/components/SaveMemeButton';
 import Tooltip from '@/components/Tooltip';
-import { Download } from 'react-feather';
 import likeStyles from '@/components/LikeButton.module.scss';
-import {
-  getRelativeTimeString,
-  getServerSideRelativeTime,
-} from '@/util/datetimeFormat';
+import { getRelativeTimeString, getServerSideRelativeTime } from '@/util/datetimeFormat';
 import type { MemeCard } from '@/db/queries/memes';
 import type { UserPayload } from '@/auth/lib';
 
+// The top of the meme page's side panel: who posted it and when, then the actions.
 export function MemeDetailsLarge(props: {
   meme: MemeCard;
   user: UserPayload | undefined;
   // The uploader, or a moderator.
   canDelete: boolean;
 }) {
+  const { meme } = props;
+  const when =
+    typeof window === 'undefined'
+      ? getServerSideRelativeTime(new Date(meme.createdAt))
+      : getRelativeTimeString(new Date(meme.createdAt));
+
   return (
-    <div key={props.meme.id} className={`${styles['meme']} ${styles.large}`}>
-      <MemeMediaRenderer meme={props.meme} large />
-      <div className={styles['meme-body']}>
-        <div className={styles['meme-body-title']}>
-          <div className={styles['meme-body-date']}>
-            {typeof window === 'undefined'
-              ? getServerSideRelativeTime(new Date(props.meme.createdAt))
-              : getRelativeTimeString(new Date(props.meme.createdAt))}{' '}
-            by{' '}
-            <Link href={'/me/' + props.meme.username} className={styles['meme-username']}>
-              {props.meme.username}
-            </Link>
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              gap: '8px',
-              marginLeft: 'auto',
-            }}
-          >
-            {props.canDelete && (
-              <DeleteMemeButton
-                memeId={props.meme.id}
-                asModerator={props.user?.id !== props.meme.uploaderId}
-              />
-            )}
-            <Tooltip label="Download">
-              <a
-                href={`/api/resource/${props.meme.id}`}
-                download
-                aria-label="Download"
-                className={likeStyles['wrapper']}
-              >
-                <Download size={14} className={likeStyles['icon']} />
-              </a>
-            </Tooltip>
-            <SendMemeButton memeId={props.meme.id} contentType={props.meme.contentType} />
-            {props.user && <SaveMemeButton memeId={props.meme.id} saved={props.meme.hasSaved} />}
-            <LikeButton
-              memeId={props.meme.id}
-              userId={props.user?.id || ''}
-              liked={props.meme.hasLiked}
-              likes={props.meme.likeCount}
-            />
-          </div>
+    <>
+      <div className={d.uploader}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={'/api/resource/avatar/' + encodeURIComponent(meme.username)}
+          alt=""
+          width={40}
+          height={40}
+          className={d.avatar}
+        />
+        <div className={d.uploaderText}>
+          <Link href={'/me/' + encodeURIComponent(meme.username)} className={d.uploaderName}>
+            {meme.username}
+          </Link>
+          <span className={d.when}>Posted {when}</span>
         </div>
       </div>
-    </div>
+
+      <div className={d.actions}>
+        <LikeButton memeId={meme.id} userId={props.user?.id || ''} liked={meme.hasLiked} likes={meme.likeCount} />
+        {props.user && <SaveMemeButton memeId={meme.id} saved={meme.hasSaved} />}
+        <SendMemeButton memeId={meme.id} contentType={meme.contentType} />
+        <Tooltip label="Download">
+          <a href={`/api/resource/${meme.id}`} download aria-label="Download" className={likeStyles['wrapper']}>
+            <Download size={14} className={likeStyles['icon']} />
+          </a>
+        </Tooltip>
+        {props.canDelete && (
+          <span className={d.deleteSlot}>
+            <DeleteMemeButton memeId={meme.id} asModerator={props.user?.id !== meme.uploaderId} />
+          </span>
+        )}
+      </div>
+    </>
   );
 }

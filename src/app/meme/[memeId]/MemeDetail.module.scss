@@ -1,0 +1,117 @@
+// Desktop: the meme on the left, a panel on the right. Phones: stacked.
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr);
+  gap: 24px;
+  align-items: start;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+// A neutral frame so memes of any shape sit centered, letterboxed rather than cropped.
+.frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+  max-height: 80vh;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background-color: var(--hover-background-color);
+  overflow: hidden;
+
+  img,
+  video {
+    display: block;
+    max-width: 100%;
+    max-height: calc(80vh - 24px);
+    width: auto;
+    height: auto;
+    border-radius: 8px;
+    object-fit: contain;
+  }
+
+  @media (max-width: 900px) {
+    min-height: 0;
+    padding: 8px;
+  }
+}
+
+// Sticks beside a tall meme while scrolling on desktop.
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background-color: var(--background-color);
+
+  @media (min-width: 901px) {
+    position: sticky;
+    top: 16px;
+  }
+
+  @media (max-width: 900px) {
+    padding: 16px;
+  }
+}
+
+.uploader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 100%;
+  object-fit: cover;
+  border: 1px solid var(--border-color);
+}
+
+.uploaderText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.uploaderName {
+  font-weight: 600;
+  color: var(--text-color);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.when {
+  font-size: 13px;
+  color: var(--sub-text-color);
+}
+
+// The actions as one toolbar between two rules; delete pushed to the far end.
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+
+  // The shared icon-button wrapper pushes itself right with margin-left: auto;
+  // in this toolbar they sit in order instead.
+  & > * {
+    margin-left: 0;
+  }
+}
+
+.deleteSlot {
+  margin-left: auto !important;
+}

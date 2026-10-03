@@ -1,16 +1,18 @@
-// app/meme/[memeId]/page.tsx
-
 import { notFound } from 'next/navigation';
 import styles from '../../main.module.scss';
+import d from './MemeDetail.module.scss';
 import NavigationBar from '@/components/NavigationBar';
-import { getUserFromAccessToken } from '@/auth/lib';
 import FooterBar from '@/components/FooterBar';
 import BackButton from '@/components/BackButton';
-import { MemeDetailsLarge } from './MemeDetailsLarge';
+import MemeMediaRenderer from '@/components/MemeMediaRenderer';
 import MemeTranscriptionEditor from '@/components/MemeTranscriptionEditor';
 import MemeTagsEditor from '@/components/MemeTagsEditor';
-import { getMeme } from '@/db/queries/memes';
+import { MemeDetailsLarge } from './MemeDetailsLarge';
+import { getUserFromAccessToken } from '@/auth/lib';
 import { isModerator } from '@/auth/role';
+import { getMeme } from '@/db/queries/memes';
+import { getCurrentTranscription } from '@/db/queries/transcriptions';
+import { listTagsForMeme } from '@/db/queries/tags';
 
 export default async function MemeDetails(props: { params: Promise<{ memeId: string }> }) {
   const params = await props.params;
@@ -21,6 +23,13 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
     notFound();
   }
 
+  // Loaded with the page, so the panel is complete on first paint instead of showing
+  // "Loading..." while the editors fetch their own data.
+  const [transcription, tags] = await Promise.all([
+    getCurrentTranscription(meme.id),
+    listTagsForMeme(meme.id, user?.id),
+  ]);
+
   return (
     <>
       <NavigationBar />
@@ -29,13 +38,30 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
           <div className={styles.description}>
             <BackButton to={'/explore'} text={'Back'} />
           </div>
-          <MemeDetailsLarge
-            meme={meme}
-            user={user}
-            canDelete={!!user && (user.id === meme.uploaderId || isModerator(user))}
-          />
-          <MemeTranscriptionEditor memeId={meme.id} userId={user?.id || ''} />
-          <MemeTagsEditor memeId={meme.id} userId={user?.id || ''} />
+          <div className={d.layout}>
+            <div className={d.frame}>
+              <MemeMediaRenderer meme={meme} large />
+            </div>
+            <aside className={d.panel}>
+              <MemeDetailsLarge
+                meme={meme}
+                user={user}
+                canDelete={!!user && (user.id === meme.uploaderId || isModerator(user))}
+              />
+              <MemeTranscriptionEditor
+                memeId={meme.id}
+                userId={user?.id || ''}
+                initial={
+                  transcription && {
+                    text: transcription.text,
+                    editedBy: transcription.editedBy,
+                    editedByUsername: transcription.editedByUsername,
+                  }
+                }
+              />
+              <MemeTagsEditor memeId={meme.id} userId={user?.id || ''} initial={tags} />
+            </aside>
+          </div>
         </div>
       </main>
       <FooterBar />
