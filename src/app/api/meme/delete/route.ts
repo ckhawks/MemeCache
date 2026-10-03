@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/db/db';
 import { getUserFromAccessToken } from '@/auth/lib';
 import { isModerator } from '@/auth/role';
-import { DeleteS3ObjectByKey } from '@/util/s3/DeleteS3ObjectByKey';
+import { getMeme, softDeleteMeme } from '@/db/queries/memes';
 
 // change this to be a server action
 
@@ -23,25 +22,24 @@ export async function POST(request: Request) {
       );
     }
 
-    const memes = await db(`SELECT * FROM "Meme" WHERE id = $1`, [memeId]);
+    const meme = await getMeme(memeId.toString());
 
-    if (memes.length !== 1) {
+    if (!meme) {
       return NextResponse.json(
         { error: 'Could not find meme by provided memeId' },
         { status: 404 }
       );
     }
 
-    const meme = memes[0];
-
     // The meme has to actually belong to the caller. Checking only that the caller is
     // who they claim to be let any logged-in user delete anyone else's meme.
-    if (meme.uploaderUserId !== user.id && !isModerator(user)) {
+    if (meme.uploaderId !== user.id && !isModerator(user)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    await DeleteS3ObjectByKey(meme.s3Key);
-    await db(`DELETE FROM "Meme" WHERE "id" = $1`, [meme.id]);
+    // Soft delete: the row and the file stay. Deleting the file first and the row second
+    // used to lose the file whenever the row delete then failed.
+    await softDeleteMeme(meme.id);
 
     return NextResponse.json(
       {

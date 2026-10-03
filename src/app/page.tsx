@@ -1,4 +1,4 @@
-import { db } from '@/db/db';
+import { listUsers } from '@/db/queries/users';
 import styles from './main.module.scss';
 import NavigationBar from '@/components/NavigationBar';
 import { getUserFromAccessToken } from '@/auth/lib';
@@ -9,7 +9,7 @@ import OnlineUsers from '@/components/OnlineUsers';
 export default async function Home() {
   const user = await getUserFromAccessToken();
 
-  const usersResponse = await db(`SELECT * FROM "User"`);
+  const usersResponse = await listUsers();
 
   return (
     <>

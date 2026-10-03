@@ -1,6 +1,7 @@
 import getS3Client from '@/util/s3/GetS3Client';
 import { GetObjectCommand, GetObjectCommandInput } from '@aws-sdk/client-s3';
 import { NextResponse } from 'next/server';
+import { getMemeMedia } from '@/db/queries/memes';
 
 // TODO switch this to use like a short slug for resource id's instead of full uuid because its ugly
 
@@ -18,12 +19,18 @@ export async function GET(
     });
   }
 
+  // The id has to name a meme that still exists. This used to hand any key straight to
+  // S3, so a deleted meme's file stayed reachable to anyone with the link.
+  const media = await getMemeMedia(params.memeId);
+  if (!media) {
+    return new NextResponse('Image not found', { status: 404 });
+  }
+
   try {
     const s3Client = getS3Client();
-    // console.log('bucket: ', process.env.MC_AWS_S3_BUCKET);
     const getObjectCommand = new GetObjectCommand({
       Bucket: process.env.MC_AWS_S3_BUCKET,
-      Key: params.memeId,
+      Key: media.s3Key,
     } as GetObjectCommandInput);
 
     const data = await s3Client.send(getObjectCommand);

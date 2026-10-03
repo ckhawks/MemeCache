@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "db:migrate": "node scripts/migrate.mjs",
     "db:migrate:status": "node scripts/migrate.mjs --status",
     "db:migrate:dry": "node scripts/migrate.mjs --dry-run",
@@ -39,6 +40,7 @@
     "@types/react-dom": "^18",
     "eslint": "^8",
     "eslint-config-next": "14.2.35",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.7"
   }
 }

@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/db/db';
 import { getUserFromAccessToken } from '@/auth/lib';
+import { getMeme } from '@/db/queries/memes';
+import {
+  addTranscription,
+  getCurrentTranscription,
+} from '@/db/queries/transcriptions';
 
 const MAX_TRANSCRIPTION_LENGTH = 5000;
 
@@ -10,29 +14,13 @@ export async function GET(
   { params }: { params: { memeId: string } }
 ) {
   try {
-    const transcriptionData = await db(
-      `SELECT 
-        mt.text as transcription,
-        u.username as "edited_by_username",
-        mt.edited_by as "edited_by"
-      FROM "MemeTranscription" mt
-      LEFT JOIN "User" u ON u.id = mt.edited_by
-      WHERE mt.meme_id = $1
-      GROUP BY mt.text, u.username, mt.edited_by, mt.created_at
-      ORDER BY mt.created_at DESC 
-      LIMIT 1`,
-      [params.memeId]
-    );
+    const transcription = await getCurrentTranscription(params.memeId);
 
-    if (!transcriptionData || transcriptionData.length === 0) {
+    if (!transcription) {
       return NextResponse.json({ text: '' });
     }
 
-    return NextResponse.json({
-      text: transcriptionData[0].transcription,
-      editedBy: transcriptionData[0].edited_by,
-      editedByUsername: transcriptionData[0].edited_by_username,
-    });
+    return NextResponse.json(transcription);
   } catch (error) {
     console.error(error);
     return NextResponse.json(
@@ -70,26 +58,18 @@ export async function POST(
       );
     }
 
+    const meme = await getMeme(params.memeId);
+    if (!meme) {
+      return NextResponse.json({ error: 'Meme not found' }, { status: 404 });
+    }
+
     // The editor is the session user. The client used to send edited_by and the server
     // only checked it matched -- there was never a reason to accept it at all.
-    const editedBy = user.id;
-
-    const result = await db(
-      `INSERT INTO "MemeTranscription" (meme_id, text, edited_by) VALUES ($1, $2, $3) RETURNING *`,
-      [params.memeId, text, editedBy]
-    );
-
-    // Fetch the username for the edited_by user
-    const userInfo = await db(`SELECT username FROM "User" WHERE id = $1`, [
-      editedBy,
-    ]);
-
-    const editedByUsername =
-      userInfo && userInfo[0] ? userInfo[0].username : null;
+    const transcription = await addTranscription(meme.id, text, user.id);
 
     return NextResponse.json({
       message: 'Transcription updated successfully',
-      transcription: { ...result[0], editedByUsername: editedByUsername },
+      transcription,
     });
   } catch (error) {
     console.error(error);

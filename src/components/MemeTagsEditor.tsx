@@ -108,7 +108,13 @@ export default function MemeTagsEditor({
       <div className={styles['tags-list']}>
         {tagsData?.tags && tagsData.tags.length > 0 ? (
           tagsData.tags.map((tag) => (
-            <TagChip key={tag.id} tag={tag} onVote={handleVote} disableVote={tag.own === true} />
+            <TagChip
+              key={tag.id}
+              tag={tag}
+              onVote={handleVote}
+              // No voting on your own tags, and none while logged out.
+              disableVote={tag.own || !userId}
+            />
           ))
         ) : (
           <i>No tags.</i>
@@ -133,7 +139,7 @@ export default function MemeTagsEditor({
         </button>
       </div>
       )}
-      
+
     </div>
   );
 }

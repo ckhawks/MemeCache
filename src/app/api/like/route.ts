@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/db/db';
+import { setLike } from '@/db/queries/likes';
+import { getMeme } from '@/db/queries/memes';
 import { getUserFromAccessToken } from '@/auth/lib';
 
 // change this to be a server action
@@ -29,40 +30,17 @@ export async function POST(request: Request) {
       );
     }
 
-    if (likeStatus === 'true') {
-      const existingLike = await db(
-        `SELECT id FROM "Like" WHERE "memeId" = $1 AND "userId" = $2`,
-        [memeId, user.id]
-      );
-
-      if (existingLike.length > 0) {
-        return NextResponse.json(
-          { error: 'User has already liked this meme' },
-          { status: 400 }
-        );
-      }
-
-      await db(`INSERT INTO "Like" ("memeId", "userId") VALUES ($1, $2)`, [
-        memeId,
-        user.id,
-      ]);
-    } else {
-      await db(`DELETE FROM "Like" WHERE "memeId" = $1 AND "userId" = $2`, [
-        memeId,
-        user.id,
-      ]);
+    const meme = await getMeme(memeId.toString());
+    if (!meme) {
+      return NextResponse.json({ error: 'Meme not found' }, { status: 404 });
     }
 
-    // get up to date number of likes to share with frontend
-    const likeCountResult = await db(
-      `SELECT COUNT(id) as "likeCount" FROM "Like" WHERE "memeId" = $1`,
-      [memeId]
-    );
+    const newLikeCount = await setLike(meme.id, user.id, likeStatus === 'true');
 
     return NextResponse.json(
       {
         message: 'Like changed to ' + likeStatus + ' successfully',
-        newLikeCount: likeCountResult[0].likeCount,
+        newLikeCount,
       },
       { status: 200 }
     );

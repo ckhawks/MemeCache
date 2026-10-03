@@ -66,6 +66,7 @@ notes on what each is for. Production values only exist on the Dallas box.
 | `npm run start` | Serve a production build |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | `tsc --noEmit` |
+| `npm test` | Vitest against a fresh `memecache_test` database (needs `npm run dev:up`) |
 | `npm run db:migrate` | Apply pending migrations |
 | `npm run db:migrate:status` | List applied and pending migrations |
 | `npm run db:migrate:dry` | Print the SQL that would run, change nothing |
@@ -79,7 +80,9 @@ notes on what each is for. Production values only exist on the Dallas box.
 src/app/          routes; api/ holds the route handlers
 src/auth/         lib.ts is server-only helpers, actions.ts is the three form actions
 src/components/   shared UI
-src/db/db.ts      the entire data layer, a single query helper
+src/db/queries/   every SQL query, as typed functions; nothing else touches the database
+src/db/db.ts      the connection pool and the query helper the queries use
+tests/            Vitest tests for the queries, against a local test database
 src/util/s3/      object storage
 db/               schema, migrations, backups, and notes on all three
 ```

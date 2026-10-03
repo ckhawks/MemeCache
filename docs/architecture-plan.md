@@ -38,45 +38,56 @@ it, and the sample has to be pulled again.
 193 memes and 15 users. The data will never be smaller than it is now, so this is the
 cheapest it will ever be to fix the shape.
 
-- [ ] **One naming convention.** Unquoted snake_case everywhere: `meme`, `meme_id`,
+- [x] **One naming convention.** Unquoted snake_case everywhere: `meme`, `meme_id`,
       `created_at`. Postgres folds unquoted identifiers to lowercase, so snake_case is
       the convention that never needs quoting. Today there are three (see `db/README.md`
       problem 3).
-- [ ] **Cascades.** `MemeTranscription.meme_id` has no `ON DELETE CASCADE`, so deleting a
+- [x] **Cascades.** `MemeTranscription.meme_id` has no `ON DELETE CASCADE`, so deleting a
       transcribed meme fails. Audit every FK onto `Meme` and `User` and decide cascade or
       restrict on purpose.
-- [ ] **Unique `like(meme_id, user_id)`.** The like toggle relies on check-then-insert.
-- [ ] **`tag.created_by`** gets filled in by the insert, or the column goes.
-- [ ] **Caches: drop them.** `Cache` is one-per-user and `MemeCache` is one-per-meme, so the
+- [x] **Unique `like(meme_id, user_id)`.** The like toggle relies on check-then-insert.
+- [x] **`tag.created_by`** gets filled in by the insert, or the column goes.
+- [x] **Caches: drop them.** `Cache` is one-per-user and `MemeCache` is one-per-meme, so the
       feature has no real behavior. Remove both tables, the cache dropdown on upload, the
       accordion on profiles and the dead `+ Cache` button. Collections can come back later
       as a real many-to-many feature if they are wanted.
-- [ ] **Drop `RefreshToken`.** Tokens are issued but nothing redeems them since Phase 5.
+- [x] **Drop `RefreshToken`.** Tokens are issued but nothing redeems them since Phase 5.
       Stop issuing them in the same change.
-- [ ] **Soft delete or not.** Phase 7 (DMCA) wants takedowns to hold content rather than
+- [x] **Soft delete or not.** Phase 7 (DMCA) wants takedowns to hold content rather than
       purge it, so: use `deleted_at` on `meme`, filter it in the data layer, and drop the
       unused `deleted_at` on `like` and `user`.
-- [ ] Leave `User.id` on uuid v1. Rewriting every FK to change it is not worth it. New
+- [x] Leave `User.id` on uuid v1. Rewriting every FK to change it is not worth it. New
       tables use v4.
 
 Renaming touches every query, which is why this ships together with step 3.
+
+Done 2026-10-03 as `db/migrations/002_snake_case_cascades_drop_caches.sql`. The tables
+are `app_user`, `meme`, `meme_like`, `tag`, `meme_tag`, `meme_tag_vote` and
+`meme_transcription` (`user` and `like` are reserved words). Beyond the list above: all
+timestamps are now `timestamptz`, `meme_tag` has one row per (meme, tag) with votes
+cascading from it, and deleting a meme is a soft delete that also stops its file being
+served.
 
 ## 3. Data layer
 
 SQL currently lives in page files and route handlers, results are `any`, and the count
 bugs in `known-bugs.md` come from the same join being copy-pasted and edited.
 
-- [ ] `src/db/queries/` with one module per area: `memes.ts`, `tags.ts`, `users.ts`,
+- [x] `src/db/queries/` with one module per area: `memes.ts`, `tags.ts`, `users.ts`,
       `likes.ts`, `transcriptions.ts`. Plain functions returning typed rows.
-- [ ] Pages, server actions and route handlers call those functions and contain no SQL.
-- [ ] Feed and detail counts computed with subqueries or `LATERAL`, never by joining
+- [x] Pages, server actions and route handlers call those functions and contain no SQL.
+- [x] Feed and detail counts computed with subqueries or `LATERAL`, never by joining
       `like` and `meme_tag_vote` in the same `FROM`. Fixes the fan-out bugs once.
-- [ ] Counts converted to `number` in this layer. The int8-as-string behavior noted in
+- [x] Counts converted to `number` in this layer. The int8-as-string behavior noted in
       `src/db/db.ts` stops leaking into components.
-- [ ] Pagination built into the feed queries from the start (keyset on `created_at, id`),
+- [x] Pagination built into the feed queries from the start (keyset on `created_at, id`),
       newest first in SQL instead of reversed on the client.
-- [ ] Stay on raw SQL. If schema-derived types become worth it later, Kysely with
+- [x] Stay on raw SQL. If schema-derived types become worth it later, Kysely with
       `kysely-codegen` is the light option. No Prisma or Drizzle.
+
+Done 2026-10-03. Feeds show 60 memes with an "Older memes" link; infinite scroll is
+still TODO.md Phase 8. Vitest tests for the query functions run against a separate
+`memecache_test` database in the compose Postgres (`npm test`), which starts step 7.
 
 ## 4. One mutation pattern
 

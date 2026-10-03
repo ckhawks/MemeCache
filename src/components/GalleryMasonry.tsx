@@ -7,27 +7,22 @@ import {
   getRelativeTimeString,
   getServerSideRelativeTime,
 } from '@/util/datetimeFormat';
-import { Download, Folder } from 'react-feather';
-import { useEffect, useMemo, useState } from 'react';
+import { Download } from 'react-feather';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import LikeButton from './LikeButton';
 import MemeMediaRenderer from './MemeMediaRenderer';
 import DeleteMemeButton from './DeleteMemeButton';
-import { redirect } from 'next/navigation';
-import { TagChip } from './TagChip';
+import type { MemeCard } from '@/db/queries/memes';
 
-export function GalleryMasonry(props: { memes: any[]; currentUserId: string }) {
+// Memes arrive newest first from the query.
+export function GalleryMasonry(props: { memes: MemeCard[]; currentUserId: string }) {
   const [, forceUpdate] = useState({});
 
   useEffect(() => {
     const timer = setInterval(() => forceUpdate({}), 60000); // Update every minute
     return () => clearInterval(timer);
   }, []);
-
-  const reversedMemes = useMemo(
-    () => [...props.memes].reverse(),
-    [props.memes]
-  );
 
   return (
     <>
@@ -42,7 +37,7 @@ export function GalleryMasonry(props: { memes: any[]; currentUserId: string }) {
           className="my-masonry-grid"
           columnClassName="my-masonry-grid_column"
         >
-          {reversedMemes.map((meme) => {
+          {props.memes.map((meme) => {
             return (
               <div
                 onClick={() => {
@@ -54,7 +49,6 @@ export function GalleryMasonry(props: { memes: any[]; currentUserId: string }) {
                 <MemeMediaRenderer meme={meme} />
                 <div className={styles['meme-body']}>
                   <div className={styles['meme-body-title']}>
-                    <Folder size={14} /> <span>{meme.cacheName}</span>{' '}
                     <div
                       style={{
                         display: 'flex',
@@ -63,7 +57,7 @@ export function GalleryMasonry(props: { memes: any[]; currentUserId: string }) {
                         marginLeft: 'auto',
                       }}
                     >
-                      {props.currentUserId === meme.userId && (
+                      {props.currentUserId === meme.uploaderId && (
                         <DeleteMemeButton memeId={meme.id} />
                       )}
                       <a

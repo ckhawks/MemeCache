@@ -3,7 +3,7 @@ import { PutObjectCommand, PutObjectCommandInput } from '@aws-sdk/client-s3';
 import getS3Client from '@/util/s3/GetS3Client';
 
 import crypto from 'crypto';
-import { db } from '@/db/db';
+import { createMeme } from '@/db/queries/memes';
 import { getUserFromAccessToken } from '@/auth/lib';
 import { DeleteS3ObjectByKey } from '@/util/s3/DeleteS3ObjectByKey';
 import { maxBytesForType, supportedTypes } from '@/constants/mimeTypes';
@@ -22,17 +22,9 @@ export async function POST(request: Request) {
 
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const cacheId = formData.get('cacheId');
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
-    }
-
-    if (!cacheId) {
-      return NextResponse.json(
-        { error: 'No cacheId provided' },
-        { status: 400 }
-      );
     }
 
     if (!supportedTypes.includes(file.type)) {
@@ -54,20 +46,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // The cache has to exist and belong to the uploader, otherwise anyone could drop
-    // memes into someone else's cache.
-    const ownedCaches = await db(
-      `SELECT id FROM "Cache" WHERE id = $1 AND "ownerUserId" = $2`,
-      [cacheId, user.id]
-    );
-
-    if (ownedCaches.length !== 1) {
-      return NextResponse.json(
-        { error: 'Cache not found, or you do not own it' },
-        { status: 403 }
-      );
-    }
-
     let uuid = crypto.randomUUID();
 
     const uploadParams = {
@@ -81,15 +59,12 @@ export async function POST(request: Request) {
     await s3Client.send(command);
 
     try {
-      await db(
-        `INSERT INTO "Meme" (id, "createdAt", "uploaderUserId", "s3Key", "contentType") VALUES ($1, $2, $3, $4, $5)`,
-        [uuid, new Date().toISOString(), user.id, uuid, file.type]
-      );
-
-      await db(
-        `INSERT INTO "MemeCache" ("memeId", "cacheId") VALUES ($1, $2)`,
-        [uuid, cacheId]
-      );
+      await createMeme({
+        id: uuid,
+        uploaderId: user.id,
+        s3Key: uuid,
+        contentType: file.type,
+      });
     } catch (dbError) {
       // The object is already in the bucket at this point. Without this the bucket
       // accumulates files no row will ever reference or clean up.

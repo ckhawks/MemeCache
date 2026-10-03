@@ -7,6 +7,8 @@
 //   node scripts/migrate.mjs           apply pending migrations
 //   node scripts/migrate.mjs --status  list applied and pending, change nothing
 //   node scripts/migrate.mjs --dry-run print the SQL that would run, change nothing
+//   node scripts/migrate.mjs --to 001_x.sql  apply pending migrations up to and including
+//                                            that file (the seed script uses this)
 //
 // Reads DATABASE_URL from the environment, falling back to .env. Neon's -pooler host is
 // rewritten to the direct endpoint: DDL in a transaction does not survive PgBouncer in
@@ -57,7 +59,10 @@ function migrationFiles() {
 }
 
 async function main() {
-  const mode = process.argv[2];
+  const args = process.argv.slice(2);
+  const mode = args.find((a) => a === '--status' || a === '--dry-run');
+  const toIndex = args.indexOf('--to');
+  const to = toIndex === -1 ? null : args[toIndex + 1];
   const url = directEndpoint(loadDatabaseUrl());
   const client = new pg.Client({
     connectionString: url,
@@ -79,7 +84,10 @@ async function main() {
     const { rows } = await client.query('SELECT id FROM "_migration"');
     const applied = new Set(rows.map((r) => r.id));
     const all = migrationFiles();
-    const pending = all.filter((f) => !applied.has(f));
+    if (to && !all.includes(to)) {
+      throw new Error(`--to ${to}: no such migration in db/migrations.`);
+    }
+    const pending = all.filter((f) => !applied.has(f) && (!to || f <= to));
 
     if (mode === '--status') {
       for (const f of all) {

@@ -1,8 +1,11 @@
 # Database
 
-`schema.sql` is the schema of the live database, dumped 2026-08-09. Before that date the
-schema had never existed anywhere outside the hosted Neon instance — not in this repo, not
-in any branch. Treat this file as the source of truth from here on.
+`schema.sql` is the **baseline**: the schema as dumped from Neon on 2026-08-09, before any
+migration. The current schema is that file plus `migrations/` in order, which is exactly how
+`npm run db:seed` and the tests build a database. Migration 002 replaced every table, so
+the names in `schema.sql` (`"Meme"`, `"MemeTagVote"`) no longer exist anywhere live; the
+current tables are `app_user`, `meme`, `meme_like`, `tag`, `meme_tag`, `meme_tag_vote` and
+`meme_transcription`.
 
 ## Regenerating
 
@@ -70,9 +73,12 @@ Small enough that the migration is a single dump and restore with no downtime pl
 needed. Note `pg_stat_user_tables.n_live_tup` disagrees with these — it is an autovacuum
 estimate, not a count. Use `count(*)`.
 
-## Known problems in the schema
+## Known problems in the baseline schema
 
-Recorded here rather than fixed, because changing them is migration work. See TODO.md.
+Recorded against `schema.sql` on 2026-08-09. All eight are resolved: 4 and 5 by migration
+001, the rest by migration 002 (caches and `RefreshToken` dropped, one naming convention,
+`deleted_at` used on `meme` and dropped elsewhere). Existing user ids stay uuid v1; new
+rows get v4 from `gen_random_uuid()`. Kept for the history.
 
 1. **`Cache` has `UNIQUE ("ownerUserId")` — each user can have exactly one cache.** This is
    why "create cache" was never built and why the `+ Cache` button on the profile page does

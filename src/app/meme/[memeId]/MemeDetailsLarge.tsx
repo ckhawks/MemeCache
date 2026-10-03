@@ -5,19 +5,23 @@ import MemeMediaRenderer from '@/components/MemeMediaRenderer';
 import Link from 'next/link';
 import DeleteMemeButton from '@/components/DeleteMemeButton';
 import LikeButton from '@/components/LikeButton';
-import { Download, Folder } from 'react-feather';
+import { Download } from 'react-feather';
 import {
   getRelativeTimeString,
   getServerSideRelativeTime,
 } from '@/util/datetimeFormat';
+import type { MemeCard } from '@/db/queries/memes';
+import type { UserPayload } from '@/auth/lib';
 
-export function MemeDetailsLarge(props: { meme: any; user: any }) {
+export function MemeDetailsLarge(props: {
+  meme: MemeCard;
+  user: UserPayload | undefined;
+}) {
   return (
     <div key={props.meme.id} className={`${styles['meme']} ${styles.large}`}>
       <MemeMediaRenderer meme={props.meme} large />
       <div className={styles['meme-body']}>
         <div className={styles['meme-body-title']}>
-          <Folder size={14} /> <span>{props.meme.cacheName}</span>{' '}
           <div
             style={{
               display: 'flex',
@@ -26,7 +30,7 @@ export function MemeDetailsLarge(props: { meme: any; user: any }) {
               marginLeft: 'auto',
             }}
           >
-            {props.user?.id === props.meme.userId && (
+            {props.user?.id === props.meme.uploaderId && (
               <DeleteMemeButton memeId={props.meme.id} />
             )}
             <a

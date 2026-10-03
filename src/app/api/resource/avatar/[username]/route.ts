@@ -1,4 +1,4 @@
-import { db } from '@/db/db';
+import { getProfile } from '@/db/queries/users';
 import getS3Client from '@/util/s3/GetS3Client';
 import { GetObjectCommand, GetObjectCommandInput } from '@aws-sdk/client-s3';
 import { NextResponse } from 'next/server';
@@ -13,21 +13,13 @@ export async function GET(
     return new NextResponse('Please provide a username.', { status: 404 });
   }
 
-  const users = await db(
-    `SELECT username, id, "avatarS3Key" FROM "User"
-    WHERE username = $1`,
-    [params.username]
-  );
+  const user = await getProfile(params.username);
 
-  if (users.length !== 1) {
-    // console.log('api/avatar/[username], users.length', users.length);
+  if (!user) {
     return new NextResponse('Could not find user by that username.', {
       status: 404,
     });
   }
-
-  const user = users[0];
-  // console.log('user', user);
 
   if (user.avatarS3Key === undefined || user.avatarS3Key === null) {
     // return new NextResponse('User does not have an avatar set.', {
@@ -55,7 +47,7 @@ export async function GET(
       // console.log('bucket: ', process.env.MC_AWS_S3_BUCKET);
       const getObjectCommand = new GetObjectCommand({
         Bucket: process.env.MC_AWS_S3_BUCKET,
-        Key: (user as any).avatarS3Key,
+        Key: user.avatarS3Key,
       } as GetObjectCommandInput);
 
       const data = await s3Client.send(getObjectCommand);

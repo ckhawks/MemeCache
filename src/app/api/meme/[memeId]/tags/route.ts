@@ -1,59 +1,28 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/db/db';
 import { getUserFromAccessToken } from '@/auth/lib';
+import { getMeme } from '@/db/queries/memes';
+import {
+  addTagToMeme,
+  findOrCreateTag,
+  getTagAdder,
+  listTagsForMeme,
+  tagExists,
+  voteOnTag,
+} from '@/db/queries/tags';
 
 const MAX_TAG_LENGTH = 50;
 
-// GET: Retrieve all tags with scores and metadata for a meme ordered by score DESC
+// GET: All tags on a meme with their scores, highest first. `own` and `myVote` describe
+// the logged-in user, taken from the session. This used to read a userId query parameter
+// that the client never sent, so `own` was always false.
 export async function GET(
   request: Request,
   { params }: { params: { memeId: string } }
 ) {
   try {
-    const url = new URL(request.url);
-    const currentUserId = url.searchParams.get('userId');
-    let tagsData;
-    if (currentUserId) {
-      tagsData = await db(
-        `SELECT 
-             t.id,
-             t.name,
-             COALESCE(SUM(v.vote), 0) AS score,
-             COUNT(DISTINCT mt.addedBy) AS contributors,
-             CASE 
-               WHEN EXISTS (
-                 SELECT 1 FROM "MemeTag" mt2 
-                 WHERE mt2.memeId = $1 AND mt2.tagId = t.id AND mt2.addedBy = $2
-               ) THEN true 
-               ELSE false 
-             END AS own
-           FROM "Tag" t
-           JOIN "MemeTag" mt ON mt.tagId = t.id
-           LEFT JOIN "MemeTagVote" v ON v.tagId = t.id AND v.memeId = mt.memeId
-           WHERE mt.memeId = $1
-           GROUP BY t.id
-           ORDER BY score DESC, contributors DESC`,
-        [params.memeId, currentUserId]
-      );
-    } else {
-      tagsData = await db(
-        `SELECT 
-             t.id,
-             t.name,
-             COALESCE(SUM(v.vote), 0) AS score,
-             COUNT(DISTINCT mt.addedBy) AS contributors,
-             false AS own
-           FROM "Tag" t
-           JOIN "MemeTag" mt ON mt.tagId = t.id
-           LEFT JOIN "MemeTagVote" v ON v.tagId = t.id AND v.memeId = mt.memeId
-           WHERE mt.memeId = $1
-           GROUP BY t.id
-           ORDER BY score DESC, contributors DESC`,
-        [params.memeId]
-      );
-    }
-
-    return NextResponse.json({ tags: tagsData });
+    const user = await getUserFromAccessToken();
+    const tags = await listTagsForMeme(params.memeId, user?.id);
+    return NextResponse.json({ tags });
   } catch (error) {
     console.error(error);
     return NextResponse.json(
@@ -75,6 +44,11 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const meme = await getMeme(params.memeId);
+    if (!meme) {
+      return NextResponse.json({ error: 'Meme not found' }, { status: 404 });
+    }
+
     const body = await request.json();
 
     // Check if the request is to add a vote (vote field provided)
@@ -88,27 +62,23 @@ export async function POST(
         );
       }
 
+      const adder = await getTagAdder(meme.id, tagId);
+      if (!adder) {
+        return NextResponse.json(
+          { error: 'That tag is not on this meme.' },
+          { status: 404 }
+        );
+      }
+
       // Disallow vote if the user added the tag themselves.
-      const selfTag = await db(
-        `SELECT 1 FROM "MemeTag" WHERE memeId = $1 AND tagId = $2 AND addedBy = $3`,
-        [params.memeId, tagId, user.id]
-      );
-      if (selfTag.length > 0) {
+      if (adder === user.id) {
         return NextResponse.json(
           { error: 'Cannot vote on a tag you added.' },
           { status: 400 }
         );
       }
 
-      // Insert vote into MemeTagVote table.
-      // Using ON CONFLICT to update vote if the user has already voted.
-      await db(
-        `INSERT INTO "MemeTagVote" (memeId, tagId, voterId, vote)
-           VALUES ($1, $2, $3, $4)
-           ON CONFLICT (memeId, tagId, voterId)
-           DO UPDATE SET vote = $4`,
-        [params.memeId, tagId, user.id, vote]
-      );
+      await voteOnTag(meme.id, tagId, user.id, vote);
       return NextResponse.json({ message: 'Vote recorded successfully' });
     }
     // Check if the request is to add a tag (either via tagId or tagName)
@@ -130,46 +100,14 @@ export async function POST(
             { status: 400 }
           );
         }
-        const existingTags = await db(
-          `SELECT id FROM "Tag" WHERE LOWER(name) = LOWER($1)`,
-          [tagName]
-        );
-        if (existingTags.length > 0) {
-          tagId = existingTags[0].id;
-        } else {
-          // Create the new tag and get its id
-          const createdTag = await db(
-            `INSERT INTO "Tag" (name)
-               VALUES ($1)
-               RETURNING id`,
-            [tagName]
-          );
-          tagId = createdTag[0].id;
-        }
-      } else {
+        tagId = await findOrCreateTag(tagName, user.id);
+      } else if (!(await tagExists(tagId))) {
         // tagId came straight from the client, so confirm it is a real tag rather than
         // letting an arbitrary value reach the insert.
-        const knownTag = await db(`SELECT id FROM "Tag" WHERE id = $1`, [tagId]);
-        if (knownTag.length !== 1) {
-          return NextResponse.json({ error: 'Unknown tagId' }, { status: 400 });
-        }
+        return NextResponse.json({ error: 'Unknown tagId' }, { status: 400 });
       }
 
-      // Insert into MemeTag table.
-      await db(
-        `INSERT INTO "MemeTag" (memeId, tagId, addedBy)
-           VALUES ($1, $2, $3)
-           ON CONFLICT DO NOTHING`,
-        [params.memeId, tagId, user.id]
-      );
-      // Automatically add a +1 vote when the tag is added.
-      await db(
-        `INSERT INTO "MemeTagVote" (memeId, tagId, voterId, vote)
-         VALUES ($1, $2, $3, 1)
-         ON CONFLICT (memeId, tagId, voterId)
-         DO UPDATE SET vote = 1`,
-        [params.memeId, tagId, user.id]
-      );
+      await addTagToMeme(meme.id, tagId, user.id);
       return NextResponse.json({ message: 'Tag added successfully' });
     } else {
       return NextResponse.json(

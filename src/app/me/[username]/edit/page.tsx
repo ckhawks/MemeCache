@@ -1,12 +1,11 @@
 // library/page.tsx
 
-import { db } from '@/db/db';
+import { getProfile } from '@/db/queries/users';
 import styles from '../../../main.module.scss';
 import NavigationBar from '@/components/NavigationBar';
 import { getUserFromAccessToken } from '@/auth/lib';
 
 import { Col, Row } from 'react-bootstrap';
-// import CacheAccordion from './CacheAccordion';
 import FooterBar from '@/components/FooterBar';
 import EditAvatarComponent from './EditAvatarComponent';
 import EditUsernameComponent from './EditUsernameComponent';
@@ -43,13 +42,9 @@ export default async function Profile({
     );
   }
 
-  const users = await db(
-    `SELECT u.id, u.username, u."createdAt" FROM "User" u
-    WHERE u.username = $1`,
-    [params.username]
-  );
+  const userFromDb = await getProfile(params.username);
 
-  if (users.length === 0) {
+  if (!userFromDb) {
     return (
       <>
         <NavigationBar username={(user && user.username) || ''} />
@@ -67,8 +62,6 @@ export default async function Profile({
       </>
     );
   }
-
-  const userFromDb = users[0];
 
   const isCurrentUser = user?.id === userFromDb.id;
   if (!isCurrentUser) {

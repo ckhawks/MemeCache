@@ -1,10 +1,7 @@
-import { db } from '@/db/db';
+import { listOnlineUsers } from '@/db/queries/users';
 
+// Feeds the public /api/users/online endpoint, so only ids and usernames. This used to
+// return every online user's email address to anyone who asked.
 export async function getOnlineUsers() {
-  const query = `
-    SELECT id, username, email, role FROM "User"
-    WHERE "lastActive" >= NOW() - INTERVAL '15 minutes'
-  `;
-  const users = await db(query, []);
-  return users;
+  return listOnlineUsers();
 }

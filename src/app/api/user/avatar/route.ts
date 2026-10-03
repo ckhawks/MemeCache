@@ -7,7 +7,7 @@ import {
 import getS3Client from '@/util/s3/GetS3Client';
 
 import crypto from 'crypto';
-import { db } from '@/db/db';
+import { getAvatarKey, setAvatarKey } from '@/db/queries/users';
 import { getUserFromAccessToken } from '@/auth/lib';
 import { revalidatePath } from 'next/cache';
 import { supportedImageTypes } from '@/constants/mimeTypes';
@@ -51,28 +51,13 @@ export async function POST(request: Request) {
       );
     }
 
-    let currentUserResponse = await db(
-      `
-        SELECT id, username, "avatarS3Key" from "User" 
-        WHERE id = $1 
-      `,
-      [user?.id]
-    );
-
-    if (currentUserResponse.length != 1) {
-      return NextResponse.json(
-        { error: 'Unable to locate user.' },
-        { status: 400 }
-      );
-    }
-    const currentUser = currentUserResponse[0];
-
-    // avatarS3Key is null when the user has not had an avatar before
-    if (currentUser.avatarS3Key !== '' && currentUser.avatarS3Key !== null) {
+    // Null when the user has not had an avatar before
+    const currentAvatarKey = await getAvatarKey(user.id);
+    if (currentAvatarKey) {
       // delete existing avatar from S3
       const command = new DeleteObjectCommand({
         Bucket: process.env.MC_AWS_S3_BUCKET,
-        Key: currentUser.avatarS3Key,
+        Key: currentAvatarKey,
       });
       await s3Client.send(command);
     }
@@ -90,10 +75,7 @@ export async function POST(request: Request) {
     const command = new PutObjectCommand(uploadParams);
     await s3Client.send(command);
 
-    const updateUserResponse = await db(
-      `UPDATE "User" SET "avatarS3Key" = $1 WHERE "id" = $2;`,
-      [newAvatarKey, user?.id]
-    );
+    await setAvatarKey(user.id, newAvatarKey);
 
     revalidatePath('/api/resource/avatar/' + user?.username);
     revalidatePath('/me/' + user?.username + '/edit');

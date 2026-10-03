@@ -91,6 +91,7 @@ async function local() {
 
   const manifest = {
     pulledAt: sample.pulledAt,
+    schemaVersion: sample.schemaVersion,
     tables: sample.tables,
     media,
   };
@@ -109,9 +110,10 @@ async function remote() {
 
   process.loadEnvFile('.env');
 
-  // Keep "timestamp without time zone" as the literal string. Parsing it to a Date applies
-  // the box's local zone, and writing that back as ISO would shift every timestamp.
+  // Keep timestamps as Postgres's literal text. A JS Date would drop microseconds, and for
+  // "timestamp without time zone" (before migration 002) would apply the box's zone.
   pg.types.setTypeParser(1114, (value) => value);
+  pg.types.setTypeParser(1184, (value) => value);
 
   const db = new pg.Client({ connectionString: process.env.DATABASE_URL });
   await db.connect();
@@ -143,17 +145,21 @@ async function remote() {
   }
 
   try {
+    // The seed loads the sample at this version and migrates it forward from there.
+    const {
+      rows: [{ version: schemaVersion }],
+    } = await db.query(`SELECT max(id) AS version FROM _migration`);
+
     const { rows: candidates } = await db.query(`
       SELECT m.id,
-             m."s3Key",
-             m."contentType",
-             (SELECT count(*) FROM "MemeTag" mt WHERE mt.memeid = m.id)::int AS tags,
-             EXISTS (SELECT 1 FROM "MemeTranscription" t WHERE t.meme_id = m.id) AS transcribed,
-             (SELECT count(*) FROM "Like" l
-               WHERE l."memeId" = m.id AND l."deletedAt" IS NULL)::int AS likes
-        FROM "Meme" m
-       WHERE m."deletedAt" IS NULL
-       ORDER BY transcribed DESC, tags DESC, likes DESC, m."createdAt" DESC
+             m.s3_key AS "s3Key",
+             m.content_type AS "contentType",
+             (SELECT count(*) FROM meme_tag mt WHERE mt.meme_id = m.id)::int AS tags,
+             EXISTS (SELECT 1 FROM meme_transcription t WHERE t.meme_id = m.id) AS transcribed,
+             (SELECT count(*) FROM meme_like l WHERE l.meme_id = m.id)::int AS likes
+        FROM meme m
+       WHERE m.deleted_at IS NULL
+       ORDER BY transcribed DESC, tags DESC, likes DESC, m.created_at DESC
     `);
 
     const picked = [];
@@ -210,33 +216,32 @@ async function remote() {
     const ids = picked.map((m) => m.id);
     const query = async (sql, params = []) => (await db.query(sql, params)).rows;
 
+    // In foreign-key order: the seed loads them in this order.
     const tables = {
-      // No email, no passwordHash.
-      User: await query(`
-        SELECT id, username, "createdAt", "deletedAt", role, "lastActive", "avatarS3Key"
-          FROM "User"
+      // No email, no password_hash.
+      app_user: await query(`
+        SELECT id, username, role, avatar_s3_key, created_at, last_active
+          FROM app_user
       `),
-      Cache: await query(`SELECT * FROM "Cache"`),
-      Meme: await query(`SELECT * FROM "Meme" WHERE id = ANY($1)`, [ids]),
-      MemeCache: await query(`SELECT * FROM "MemeCache" WHERE "memeId" = ANY($1)`, [ids]),
-      Tag: await query(
-        `SELECT * FROM "Tag"
-          WHERE id IN (SELECT tagid FROM "MemeTag" WHERE memeid = ANY($1))`,
+      meme: await query(`SELECT * FROM meme WHERE id = ANY($1)`, [ids]),
+      tag: await query(
+        `SELECT * FROM tag
+          WHERE id IN (SELECT tag_id FROM meme_tag WHERE meme_id = ANY($1))`,
         [ids]
       ),
-      MemeTag: await query(`SELECT * FROM "MemeTag" WHERE memeid = ANY($1)`, [ids]),
-      MemeTagVote: await query(`SELECT * FROM "MemeTagVote" WHERE memeid = ANY($1)`, [ids]),
-      MemeTranscription: await query(
-        `SELECT * FROM "MemeTranscription" WHERE meme_id = ANY($1) ORDER BY id`,
+      meme_tag: await query(`SELECT * FROM meme_tag WHERE meme_id = ANY($1)`, [ids]),
+      meme_tag_vote: await query(`SELECT * FROM meme_tag_vote WHERE meme_id = ANY($1)`, [ids]),
+      meme_transcription: await query(
+        `SELECT * FROM meme_transcription WHERE meme_id = ANY($1) ORDER BY id`,
         [ids]
       ),
-      Like: await query(`SELECT * FROM "Like" WHERE "memeId" = ANY($1) ORDER BY id`, [ids]),
+      meme_like: await query(`SELECT * FROM meme_like WHERE meme_id = ANY($1)`, [ids]),
     };
 
     const mediaKeys = [
       ...picked.map((m) => ({ key: m.s3Key, contentType: m.contentType })),
-      ...tables.User.filter((u) => u.avatarS3Key).map((u) => ({
-        key: u.avatarS3Key,
+      ...tables.app_user.filter((u) => u.avatar_s3_key).map((u) => ({
+        key: u.avatar_s3_key,
         contentType: null,
       })),
       { key: DEFAULT_AVATAR_KEY, contentType: null },
@@ -261,6 +266,7 @@ async function remote() {
     process.stdout.write(
       JSON.stringify({
         pulledAt: new Date().toISOString(),
+        schemaVersion,
         tables,
         media,
       })

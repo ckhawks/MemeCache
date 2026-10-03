@@ -2,13 +2,11 @@ import { Pool } from 'pg';
 
 // The whole data layer. Every query in the app goes through db().
 //
-// Was @neondatabase/serverless, whose neon() HTTP driver only talks to Neon. This uses the
-// standard wire protocol, so it works against Neon today and against self-hosted Postgres
-// after the move, with no further code change.
+// Pages and routes do not call this directly. They call the typed functions in
+// src/db/queries/, which are the only place SQL lives.
 //
-// int8 (COUNT, SUM) is left as a string rather than parsed to a number. That is what both
-// node-postgres and the Neon driver do by default, and changing it here would silently
-// alter every likeCount and tag score in the app. See the note in db/MIGRATION.md.
+// int8 (COUNT, SUM) comes back from node-postgres as a string. The queries cast counts to
+// int (`count(*)::int`) so they arrive as numbers.
 
 declare global {
   // eslint-disable-next-line no-var
@@ -51,8 +49,10 @@ pool.on('error', (err) => {
   console.error('Unexpected error on idle database client:', err);
 });
 
-export async function db(query: string, params: any[] = []) {
+export async function db<T = Record<string, unknown>>(
+  query: string,
+  params: unknown[] = []
+): Promise<T[]> {
   const result = await pool.query(query, params);
-  // Callers expect the row array directly, as the Neon driver returned.
-  return result.rows;
+  return result.rows as T[];
 }

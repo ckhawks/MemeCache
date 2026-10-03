@@ -4,20 +4,14 @@ import {
   supportedImageTypes,
   supportedVideoTypes,
 } from '@/constants/mimeTypes';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Button, Col, Form, Row } from 'react-bootstrap';
 import imageCompression from 'browser-image-compression';
 
-export default function UploadComponent(props: {
-  caches: {
-    id: string;
-    name: string;
-  }[];
-}) {
+export default function UploadComponent() {
   const [file, setFile] = useState<File | null>(null);
   const [contentType, setContentType] = useState<string>('');
   const [submitEnabled, setSubmitEnabled] = useState(false);
-  const [cacheId, setCacheId] = useState<string>('');
   const [message, setMessage] = useState('');
   const [preview, setPreview] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
@@ -54,10 +48,6 @@ export default function UploadComponent(props: {
       );
       console.log();
     }
-  };
-
-  const handleCacheChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setCacheId(event.target.value);
   };
 
   const handleUpload = async () => {
@@ -117,7 +107,6 @@ export default function UploadComponent(props: {
     const formData = new FormData();
     // No userId here on purpose -- the server takes the uploader from the session.
     formData.append('file', fileToUpload);
-    formData.append('cacheId', cacheId);
 
     try {
       const response = await fetch('/api/upload', {
@@ -145,12 +134,6 @@ export default function UploadComponent(props: {
     }
   };
 
-  useEffect(() => {
-    setCacheId(props.caches[0].id);
-  }, [props.caches]);
-
-  console.log('cacheId', cacheId);
-
   return (
     <div>
       <Form>
@@ -171,21 +154,6 @@ export default function UploadComponent(props: {
             name="userId"
             value={props.userId}
           ></input> */}
-          <Col>
-            <Form.Select
-              aria-label="Cache"
-              name="cache"
-              id="cache"
-              onChange={handleCacheChange}
-            >
-              {props.caches &&
-                props.caches.map((cache) => (
-                  <option value={cache?.id} key={cache?.id}>
-                    {cache?.name}
-                  </option>
-                ))}
-            </Form.Select>
-          </Col>
           <Col>
             <Button onClick={handleUpload} disabled={!submitEnabled}>
               Upload

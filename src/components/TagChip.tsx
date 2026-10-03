@@ -34,17 +34,26 @@ export function TagChip({ tag, onVote, disableVote }: TagChipProps) {
       <span>
         {tag.name} {tag.score}
       </span>
-      {disableVote && (
+      {!disableVote && (
         <div className={styles['tag-actions']}>
           <ArrowUp
             size={12}
             className={styles['tag-action-icon']}
-            onClick={(e) => { e.stopPropagation(); onVote(tag.id, 1) }}
+            onClick={(e) => {
+              // The chip is a link to the tag page. Without preventDefault a vote also navigates.
+              e.preventDefault();
+              e.stopPropagation();
+              onVote(tag.id, 1);
+            }}
           />
           <ArrowDown
             size={12}
             className={styles['tag-action-icon']}
-            onClick={(e) => { e.stopPropagation(); onVote(tag.id, -1) }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onVote(tag.id, -1);
+            }}
           />
         </div>
       )}
