@@ -10,6 +10,9 @@ import Link from 'next/link';
 import styles from '../main.module.scss';
 import imageCompression from 'browser-image-compression';
 import { api } from '@/util/api';
+import { cropFile } from '@/util/cropImage';
+import type { Box } from '@/util/imageEdges';
+import CropEditor from './CropEditor';
 
 export default function UploadComponent() {
   const [file, setFile] = useState<File | null>(null);
@@ -19,6 +22,8 @@ export default function UploadComponent() {
   const [uploadedId, setUploadedId] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
+  // The crop chosen in the preview, as fractions of the image. Null means the whole image.
+  const [crop, setCrop] = useState<Box | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const selectFile = (file: File) => {
@@ -39,6 +44,7 @@ export default function UploadComponent() {
     reader.readAsDataURL(file);
 
     setFile(file);
+    setCrop(null);
     setSubmitEnabled([...supportedImageTypes, ...supportedVideoTypes].includes(file.type));
   };
 
@@ -93,13 +99,16 @@ export default function UploadComponent() {
             return;
           }
         } else {
+          if (crop) {
+            fileToUpload = await cropFile(file, crop);
+          }
           const options = {
             maxWidthOrHeight: 1920,
             useWebWorker: true,
             initialQuality: 1, // maintain original quality
           };
           console.log('Uncompressed file size: ', fileToUpload.size);
-          fileToUpload = await imageCompression(file, options);
+          fileToUpload = await imageCompression(fileToUpload, options);
           console.log('Compressed file size: ', fileToUpload.size);
           if (fileToUpload.size > 4 * 1024 * 1024) {
             // Check if compressed file exceeds 4MB
@@ -135,6 +144,7 @@ export default function UploadComponent() {
       setSubmitEnabled(false);
       setPreview(null);
       setMediaType(null);
+      setCrop(null);
       if (inputRef.current) {
         inputRef.current.value = '';
       }
@@ -173,13 +183,18 @@ export default function UploadComponent() {
           </p>
         )}
       </div>
-      {preview && mediaType === 'image' && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={preview}
-          alt="Preview of the selected file"
-          style={{ maxWidth: '100%', height: 'auto' }}
-        />
+      {preview && mediaType === 'image' && file?.type !== 'image/gif' && (
+        // key: a new file starts with a fresh crop box and a fresh edge analysis.
+        <CropEditor key={preview} src={preview} onChange={setCrop} />
+      )}
+      {preview && file?.type === 'image/gif' && (
+        <>
+          <p style={{ color: 'var(--sub-text-color)', fontSize: '14px', margin: '12px 0 8px' }}>
+            GIFs upload as they are. Cropping would keep only the first frame.
+          </p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={preview} alt="Preview of the selected file" style={{ maxWidth: '100%' }} />
+        </>
       )}
       {preview && mediaType === 'video' && (
         <video src={preview} controls style={{ maxWidth: '100%' }} />
