@@ -4,7 +4,7 @@ import {
   supportedImageTypes,
   supportedVideoTypes,
 } from '@/constants/mimeTypes';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button, Col, Form, Row } from 'react-bootstrap';
 import imageCompression from 'browser-image-compression';
 import { api } from '@/util/api';
@@ -18,38 +18,54 @@ export default function UploadComponent() {
   const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const selectFile = (file: File) => {
+    if (file.type.startsWith('image/')) {
+      setMediaType('image');
+    } else if (file.type.startsWith('video/')) {
+      setMediaType('video');
+    } else {
+      setMediaType(null);
+      setPreview(null);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    setFile(file);
+    setContentType(file.type);
+    setSubmitEnabled([...supportedImageTypes, ...supportedVideoTypes].includes(file.type));
+  };
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files && event.target.files[0];
     if (file) {
-      // Determine media type based on file type
-      if (file.type.startsWith('image/')) {
-        setMediaType('image');
-      } else if (file.type.startsWith('video/')) {
-        setMediaType('video');
-      } else {
-        setMediaType(null);
-        setPreview(null);
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-
-    if (event.target.files && event.target.files[0]) {
-      setFile(event.target.files[0]);
-      setContentType(event.target.files[0].type);
-      setSubmitEnabled(
-        [...supportedImageTypes, ...supportedVideoTypes].indexOf(
-          event.target.files[0].type
-        ) > -1
-      );
-      console.log();
+      selectFile(file);
     }
   };
+
+  // Shared from another app on Android: public/sw.js parked the file in Cache Storage and
+  // sent us here with ?shared=1. Take it out once and preselect it.
+  useEffect(() => {
+    if (!new URLSearchParams(window.location.search).has('shared') || !('caches' in window)) {
+      return;
+    }
+    (async () => {
+      const cache = await caches.open('share-target');
+      const response = await cache.match('/shared-file');
+      if (!response) {
+        return;
+      }
+      await cache.delete('/shared-file');
+      const blob = await response.blob();
+      const name = decodeURIComponent(response.headers.get('X-File-Name') ?? 'shared');
+      selectFile(new File([blob], name, { type: blob.type }));
+      setMessage('Shared file ready. Check the preview, then upload.');
+    })().catch((error) => console.error('Could not read the shared file:', error));
+  }, []);
 
   const handleUpload = async () => {
     if (!file) {

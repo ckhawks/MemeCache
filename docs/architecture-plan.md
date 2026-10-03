@@ -147,6 +147,7 @@ stubs on the profile edit page were removed rather than wired up.
       App Router apps whether or not they defined server actions. Avoiding actions in step 4
       shrinks surprise surface but is not a defense; keeping React and Next patched is.
       Next 14.2 on React 18 was outside the affected range.
+- [ ] UI pass: `docs/ui-and-pwa.md` phase B rides along with this step.
 - [ ] Drop Bootstrap (TODO.md Phase 6) in the same pass. Usage is shallow: `Button`,
       `Form`, `Row`/`Col`, `Image`, one `Modal`.
 - [ ] `<Link>` for gallery cards instead of `window.location.href`, responsive masonry

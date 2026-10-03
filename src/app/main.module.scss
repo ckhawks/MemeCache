@@ -18,6 +18,10 @@
 .content {
   min-width: 100%;
   padding: 0 4rem;
+
+  @media (max-width: 700px) {
+    padding: 0 1rem;
+  }
 }
 
 .center {
@@ -199,6 +203,11 @@
   font-size: 14px;
   max-width: calc((1200px - 20px * 2) / 3);
   height: fit-content;
+
+  // One column on phones: the card takes the full width.
+  @media (max-width: 600px) {
+    max-width: 100%;
+  }
   min-height: fit-content;
   margin-bottom: 20px;
 

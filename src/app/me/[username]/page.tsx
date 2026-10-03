@@ -98,12 +98,22 @@ export default async function Profile({
                 />
                 <h1>{userFromDb?.username}</h1>
                 {isCurrentUser && (
-                  <Link
-                    href={'/me/' + user?.username + '/edit'}
-                    className={`${styles['button']} ${styles['button-secondary']}`}
-                  >
-                    Edit profile
-                  </Link>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <Link
+                      href={'/me/' + user?.username + '/edit'}
+                      className={`${styles['button']} ${styles['button-secondary']}`}
+                    >
+                      Edit profile
+                    </Link>
+                    {/* Phones have no logout in the top bar, so it lives here too. */}
+                    <Link
+                      prefetch={false}
+                      href={'/api/logout'}
+                      className={`${styles['button']} ${styles['button-secondary']}`}
+                    >
+                      Log out
+                    </Link>
+                  </div>
                 )}
               </div>
 

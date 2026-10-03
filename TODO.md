@@ -318,6 +318,8 @@ The only exit path today is the download button.
 
 - [ ] Copy-link and copy-image buttons on the meme card and detail page
       (`navigator.clipboard.write()` with a blob for the image case).
+- [ ] **Mobile and PWA: planned in `docs/ui-and-pwa.md`**, which replaces the two items
+      below.
 - [ ] **Mobile.** `GalleryMasonry.tsx:47` hardcodes `breakpointCols={3}` with the
       responsive config commented out directly below it. A shared link currently opens to
       a three-column masonry on a 390px screen.

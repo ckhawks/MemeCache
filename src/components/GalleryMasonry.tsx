@@ -13,6 +13,7 @@ import Link from 'next/link';
 import LikeButton from './LikeButton';
 import MemeMediaRenderer from './MemeMediaRenderer';
 import DeleteMemeButton from './DeleteMemeButton';
+import SendMemeButton from './SendMemeButton';
 import type { MemeCard } from '@/db/queries/memes';
 
 // Memes arrive newest first from the query.
@@ -33,12 +34,12 @@ export function GalleryMasonry(props: {
     <>
       <div className={styles.gallery}>
         <Masonry
-          breakpointCols={3}
-          // breakpointCols={{
-          //   default: 3,
-          //   1280: 2,
-          //   850: 1,
-          // }}
+          // Keys are max widths in px, matching the card max-width rule in main.module.scss.
+          breakpointCols={{
+            default: 3,
+            1000: 2,
+            600: 1,
+          }}
           className="my-masonry-grid"
           columnClassName="my-masonry-grid_column"
         >
@@ -77,6 +78,7 @@ export function GalleryMasonry(props: {
                       >
                         <Download size={14} />
                       </a>
+                      <SendMemeButton memeId={meme.id} contentType={meme.contentType} />
                       <LikeButton
                         memeId={meme.id}
                         userId={props.currentUserId}

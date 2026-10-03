@@ -5,6 +5,7 @@ import MemeMediaRenderer from '@/components/MemeMediaRenderer';
 import Link from 'next/link';
 import DeleteMemeButton from '@/components/DeleteMemeButton';
 import LikeButton from '@/components/LikeButton';
+import SendMemeButton from '@/components/SendMemeButton';
 import { Download } from 'react-feather';
 import {
   getRelativeTimeString,
@@ -44,6 +45,7 @@ export function MemeDetailsLarge(props: {
             >
               <Download size={14} />
             </a>
+            <SendMemeButton memeId={props.meme.id} contentType={props.meme.contentType} />
             <LikeButton
               memeId={props.meme.id}
               userId={props.user?.id || ''}

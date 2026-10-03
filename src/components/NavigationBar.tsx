@@ -4,115 +4,126 @@ import Link from 'next/link';
 import styles from '../app/main.module.scss';
 import navStyles from './NavigationBar.module.scss';
 import { usePathname } from 'next/navigation';
-import { LogOut, User } from 'react-feather';
-import { Image } from 'react-bootstrap';
+import { Compass, Grid, LogOut, PlusSquare, User } from 'react-feather';
+
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ReactNode;
+  // Only shown when logged in.
+  private?: boolean;
+}
 
 export default function NavigationBar(props: { username: string }) {
   const pathname = usePathname();
-  // return <p>Current pathname: {pathname}</p>;
-  // console.log(pathname);
+  const profileHref = '/me/' + props.username;
+
+  const items: NavItem[] = [
+    {
+      href: '/explore',
+      label: 'Explore',
+      icon: <Compass size={20} />,
+    },
+    {
+      href: '/library',
+      label: 'Library',
+      icon: <Grid size={20} />,
+      private: true,
+    },
+    {
+      href: '/upload',
+      label: 'Upload',
+      icon: <PlusSquare size={20} />,
+      private: true,
+    },
+    {
+      href: profileHref,
+      label: 'Profile',
+      icon: <User size={20} />,
+      private: true,
+    },
+  ];
+  const visible = items.filter((item) => !item.private || props.username);
 
   return (
-    <div className={navStyles['wrapper']}>
-      <div className={navStyles['navbar']}>
-        <div className={navStyles['navbar-left']}>
-          <Link href={'/'} className={navStyles['logo']}>
-            <h5>MemeCache</h5>
-          </Link>
-        </div>
-
-        <div className={navStyles['navbar-links']}>
-          <Link
-            href={'/'}
-            className={`
-              ${navStyles['navbar-link']}
-              ${pathname === '/' ? navStyles['active'] : ''}
-            `}
-          >
-            Home
-          </Link>
-          <Link
-            href={'/explore'}
-            className={`
-              ${navStyles['navbar-link']}
-              ${pathname === '/explore' ? navStyles['active'] : ''}
-            `}
-          >
-            Explore
-          </Link>
-          {props.username && (
-            <Link
-              href={'/library'}
-              className={`
-              ${navStyles['navbar-link']}
-              ${pathname === '/library' ? navStyles['active'] : ''}
-            `}
-            >
-              Library
+    <>
+      <div className={navStyles['wrapper']}>
+        <div className={navStyles['navbar']}>
+          <div className={navStyles['navbar-left']}>
+            <Link href={'/'} className={navStyles['logo']}>
+              <h5>MemeCache</h5>
             </Link>
-          )}
+          </div>
 
-          {props.username && (
+          {/* Desktop: inline links. Hidden on phones, where the tab bar below takes over. */}
+          <div className={navStyles['navbar-links']}>
             <Link
-              href={'/upload'}
-              className={`
-              ${navStyles['navbar-link']}
-              ${pathname === '/upload' ? navStyles['active'] : ''}
-            `}
+              href={'/'}
+              className={`${navStyles['navbar-link']} ${pathname === '/' ? navStyles['active'] : ''}`}
             >
-              Upload
+              Home
             </Link>
-          )}
-
-          {props.username && (
-            <Link
-              href={'/me/' + props.username}
-              className={`
-              ${navStyles['navbar-link']}
-              ${pathname === '/me/' + props.username ? navStyles['active'] : ''}
-            `}
-            >
-              Profile
-            </Link>
-          )}
-        </div>
-        <div className={navStyles['navbar-right']}>
-          {props.username && (
-            <>
+            {visible.map((item) => (
               <Link
-                prefetch={false}
-                href={'/api/logout'}
-                // className={`${styles['button']} ${styles['button-small']} ${styles['button-secondary']}`}
-                className={`${navStyles['navbar-link']}`}
+                key={item.href}
+                href={item.href}
+                className={`${navStyles['navbar-link']} ${
+                  pathname === item.href ? navStyles['active'] : ''
+                }`}
               >
-                Log out <LogOut size={14} />
+                {item.label}
               </Link>
-              <Link
-                href={'/me/' + props.username}
-                style={{ textDecoration: 'none', color: 'unset' }}
-                className={navStyles['navbar-right-user']}
-              >
-                <img
-                  src={'/api/resource/avatar/' + props.username}
-                  width={21}
-                  height={21}
-                  className={navStyles['profile-picture']}
-                />
-                {/* <User size={14} /> */}
-                {props.username}
+            ))}
+          </div>
+
+          <div className={navStyles['navbar-right']}>
+            {props.username && (
+              <>
+                <Link
+                  prefetch={false}
+                  href={'/api/logout'}
+                  className={`${navStyles['navbar-link']} ${navStyles['desktop-only']}`}
+                >
+                  Log out <LogOut size={14} />
+                </Link>
+                <Link
+                  href={profileHref}
+                  style={{ textDecoration: 'none', color: 'unset' }}
+                  className={navStyles['navbar-right-user']}
+                >
+                  <img
+                    src={'/api/resource/avatar/' + props.username}
+                    width={21}
+                    height={21}
+                    alt=""
+                    className={navStyles['profile-picture']}
+                  />
+                  {props.username}
+                </Link>
+              </>
+            )}
+            {!props.username && (
+              <Link href={'/login'} className={`${styles['button']} ${styles['button-small']}`}>
+                Login
               </Link>
-            </>
-          )}
-          {!props.username && (
-            <Link
-              href={'/login'}
-              className={`${styles['button']} ${styles['button-small']}`}
-            >
-              Login
-            </Link>
-          )}
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Phones: a fixed bottom tab bar, where thumbs reach. */}
+      <nav className={navStyles['tabbar']} aria-label="Main">
+        {visible.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`${navStyles['tab']} ${pathname === item.href ? navStyles['active'] : ''}`}
+          >
+            {item.icon}
+            <span>{item.label}</span>
+          </Link>
+        ))}
+      </nav>
+    </>
   );
 }

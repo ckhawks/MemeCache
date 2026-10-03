@@ -23,7 +23,7 @@ function createPool(): Pool {
   // Postgres over localhost does not want TLS at all.
   const wantsSsl = !/sslmode=disable/.test(connectionString);
 
-  return new Pool({
+  const pool = new Pool({
     connectionString,
     ssl: wantsSsl ? { rejectUnauthorized: false } : false,
     // Deliberately small. On a long-running server this is plenty for the traffic this
@@ -32,6 +32,16 @@ function createPool(): Pool {
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 10_000,
   });
+
+  // An idle client erroring (server restart, network blip) emits on the pool. Without a
+  // listener that is an unhandled 'error' event, which takes the whole process down.
+  // Attached here, once per pool: the module body re-runs on every dev hot reload while
+  // the pool is reused, which used to stack a new listener each time.
+  pool.on('error', (err) => {
+    console.error('Unexpected error on idle database client:', err);
+  });
+
+  return pool;
 }
 
 // One pool for the process. Cached on globalThis because Next's dev server re-evaluates
@@ -42,12 +52,6 @@ const pool = global.__memecachePool ?? createPool();
 if (process.env.NODE_ENV !== 'production') {
   global.__memecachePool = pool;
 }
-
-// An idle client erroring (server restart, network blip) emits on the pool. Without a
-// listener that is an unhandled 'error' event, which takes the whole process down.
-pool.on('error', (err) => {
-  console.error('Unexpected error on idle database client:', err);
-});
 
 export async function db<T = Record<string, unknown>>(
   query: string,

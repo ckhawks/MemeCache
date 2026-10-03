@@ -16,6 +16,10 @@
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
+
+  @media (max-width: 700px) {
+    padding: 0 1rem;
+  }
 }
 
 .navbar-left {
@@ -94,4 +98,54 @@
 .profile-picture {
   border-radius: 100%;
   margin-right: 2px;
+}
+
+// Phones: inline links and logout give way to the bottom tab bar.
+$phone: 700px;
+
+.desktop-only {
+  @media (max-width: $phone) {
+    display: none;
+  }
+}
+
+.navbar-links {
+  @media (max-width: $phone) {
+    display: none;
+  }
+}
+
+.tabbar {
+  display: none;
+
+  @media (max-width: $phone) {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100;
+    justify-content: space-around;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--full-background-color);
+    // Clear the home indicator on iPhones (needs viewport-fit=cover, set in layout.tsx).
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 0 6px;
+  font-size: 11px;
+  color: var(--sub-text-color);
+  text-decoration: none;
+
+  &.active {
+    color: var(--text-color);
+    font-weight: 600;
+  }
 }
