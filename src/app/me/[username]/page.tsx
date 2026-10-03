@@ -9,6 +9,7 @@ import { getUserFromAccessToken } from '@/auth/lib';
 
 import FooterBar from '@/components/FooterBar';
 import Link from 'next/link';
+import { isAdmin } from '@/auth/role';
 import FeedViewToggle from '@/components/FeedViewToggle';
 import { getFeedView } from '@/server/feedView';
 import { GalleryMasonry } from '@/components/GalleryMasonry';
@@ -79,6 +80,14 @@ export default async function Profile(props: {
                     >
                       Edit profile
                     </Link>
+                    {user && isAdmin(user) && (
+                      <Link
+                        href="/admin"
+                        className={`${styles['button']} ${styles['button-secondary']}`}
+                      >
+                        Admin
+                      </Link>
+                    )}
                     {/* Phones have no logout in the top bar, so it lives here too. */}
                     <Link
                       prefetch={false}

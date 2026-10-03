@@ -1,0 +1,256 @@
+'use client';
+
+import { UploadCloud } from 'react-feather';
+import { Download } from 'react-feather';
+import main from '../../main.module.scss';
+import ds from './DesignSystem.module.scss';
+import upload from '../../upload/Upload.module.scss';
+import tagEditor from '@/components/MemeTagsEditor.module.scss';
+import transcription from '@/components/MemeTranscriptionEditor.module.scss';
+import likeStyles from '@/components/LikeButton.module.scss';
+import LikeButton from '@/components/LikeButton';
+import SaveMemeButton from '@/components/SaveMemeButton';
+import SendMemeButton from '@/components/SendMemeButton';
+import DeleteMemeButton from '@/components/DeleteMemeButton';
+import Tooltip from '@/components/Tooltip';
+import { TagChip } from '@/components/TagChip';
+import BackButton from '@/components/BackButton';
+import ThemeToggle from '@/components/ThemeToggle';
+import FeedViewToggle from '@/components/FeedViewToggle';
+import { GalleryMasonry } from '@/components/GalleryMasonry';
+import type { MemeCard } from '@/db/queries/memes';
+
+// A meme id that does not exist: interactive examples hit the real API and get a 404, so
+// clicking them shows the error and rollback paths without changing any data.
+const FAKE_MEME = '00000000-0000-4000-8000-000000000000';
+
+// The color tokens from globals.scss, in the order they are defined.
+const TOKENS = [
+  '--background-color',
+  '--full-background-color',
+  '--hover-background-color',
+  '--border-color',
+  '--border-color-hover',
+  '--text-color',
+  '--mostly-text-color',
+  '--sub-text-color',
+  '--danger-color',
+  '--button-primary-bg-color',
+  '--button-primary-color',
+  '--button-secondary-bg-color',
+  '--button-secondary-bg-color-hover',
+  '--button-secondary-color',
+  '--button-secondary-color-hover',
+];
+
+function Section(props: { title: string; note?: string; children: React.ReactNode }) {
+  return (
+    <section className={ds.section}>
+      <h2 className={ds.sectionTitle}>{props.title}</h2>
+      {props.note && <div className={ds.caption}>{props.note}</div>}
+      {props.children}
+    </section>
+  );
+}
+
+// Renders the same content in a light pane and a dark pane.
+function Themed(props: { children: React.ReactNode }) {
+  return (
+    <div className={ds.themes}>
+      <div className={ds.themePane} data-theme="light" data-bs-theme="light">
+        <div className={ds.caption}>Light</div>
+        {props.children}
+      </div>
+      <div className={ds.themePane} data-theme="dark" data-bs-theme="dark">
+        <div className={ds.caption}>Dark</div>
+        {props.children}
+      </div>
+    </div>
+  );
+}
+
+function Labeled(props: { label: string; children: React.ReactNode }) {
+  return (
+    <div className={ds.labeled}>
+      {props.children}
+      <span className={ds.caption}>{props.label}</span>
+    </div>
+  );
+}
+
+export default function DesignSystem(props: { memes: MemeCard[]; userId: string }) {
+  const noVote = () => undefined;
+
+  return (
+    <div className={ds.system}>
+      <Section title="Color tokens" note="Defined in src/app/globals.scss. Use these, never hardcoded colors.">
+        <Themed>
+          <div className={ds.swatches}>
+            {TOKENS.map((token) => (
+              <div key={token} className={ds.swatch} title={token}>
+                <span className={ds.chip} style={{ backgroundColor: `var(${token})` }} />
+                <span className={ds.swatchName}>{token.replace('--', '')}</span>
+              </div>
+            ))}
+          </div>
+        </Themed>
+      </Section>
+
+      <Section title="Typography" note="Inter. Page titles are h1; card titles are 600 weight 14px.">
+        <Themed>
+          <h1 style={{ margin: 0 }}>Page title (h1)</h1>
+          <h3 style={{ margin: 0 }}>Section heading (h3)</h3>
+          <h6 style={{ margin: 0 }}>Panel heading (h6)</h6>
+          <p style={{ margin: 0 }}>Body text. Memes, tags and transcriptions read at 16px.</p>
+          <p style={{ margin: 0, color: 'var(--sub-text-color)', fontSize: '14px' }}>
+            Secondary text: counts, dates, help text.
+          </p>
+          <p className={main['meme-body-date']} style={{ margin: 0 }}>
+            <a className={main['meme-username']} href="#">username</a>
+            <span className={main['meme-meta-separator']}>·</span>12 months ago
+          </p>
+        </Themed>
+      </Section>
+
+      <Section title="Buttons" note="main.module.scss: button, button-secondary, button-danger, button-small.">
+        <Themed>
+          <div className={ds.row}>
+            <Labeled label="primary">
+              <button type="button" className={main['button']}>Upload</button>
+            </Labeled>
+            <Labeled label="secondary">
+              <button type="button" className={`${main['button']} ${main['button-secondary']}`}>Cancel</button>
+            </Labeled>
+            <Labeled label="danger">
+              <button type="button" className={`${main['button']} ${main['button-danger']}`}>Delete</button>
+            </Labeled>
+            <Labeled label="small">
+              <button type="button" className={`${main['button']} ${main['button-secondary']} ${main['button-small']}`}>
+                Change
+              </button>
+            </Labeled>
+            <Labeled label="disabled">
+              <button type="button" className={main['button']} disabled>
+                Uploading…
+              </button>
+            </Labeled>
+          </div>
+        </Themed>
+      </Section>
+
+      <Section
+        title="Icon buttons and tooltips"
+        note="Card and meme-page actions. Hover for the tooltip. These point at a meme that does not exist: clicks fail and roll back."
+      >
+        <Themed>
+          <div className={ds.row}>
+            <Labeled label="delete">
+              <DeleteMemeButton memeId={FAKE_MEME} />
+            </Labeled>
+            <Labeled label="download">
+              <Tooltip label="Download">
+                <a href="#" aria-label="Download" className={likeStyles['wrapper']} onClick={(e) => e.preventDefault()}>
+                  <Download size={14} className={likeStyles['icon']} />
+                </a>
+              </Tooltip>
+            </Labeled>
+            <Labeled label="send">
+              <SendMemeButton memeId={FAKE_MEME} contentType="image/png" />
+            </Labeled>
+            <Labeled label="save / saved">
+              <div className={ds.row}>
+                <SaveMemeButton memeId={FAKE_MEME} saved={false} />
+                <SaveMemeButton memeId={FAKE_MEME} saved />
+              </div>
+            </Labeled>
+            <Labeled label="like / liked / signed out">
+              <div className={ds.row}>
+                <LikeButton memeId={FAKE_MEME} userId={props.userId} liked={false} likes={3} />
+                <LikeButton memeId={FAKE_MEME} userId={props.userId} liked likes={4} />
+                <LikeButton memeId={FAKE_MEME} userId="" liked={false} likes={3} />
+              </div>
+            </Labeled>
+          </div>
+        </Themed>
+      </Section>
+
+      <Section title="Tags" note="Hover a chip for its vote arrows (always shown on touch screens). Zero or below reads as unconfirmed.">
+        <Themed>
+          <div className={ds.row}>
+            <Labeled label="votable">
+              <TagChip tag={{ id: FAKE_MEME, name: 'cat', score: 3 }} onVote={noVote} />
+            </Labeled>
+            <Labeled label="your own">
+              <TagChip tag={{ id: FAKE_MEME, name: 'loaf', score: 1 }} onVote={noVote} disableVote />
+            </Labeled>
+            <Labeled label="unconfirmed">
+              <TagChip tag={{ id: FAKE_MEME, name: 'dog', score: 0 }} onVote={noVote} />
+            </Labeled>
+          </div>
+        </Themed>
+      </Section>
+
+      <Section title="Inputs">
+        <Themed>
+          <div className={ds.row}>
+            <input type="text" placeholder="Add a new tag" aria-label="Example tag input" className={tagEditor['tag-input']} />
+            <button type="button" className={main['button']}>Add tag</button>
+          </div>
+          <textarea
+            aria-label="Example transcription"
+            className={transcription['transcription-area']}
+            rows={2}
+            defaultValue="Transcription text area"
+          />
+        </Themed>
+      </Section>
+
+      <Section title="Feedback text">
+        <Themed>
+          <div className={upload.note}>A note: something worth knowing, not an error.</div>
+          <div className={upload.error}>An error: what went wrong and what to do.</div>
+          <p style={{ margin: 0, color: 'var(--sub-text-color)' }}>An empty state: nothing here yet, and how to fill it.</p>
+        </Themed>
+      </Section>
+
+      <Section title="Navigation bits">
+        <Themed>
+          <div className={ds.row}>
+            <Labeled label="back">
+              <BackButton to="/admin/design" text="Back" />
+            </Labeled>
+            <Labeled label="layout toggle (live: sets your gallery layout)">
+              <FeedViewToggle view="grid" />
+            </Labeled>
+            <Labeled label="theme toggle (live)">
+              <ThemeToggle />
+            </Labeled>
+            <Labeled label="pager">
+              <span className={`${main['button']} ${main['button-secondary']}`}>Older memes</span>
+            </Labeled>
+          </div>
+        </Themed>
+      </Section>
+
+      <Section title="Upload drop zone" note="Static copy of the empty upload state.">
+        <Themed>
+          <div className={upload.dropzone} style={{ minHeight: 180 }}>
+            <UploadCloud size={36} className={upload.dropIcon} />
+            <div className={upload.dropTitle}>Drop a meme here</div>
+            <div className={upload.muted}>
+              or <span className={upload.linkish}>browse</span>, or paste with Ctrl+V
+            </div>
+          </div>
+        </Themed>
+      </Section>
+
+      <Section title="Cards: grid" note="Real memes from Explore. Their actions are live.">
+        <GalleryMasonry memes={props.memes} currentUserId={props.userId} view="grid" />
+      </Section>
+
+      <Section title="Cards: feed" note="The single-column layout.">
+        <GalleryMasonry memes={props.memes.slice(0, 1)} currentUserId={props.userId} view="feed" />
+      </Section>
+    </div>
+  );
+}
