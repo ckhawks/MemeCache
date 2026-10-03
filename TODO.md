@@ -7,6 +7,12 @@ Phases 0-4 are sequenced deliberately; later phases are a backlog.
 `architecture-plan.md` (tech debt first; supersedes open items in Phases 1, 6 and 8),
 `product-ideas.md` (ordered take on Phase 9) and `known-bugs.md`.
 
+**Update 2026-10-03:** architecture plan steps 1-4 are done and deployed: local dev stack,
+migration 002 (snake_case schema, caches and refresh tokens gone, soft delete), the
+`src/db/queries/` data layer, and one route wrapper for every API write. Items below that
+those steps closed are ticked with a pointer. Table names in older entries (`"Meme"`,
+`"MemeTagVote"`) are the pre-002 names.
+
 Target infrastructure:
 
 - **Postgres** — Dallas box `extravm-puckvps-1` (216.146.25.22), port **7465** (not 5432),
@@ -77,49 +83,52 @@ instance and in query string literals; nothing has ever been committed.
       `user_username_lower_key` correctly rejects `Alice` against an existing `alice`.
 - [x] **Migration 001 applied to the live database** on Dallas, 2026-08-09 09:01 CDT
       (`_migration` table, checked 2026-10-03).
-- [ ] ~~Add `Meme.status`~~ — not needed. `deletedAt` columns **already exist** on `Meme`,
+- [x] ~~Add `Meme.status`~~ — not needed. `deletedAt` columns **already exist** on `Meme`,
       `Like` and `User` and are simply never used. Phase 7 soft delete is a code change,
-      not a schema change.
-- [ ] **Add the missing indexes.** The database has no explicit `CREATE INDEX` at all —
+      not a schema change. Migration 002 kept `meme.deleted_at`, made delete a soft delete,
+      and dropped the other two.
+- [x] **Add the missing indexes.** Migration 001; migration 002 rebuilt them on the new
+      tables. The database has no explicit `CREATE INDEX` at all —
       only what primary keys and unique constraints imply. Every feed query joins
       `Like` on `"memeId"`, which is unindexed and sequentially scanned. Same for
       `Meme."uploaderUserId"`, `MemeTranscription.meme_id`, and `MemeTag.tagid` /
       `MemeTagVote.tagid` (the composite PKs lead with `memeid`, so the `tagid` lookup
       that `/t/[tagName]` depends on has no index).
-- [ ] **Decide what caches are.** `Cache` has `UNIQUE ("ownerUserId")`, so a user can only
+- [x] **Decide what caches are.** Dropped in migration 002, with all their UI. `Cache` has `UNIQUE ("ownerUserId")`, so a user can only
       ever have one — which is why "create cache" was never built and why the `+ Cache`
       button does nothing. `MemeCache` has `UNIQUE ("memeId")`, so a meme lives in exactly
       one cache despite the join-table shape. Either drop both constraints and finish the
       feature, or accept one-cache-per-user and remove the dead UI. Ties to Phase 9g.
-- [ ] Install the `uuid-ossp` extension on the Dallas database before restoring.
+- [x] Install the `uuid-ossp` extension on the Dallas database before restoring.
 - [x] Add `.env.example`. **Done 2026-08-09.**
 - [x] Rewrite `README.md` as real setup instructions. **Done 2026-08-09.** Includes the
       warning that `npm run dev` runs against the production database and bucket.
-- [ ] Delete dead code: `src/auth/lib copy.ts`, `middlewareOld`, `middlewareTemp`,
+- [x] Delete dead code: `src/auth/lib copy.ts`, `middlewareOld`, `middlewareTemp`,
       `handleTokenRefreshOld`, and the commented-out query blocks in most page files.
-- [ ] Normalize SQL identifier casing. The dump confirms **three** conventions in one
+      All gone as of 2026-10-03.
+- [x] Normalize SQL identifier casing. Migration 002: unquoted snake_case everywhere. The dump confirms **three** conventions in one
       database: quoted camelCase on `Meme`/`Like`/`Cache`/`User`/`MemeCache`/`RefreshToken`,
       unquoted lowercase on `MemeTag`/`MemeTagVote`/`Tag`, and snake_case on
       `MemeTranscription`. Query code has to match each exactly, which is why the tag
       queries look inconsistent — they are correct, just for a differently-named table.
 - [x] Add a GitHub Action running `tsc --noEmit`, `next lint` and `next build`.
-      **Done 2026-08-09**, `.github/workflows/ci.yml`. Untested — it has never run,
-      since nothing has been pushed yet.
+      **Done 2026-08-09**, `.github/workflows/ci.yml`. Never confirmed to run; that check is
+      architecture plan step 7.
 
 ## Phase 2 — Neon to Dallas Postgres
 
-The entire database layer is the 8-line `db()` helper in `src/db/db.ts`, which makes this
-much smaller than it sounds.
+Done: the site has run on Dallas Postgres since 2026-08-09. Neon is being deleted.
 
-- [ ] Create the `memecache` database and role on Dallas Postgres (port 7465), plus the
-      `uuid-ossp` extension. **Give the app a least-privilege role** — see below.
-- [ ] **The app currently connects to Neon as `test_owner`, a member of `neon_superuser`
+- [x] Create the `memecache` database and role on Dallas Postgres (port 7465), plus the
+      `uuid-ossp` extension. The app connects as `memecache_app`, which owns the app's
+      tables and nothing else.
+- [x] **The app used to connect to Neon as `test_owner`, a member of `neon_superuser`
       holding `pg_read_all_data` and `pg_write_all_data`.** The tables are owned by a
       different role, `memecache-api`. So the web application's database credentials are
       effectively superuser, which is the wrong shape for a public-facing app and should
       not be reproduced on Dallas. The new role wants `CONNECT`, `USAGE` on `public`, and
       `SELECT`/`INSERT`/`UPDATE`/`DELETE` on the app tables — nothing more.
-- [ ] Note: despite those privileges, `test_owner` has **no `CREATE` on schema `public`**
+- [x] Note: despite those privileges, `test_owner` has **no `CREATE` on schema `public`**
       (the Postgres 15+ default), which is why `npm run db:migrate` fails against Neon
       with `permission denied for schema public`. Not worth fixing on Neon if the move is
       imminent — apply migration 001 during the restore instead.
@@ -136,9 +145,9 @@ much smaller than it sounds.
       database and `memecache_app` role exist on Dallas with the data in place, migration
       001 applied, row counts matching, per-table content checksums byte-identical on all
       10 tables, and sequence positions carried across. Full record in `db/MIGRATION.md`.
-- [ ] **Re-dump and re-restore at cutover.** The 2026-08-09 copy goes stale the moment
+- [x] **Re-dump and re-restore at cutover.** The 2026-08-09 copy goes stale the moment
       anyone uses the live site. It is 70 KB and takes seconds.
-- [ ] **Cut the app and database over together.** Vercel cannot practically reach Dallas
+- [x] **Cut the app and database over together.** Vercel cannot practically reach Dallas
       Postgres: it accepts remote connections, but every `pg_hba` rule is a specific
       `/32`, and Vercel egresses from a wide dynamic range. Allowing it would mean
       `0.0.0.0/0` on a cluster holding 8 other databases, or Vercel's paid static egress.
@@ -265,21 +274,21 @@ complaint to Cloudflare or the registrar taking the site down.
 
 ## Phase 8 — Performance and correctness
 
-- [ ] Pagination / infinite scroll on `/explore` and `/library`. Both currently select every
-      meme with a `LEFT JOIN "Like"` and aggregate. This blocks everything as content grows.
-      (Was: "large feed".)
-- [ ] The home page does `SELECT * FROM "User"` and renders the full list — replace with a
-      real landing page. It still says "almost none of the above functionality exists".
-- [ ] Enforce username rules in the database, not just in `register`: alphanumeric only, and
-      a case-insensitive unique constraint. The dump confirms `User.username` and `Tag.name`
+- [x] Pagination on `/explore`, `/library`, profiles and tag pages: 60 per page, keyset on
+      `(created_at, id)`, with an "Older memes" link (architecture step 3).
+- [ ] Infinite scroll instead of the "Older memes" link.
+- [ ] The home page lists every user (now only ids and usernames) — replace with a real
+      landing page. It still says "almost none of the above functionality exists".
+- [ ] Enforce username rules in the database, not just in `register`: alphanumeric only.
+      The case-insensitive unique constraint is done (migration 001, kept by 002). The dump confirms `User.username` and `Tag.name`
       carry plain case-**sensitive** `UNIQUE` constraints while the code checks with
       `LOWER(...)`, so the check-then-insert is racy and a direct insert bypasses it. No
       collisions exist today (verified 2026-08-09). Fix is a unique index on
       `LOWER(username)` and `LOWER(name)`.
       (Was: "prevent two users from having same username with different casing",
       "limit username to only alphanumeric".)
-- [ ] Give `RefreshToken."userId"` the `uuid` type and a foreign key. It is `character
-      varying` with no FK, so deleting a user orphans their tokens.
+- [x] ~~Give `RefreshToken."userId"` the `uuid` type and a foreign key.~~ The table is gone
+      (migration 002).
 
 ## Phase 9 — Product
 
@@ -294,7 +303,7 @@ Transcription text and voted tags currently do nothing for the user; only the ta
 reads them. Contributing a transcription gives the contributor nothing back. Search
 retroactively makes two already-built features worth having.
 
-- [ ] Postgres full-text search over transcription + tag names + cache name + uploader.
+- [ ] Postgres full-text search over transcription + tag names + uploader.
       `tsvector` column, GIN index, `pg_trgm` for fuzzy matching. No new infrastructure,
       free on the Dallas box. (Was: "fuzzy search (transcription + tags)".)
 - [ ] **Auto-transcription via OCR at upload.** Search quality is a function of coverage,
@@ -353,9 +362,9 @@ Core to a product named *cache*, and increasingly necessary once bulk upload lan
 
 ### 9g. Finish or cut caches
 
-- [ ] `me/[username]/page.tsx` renders a `+ Cache` button with no click handler, while
-      create/edit/delete sit in the Low backlog. A visible dead button is worse than no
-      button. Either promote cache management or remove the control until it works.
+- [x] Cut. Migration 002 dropped the tables, and the `+ Cache` button, upload dropdown and
+      profile accordion are gone. Collections can come back as a many-to-many feature if
+      people ask (`product-ideas.md` section 6).
 
 ### 9h. Discovery
 
@@ -379,7 +388,7 @@ Core to a product named *cache*, and increasingly necessary once bulk upload lan
 
 ## Medium
 
-- profile bio
+- profile bio (the non-working bio field on the edit page was removed 2026-10-03)
 - XP, levels and ranks — planned in `docs/xp-levels.md`
 - view likes
 - follow tag
@@ -394,12 +403,8 @@ Core to a product named *cache*, and increasingly necessary once bulk upload lan
 
 - transcription guidelines
 - follow profile
-- follow cache
-- create cache
-- edit cache
-- delete cache
 - forgot password
-- change username
+- change username (the non-working field on the edit page was removed 2026-10-03)
 - invite collaborators
 
 ## Done

@@ -18,10 +18,14 @@ Every action worth XP already leaves a row with an author and a timestamp:
 
 | Action | Row | Author column |
 |---|---|---|
-| Upload | `Meme` | `uploaderUserId` |
-| Add tag | `MemeTag` | `addedby` |
-| Vote on tag | `MemeTagVote` | `voterid` |
-| Transcribe | `MemeTranscription` | `edited_by` |
+| Upload | `meme` | `uploader_id` |
+| Add tag | `meme_tag` | `added_by` |
+| Vote on tag | `meme_tag_vote` | `voter_id` |
+| Transcribe | `meme_transcription` | `edited_by` |
+| Like received | `meme_like` joined to `meme` | `meme.uploader_id` (karma) |
+
+Since migration 002 there is one `meme_tag` row per (meme, tag), so "tags you added" is a
+plain count, and deleted memes are rows with `deleted_at` set, which the view filters.
 
 So XP is a SQL view (`user_xp`) that sums weighted counts per user. No ledger table, no
 code in the write paths.
@@ -132,7 +136,7 @@ Cheap additions that make it read like a real ranked mode:
 
 - **Placements.** "Unranked (3/5 placements)" until you have 5 actions in the season.
 - **Promotion and demotion toasts.** "Promoted to Gold III", "You have been demoted from
-  Challenger". Same trick as the level-up notice: store `last_seen_rank` on `user`, compare
+  Challenger". Same trick as the level-up notice: store `last_seen_rank` on `app_user`, compare
   on page load.
 - **Season end.** On the 1st, a small cron writes each user's final rank to
   `season_result (user_id, season, tier, division, position, xp)`. This is the one thing
