@@ -13,16 +13,16 @@
   max-width: calc(1200px + 2 * 4rem);
   padding: 0 4rem;
   width: 100%;
-
-  @media (max-width: 700px) {
-    padding: 0 1rem;
-  }
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
   color: var(--sub-text-color);
   font-size: 14px;
+
+  @media (max-width: 700px) {
+    padding: 0 1rem;
+  }
 }
 
 .footer-link {

@@ -10,13 +10,12 @@
     color: var(--sub-text-color);
     width: fit-content;
     text-decoration: none;
+    transition: width 0.2s ease-in-out, border 0.2s ease-in-out,
+      padding 0.2s ease-in-out;
 
     & > svg {
       color: var(--sub-text-color);
     }
-
-    transition: width 0.2s ease-in-out, border 0.2s ease-in-out,
-      padding 0.2s ease-in-out;
 
     .tag-action-icon {
       transform: scaleX(0);
