@@ -198,3 +198,23 @@ TODO.md backlog) becomes less necessary once enrichment fills most of that in.
 - **Standalone cat GIF app or keyboard.** Considered and set aside in favor of section 1.
   A mobile keyboard can only see the text field, not the conversation, which removes most
   of what makes situation search useful.
+
+## Feed ordering
+
+**Live (2026-10-03):** Explore has Newest (keyset paged), Top (most liked) and Random. A
+shuffle is `md5(id || seed)` with the seed in the URL, so paging keeps one order with no
+repeats and a link reproduces it. Top and Random page by offset (`listMemesOrdered`).
+
+**Later: For you.** Shown greyed out in the sort control. A score per meme for the viewer,
+computed in SQL at this size (no ML needed for about 15 people):
+
+- **Tag affinity:** for each confirmed tag on the meme, how often the viewer liked or saved
+  memes with that tag, plus a fixed boost for tags they follow (needs a `tag_follow` table
+  and a Follow button on tag pages).
+- **Uploader affinity:** share of the viewer's likes that went to this uploader.
+- **Freshness:** decays with age, so new memes surface.
+- **Already seen:** push down memes the viewer liked, saved or opened (opening needs a small
+  `meme_view` table).
+- **A little randomness** (the seeded shuffle again) so it is never the same page twice.
+
+Untuned weights are fine to start; tune them by looking at what comes up for real users.

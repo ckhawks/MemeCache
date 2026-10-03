@@ -330,10 +330,23 @@
 }
 
 // Page header row: the count on the left, the layout toggle on the right.
+.feed-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.feed-header > p {
+  white-space: nowrap;
+}
+
 .feed-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 12px;
   // The space the count paragraph's own margin used to give before it moved in here.
   margin-bottom: 1rem;

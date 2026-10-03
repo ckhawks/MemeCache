@@ -232,3 +232,41 @@ export async function listRelatedMemes(
     [viewerParam(viewerId), meme.id, meme.uploaderId, limit]
   );
 }
+
+export type FeedSort = 'new' | 'top' | 'random';
+
+// Feeds in an order that keyset pagination cannot follow: most liked first, or a shuffle.
+// Paged by offset instead. A shuffle is a seeded hash of each id, so the same seed gives the
+// same order on every page and no meme shows twice.
+export async function listMemesOrdered(
+  filter: MemeFilter,
+  sort: 'top' | 'random',
+  options: { page?: number; seed?: string; limit?: number } = {}
+): Promise<{ memes: MemeCard[]; nextPage: number | null }> {
+  const limit = options.limit ?? FEED_PAGE_SIZE;
+  const page = Math.max(0, Math.floor(options.page ?? 0));
+  // Postgres refuses a parameter the SQL never mentions, so the seed is only passed (as $5)
+  // when the shuffle uses it, and LIMIT/OFFSET follow whatever came last.
+  const params: unknown[] = [viewerParam(filter.viewerId), ...filterParams(filter)];
+  let order: string;
+  if (sort === 'top') {
+    order = `"likeCount" DESC, m.created_at DESC, m.id DESC`;
+  } else {
+    params.push(options.seed ?? '');
+    order = `md5(m.id::text || $${params.length}::text), m.id`;
+  }
+  params.push(limit + 1, page * limit);
+
+  const rows = await db<MemeCard>(
+    `SELECT ${CARD_COLUMNS}
+       FROM meme m
+       JOIN app_user u ON u.id = m.uploader_id
+      WHERE ${filterSql('$2', '$3', '$4')}
+      ORDER BY ${order}
+      LIMIT $${params.length - 1} OFFSET $${params.length}`,
+    params
+  );
+
+  const hasMore = rows.length > limit;
+  return { memes: rows.slice(0, limit), nextPage: hasMore ? page + 1 : null };
+}

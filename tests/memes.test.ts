@@ -176,3 +176,39 @@ describe('listRelatedMemes', () => {
     ]);
   });
 });
+
+describe('listMemesOrdered', () => {
+  it('top puts the most liked first; random is stable per seed and pages without repeats', async () => {
+    const { listMemesOrdered } = await import('@/db/queries/memes');
+    const alice = await makeUser('alice');
+    const bob = await makeUser('bob');
+    const carol = await makeUser('carol');
+    const ids: string[] = [];
+    for (let i = 0; i < 7; i++) {
+      ids.push(await makeMeme(alice, `2026-01-0${i + 1}T00:00:00Z`));
+    }
+    await setLike(ids[2], bob, true);
+    await setLike(ids[2], carol, true);
+    await setLike(ids[5], bob, true);
+
+    const top = await listMemesOrdered({}, 'top');
+    expect(top.memes.slice(0, 2).map((m) => m.id)).toEqual([ids[2], ids[5]]);
+
+    const first = await listMemesOrdered({}, 'random', { seed: 'abc', limit: 3 });
+    const again = await listMemesOrdered({}, 'random', { seed: 'abc', limit: 3 });
+    expect(again.memes.map((m) => m.id)).toEqual(first.memes.map((m) => m.id));
+
+    const seen: string[] = [];
+    let page: number | null = 0;
+    while (page !== null) {
+      const result = await listMemesOrdered({}, 'random', { seed: 'abc', limit: 3, page });
+      seen.push(...result.memes.map((m) => m.id));
+      page = result.nextPage;
+    }
+    expect(seen).toHaveLength(7);
+    expect(new Set(seen).size).toBe(7);
+
+    const other = await listMemesOrdered({}, 'random', { seed: 'xyz', limit: 7 });
+    expect(other.memes.map((m) => m.id)).not.toEqual(seen);
+  });
+});
