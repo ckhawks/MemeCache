@@ -6,6 +6,7 @@ import type { ContentWarning } from '@/constants/contentWarnings';
 import WarningCover from '@/components/WarningCover';
 import { useWarningDisplay } from '@/contexts/WarningDisplayContext';
 import d from './MemeDetail.module.scss';
+import { useViewBeacon } from './useViewBeacon';
 
 // The meme on its own page: scaled to fill the column, small memes included, but never taller
 // than 75% of the screen. CSS alone cannot do both without knowing the shape (it would stretch
@@ -15,11 +16,14 @@ import d from './MemeDetail.module.scss';
 //
 // A meme with content warnings sits under a WarningCover, which takes that width instead,
 // and the media fills it.
+//
+// It also counts the view (useViewBeacon): after a second on screen, or when the video starts.
 export default function DetailMedia(props: {
   meme: { id: string; contentType: string; username: string; warnings?: ContentWarning[] };
 }) {
   const [ratio, setRatio] = useState<number | null>(null);
   const display = useWarningDisplay();
+  const countView = useViewBeacon(props.meme.id);
   const src = '/api/resource/' + props.meme.id;
   const width = ratio ? { width: `min(100%, calc(75vh * ${ratio}))` } : undefined;
   const covered = (props.meme.warnings?.length ?? 0) > 0 && display !== 'show';
@@ -55,6 +59,7 @@ export default function DetailMedia(props: {
         preload="metadata"
         className={d.media}
         style={style}
+        onPlay={countView}
         onLoadedMetadata={(e) => {
           const video = e.currentTarget;
           setRatio(video.videoWidth / video.videoHeight);
