@@ -37,6 +37,27 @@ export const VERSION_COLUMNS = `
 
 export const STANDS = `(confirms >= rejects AND (NOT "authorHeld" OR confirms >= 1))`;
 
+// Every meme's current version at once: (meme_id, id, text), one row per meme that has a
+// standing version. The same rule as STANDS, written as joins rather than per-row
+// subqueries, because asking user_trust once per version recomputes the whole view each
+// time (2 s over a few thousand versions, against 20 ms this way). Search reads it; a test
+// checks it agrees with getCurrentTranscription, so change both together.
+export const CURRENT_TRANSCRIPTIONS = `
+  SELECT DISTINCT ON (t.meme_id) t.meme_id, t.id, t.text
+    FROM meme_transcription t
+    JOIN user_trust ut ON ut.user_id = t.edited_by
+    LEFT JOIN (
+      SELECT transcription_id,
+             count(*) FILTER (WHERE verdict = 1) AS confirms,
+             count(*) FILTER (WHERE verdict = -1) AS rejects
+        FROM counted_transcription_review
+       GROUP BY transcription_id
+    ) r ON r.transcription_id = t.id
+   WHERE COALESCE(r.confirms, 0) >= COALESCE(r.rejects, 0)
+     AND (NOT ut.held OR COALESCE(r.confirms, 0) >= 1)
+   ORDER BY t.meme_id, t.created_at DESC, t.id DESC
+`;
+
 // The meme ids with a standing transcription, for the queue's "needs transcribing".
 export const STANDING_MEMES = `
   SELECT v.meme_id FROM (

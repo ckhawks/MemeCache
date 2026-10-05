@@ -12,6 +12,7 @@ import { getFeedView } from '@/server/feedView';
 import { GalleryMasonry } from '../../components/GalleryMasonry';
 import FooterBar from '@/components/FooterBar';
 import FeedPager from '@/components/FeedPager';
+import SearchBox from '@/components/SearchBox';
 
 export default async function Explore(props: {
   searchParams: Promise<{ cursor?: string; sort?: string; seed?: string; page?: string }>;
@@ -39,6 +40,7 @@ export default async function Explore(props: {
         <div className={styles.content}>
           <div className={styles.description}>
             <h1>Explore</h1>
+            <SearchBox shortcut quietShortcut className={styles['explore-search']} />
             <div className={styles['feed-header']}>
               <p>{total} items</p>
               <div className={styles['feed-controls']}>
