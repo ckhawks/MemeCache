@@ -3,6 +3,7 @@ import { isAdmin } from '@/auth/role';
 import { TAKEDOWN_REASONS } from '@/constants/takedowns';
 import { takeDownMeme } from '@/server/accounts';
 import { HttpError, route } from '@/server/route';
+import { logModeration } from '@/db/queries/moderation';
 
 // POST { reason, note }: takes a meme down for a copyright claim or similar (migration
 // 018). Deletes its file from storage and leaves a notice on its page. Admins only.
@@ -25,6 +26,17 @@ export const POST = route({
       reason: body.reason,
       note: body.note || null,
       adminId: user.id,
+    });
+    await logModeration({
+      actorId: user.id,
+      action: 'meme_takedown',
+      targetType: 'meme',
+      targetId: params.memeId,
+      reason: body.note || null,
+      data: {
+        reason: body.reason,
+        note: body.note || null,
+      },
     });
     return { ok: true };
   },

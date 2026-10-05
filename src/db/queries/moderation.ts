@@ -14,7 +14,9 @@ export type ModerationActionKind =
   | 'invite_enable'
   | 'tag_remove'
   | 'comment_delete'
-  | 'warning_remove';
+  | 'warning_remove'
+  | 'meme_takedown'
+  | 'user_delete';
 
 export type ModerationTargetType = 'meme' | 'comment' | 'user' | 'invite';
 

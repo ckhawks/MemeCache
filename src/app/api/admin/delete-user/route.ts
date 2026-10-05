@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { isAdmin } from '@/auth/role';
 import { deleteAccount } from '@/server/accounts';
 import { HttpError, route } from '@/server/route';
+import { logModeration } from '@/db/queries/moderation';
 
 // POST { userId, reason }: deletes someone's account by anonymising it, the same way they
 // could themselves (migration 018). Admins only, never their own account (that goes
@@ -26,6 +27,13 @@ export const POST = route({
     const username = await deleteAccount({
       userId: body.userId,
       deletedBy: user.id,
+      reason: body.reason,
+    });
+    await logModeration({
+      actorId: user.id,
+      action: 'user_delete',
+      targetType: 'user',
+      targetId: body.userId,
       reason: body.reason,
     });
     return { username };

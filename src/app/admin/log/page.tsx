@@ -27,6 +27,8 @@ const ACTION_LABELS: Record<ModerationActionKind, string> = {
   tag_remove: 'removed a tag from a meme',
   comment_delete: 'deleted a comment',
   warning_remove: 'removed a content warning from a meme',
+  meme_takedown: 'took down a meme',
+  user_delete: 'deleted the account of',
 };
 
 // UTC on purpose, and said so, like the reports page.
@@ -149,6 +151,9 @@ function Details(props: { row: ModerationLogRow }) {
       break;
     case 'warning_remove':
       text = `Warning: ${WARNING_LABELS[data.warning as ContentWarning] ?? data.warning}`;
+      break;
+    case 'meme_takedown':
+      text = `Reason: ${data.reason}${data.note ? ` (${data.note})` : ''}`;
       break;
     case 'report_resolve':
       text = `${data.status === 'actioned' ? 'Deleted the meme' : 'Dismissed'}, closing ${data.reports} ${data.reports === 1 ? 'report' : 'reports'}`;
