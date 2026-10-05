@@ -8,6 +8,8 @@ import { getFeedView } from '@/server/feedView';
 import { GalleryMasonry } from '@/components/GalleryMasonry';
 import FeedPager from '@/components/FeedPager';
 import { countMemes, listMemes } from '@/db/queries/memes';
+import { getTagWithPreference } from '@/db/queries/tagPreferences';
+import TagFollowButtons from '@/components/TagFollowButtons';
 
 export default async function TagDetails(props: {
   params: Promise<{ tagName: string }>;
@@ -25,11 +27,13 @@ export default async function TagDetails(props: {
     // A literal % that is not an escape. Use the segment as-is.
   }
 
-  // Memes carrying the tag with a net score of at least 1.
+  // Memes carrying the tag with a net score of at least 1. Mutes do not apply here: the
+  // page of a muted tag still lists it, with Unmute.
   const filter = { viewerId: user?.id, tagName };
-  const [page, total] = await Promise.all([
+  const [page, total, tag] = await Promise.all([
     listMemes(filter, searchParams.cursor),
     countMemes(filter),
+    user ? getTagWithPreference(tagName, user.id) : null,
   ]);
 
   return (
@@ -40,6 +44,11 @@ export default async function TagDetails(props: {
           <div className={styles.description}>
             <BackButton to={'/explore'} text={'Back'} />
             <h1>{tagName}</h1>
+            {tag && (
+              <div style={{ marginBottom: '1rem' }}>
+                <TagFollowButtons tagId={tag.id} tagName={tag.name} preference={tag.preference} note />
+              </div>
+            )}
             <div className={styles['feed-header']}>
               <p>{total} items</p>
               <FeedViewToggle view={view} />

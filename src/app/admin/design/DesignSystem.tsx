@@ -25,6 +25,9 @@ import SearchBox from '@/components/SearchBox';
 import SearchSnippet from '@/components/SearchSnippet';
 import { GalleryMasonry } from '@/components/GalleryMasonry';
 import CooldownTimer from '@/components/CooldownTimer';
+import TagFollowButtons from '@/components/TagFollowButtons';
+import FeedReason from '@/components/FeedReason';
+import YourTags from '@/components/YourTags';
 import type { MemeCard } from '@/db/queries/memes';
 import { WarningChip } from '@/components/WarningChip';
 import { WarningToggles } from '@/components/WarningToggles';
@@ -35,6 +38,9 @@ import type { ContentWarning } from '@/constants/contentWarnings';
 // A meme id that does not exist: interactive examples hit the real API and get a 404, so
 // clicking them shows the error and rollback paths without changing any data.
 const FAKE_MEME = '00000000-0000-4000-8000-000000000000';
+// The same for tags: following or muting them fails and rolls back.
+const FAKE_TAG = '00000000-0000-4000-8000-000000000001';
+const FAKE_TAG_2 = '00000000-0000-4000-8000-000000000002';
 
 // The color tokens from globals.scss, in the order they are defined.
 const TOKENS = [
@@ -232,6 +238,44 @@ export default function DesignSystem(props: { memes: MemeCard[]; userId: string 
       </Section>
 
       <Section
+        title="Follow and mute"
+        note="components/TagFollowButtons on the tag page (with its note line) and each Browse tags row. Muting a followed tag replaces the follow. YourTags is the list on the edit profile page. These point at tags that do not exist: clicks fail and roll back."
+      >
+        <Themed>
+          <div className={ds.row}>
+            <Labeled label="Neither">
+              <TagFollowButtons tagId={FAKE_TAG} tagName="cats" preference={null} />
+            </Labeled>
+            <Labeled label="Following, with note">
+              <TagFollowButtons tagId={FAKE_TAG} tagName="cats" preference="follow" note />
+            </Labeled>
+            <Labeled label="Muted, with note">
+              <TagFollowButtons tagId={FAKE_TAG} tagName="cats" preference="mute" note />
+            </Labeled>
+          </div>
+          <Labeled label="Your tags">
+            <YourTags
+              tags={[
+                { id: FAKE_TAG, name: 'cats', kind: 'follow' },
+                { id: FAKE_TAG_2, name: 'politics', kind: 'mute' },
+              ]}
+            />
+          </Labeled>
+        </Themed>
+      </Section>
+
+      <Section
+        title="Feed reasons"
+        note="components/FeedReason, under each card in For you: the followed tags that put it there, or a plain line for the memes after them."
+      >
+        <Themed>
+          <FeedReason followedTags={['cats']} />
+          <FeedReason followedTags={['cats', 'dogs', 'loaf']} />
+          <FeedReason followedTags={[]} />
+        </Themed>
+      </Section>
+
+      <Section
         title="Content warnings"
         note="A warning chip looks like a tag chip with an icon: no score, no link, and the remove button in the same hover popover. The type buttons are plain small buttons, primary when on (upload and the meme page)."
       >
@@ -377,6 +421,15 @@ export default function DesignSystem(props: { memes: MemeCard[]; userId: string 
 
       <Section title="Cards: feed" note="The single-column layout.">
         <GalleryMasonry memes={props.memes.slice(0, 1)} currentUserId={props.userId} view="feed" />
+      </Section>
+
+      <Section title="Cards: For you" note="GalleryMasonry with reasons, as Explore's For you passes them.">
+        <GalleryMasonry
+          memes={props.memes}
+          currentUserId={props.userId}
+          view="grid"
+          reasons={Object.fromEntries(props.memes.map((meme, i) => [meme.id, i === 0 ? ['cats'] : []]))}
+        />
       </Section>
     </div>
   );

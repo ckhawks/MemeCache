@@ -2,6 +2,7 @@ import { db } from '@/db/db';
 import { isSlug, isUuid } from './ids';
 import { karmaSql } from './users';
 import { warningsSql } from './warnings';
+import { mutedSql } from './tagPreferences';
 import type { ContentWarning } from '@/constants/contentWarnings';
 
 export interface MemeCard {
@@ -38,6 +39,9 @@ export interface MemeFilter {
   tagName?: string;
   // Memes this user saved: their Library.
   savedBy?: string;
+  // Leave out memes carrying a tag the viewer muted. Explore sets it; a profile, a Library or
+  // a tag page lists what it says it lists.
+  hideMuted?: boolean;
 }
 
 export const FEED_PAGE_SIZE = 60;
@@ -66,9 +70,15 @@ export const CARD_COLUMNS = `
 
 // Shared by the feed and its count, which number their parameters differently. Postgres
 // refuses a parameter the SQL never mentions, so each query passes only what it uses.
-function filterSql(uploaderParam: string, tagParam: string, savedByParam: string) {
+function filterSql(
+  uploaderParam: string,
+  tagParam: string,
+  savedByParam: string,
+  mutedByParam: string
+) {
   return `
     m.deleted_at IS NULL
+    AND NOT ${mutedSql('m.id', mutedByParam)}
     AND (${uploaderParam}::uuid IS NULL OR m.uploader_id = ${uploaderParam}::uuid)
     AND (
       ${savedByParam}::uuid IS NULL
@@ -99,6 +109,7 @@ function filterParams(filter: MemeFilter) {
     isUuid(filter.uploaderId) ? filter.uploaderId : null,
     filter.tagName ?? null,
     isUuid(filter.savedBy) ? filter.savedBy : null,
+    filter.hideMuted && isUuid(filter.viewerId) ? filter.viewerId : null,
   ];
 }
 
@@ -134,10 +145,10 @@ export async function listMemes(
             m.created_at::text || '~' || m.id AS "sortKey"
        FROM meme m
        JOIN app_user u ON u.id = m.uploader_id
-      WHERE ${filterSql('$2', '$3', '$4')}
-        AND ($5::timestamptz IS NULL OR (m.created_at, m.id) < ($5::timestamptz, $6::uuid))
+      WHERE ${filterSql('$2', '$3', '$4', '$5')}
+        AND ($6::timestamptz IS NULL OR (m.created_at, m.id) < ($6::timestamptz, $7::uuid))
       ORDER BY m.created_at DESC, m.id DESC
-      LIMIT $7`,
+      LIMIT $8`,
     [viewerParam(filter.viewerId), ...filterParams(filter), cursorCreatedAt, cursorId, limit + 1]
   );
 
@@ -154,7 +165,7 @@ export async function countMemes(filter: MemeFilter): Promise<number> {
   const [row] = await db<{ count: number }>(
     `SELECT count(*)::int AS count
        FROM meme m
-      WHERE ${filterSql('$1', '$2', '$3')}`,
+      WHERE ${filterSql('$1', '$2', '$3', '$4')}`,
     filterParams(filter)
   );
   return row.count;
@@ -245,7 +256,8 @@ export async function getMemeMedia(id: string): Promise<{ s3Key: string } | null
 
 // "More like this" under a meme: other memes ranked by how many confirmed tags (net score
 // at least 1) they share with it, then by the same uploader, then newest. Memes that share
-// nothing still fill the list, so an untagged meme gets a feed too.
+// nothing still fill the list, so an untagged meme gets a feed too. Memes carrying a tag the
+// viewer muted are left out.
 export async function listRelatedMemes(
   meme: { id: string; uploaderId: string },
   viewerId?: string,
@@ -267,6 +279,7 @@ export async function listRelatedMemes(
        JOIN app_user u ON u.id = m.uploader_id
       WHERE m.id <> $2
         AND m.deleted_at IS NULL
+        AND NOT ${mutedSql('m.id', '$1')}
       ORDER BY
         (SELECT count(*) FROM confirmed c WHERE c.meme_id = m.id AND c.tag_id IN (SELECT tag_id FROM this_meme)) DESC,
         (m.uploader_id = $3) DESC,
@@ -277,7 +290,8 @@ export async function listRelatedMemes(
   );
 }
 
-export type FeedSort = 'new' | 'top' | 'random';
+// 'foryou' is listForYou, for signed-in members.
+export type FeedSort = 'new' | 'top' | 'random' | 'foryou';
 
 // Feeds in an order that keyset pagination cannot follow: most liked first, or a shuffle.
 // Paged by offset instead. A shuffle is a seeded hash of each id, so the same seed gives the
@@ -289,7 +303,7 @@ export async function listMemesOrdered(
 ): Promise<{ memes: MemeCard[]; nextPage: number | null }> {
   const limit = options.limit ?? FEED_PAGE_SIZE;
   const page = Math.max(0, Math.floor(options.page ?? 0));
-  // Postgres refuses a parameter the SQL never mentions, so the seed is only passed (as $5)
+  // Postgres refuses a parameter the SQL never mentions, so the seed is only passed (as $6)
   // when the shuffle uses it, and LIMIT/OFFSET follow whatever came last.
   const params: unknown[] = [viewerParam(filter.viewerId), ...filterParams(filter)];
   let order: string;
@@ -305,7 +319,7 @@ export async function listMemesOrdered(
     `SELECT ${CARD_COLUMNS}
        FROM meme m
        JOIN app_user u ON u.id = m.uploader_id
-      WHERE ${filterSql('$2', '$3', '$4')}
+      WHERE ${filterSql('$2', '$3', '$4', '$5')}
       ORDER BY ${order}
       LIMIT $${params.length - 1} OFFSET $${params.length}`,
     params
@@ -325,7 +339,8 @@ const WINDOW_INTERVALS: Record<Exclude<TopWindow, 'all'>, string> = {
 
 // The home page's "top memes": the shortest window with at least `limit` memes posted in
 // it, most liked first. A quiet day falls back to the week, then the month, then all time,
-// so the section is never short.
+// so the section is never short. Memes carrying a tag the viewer muted are left out, of the
+// counts as well.
 export async function listTopMemes(
   viewerId: string | undefined,
   limit: number
@@ -334,8 +349,10 @@ export async function listTopMemes(
     `SELECT count(*) FILTER (WHERE created_at > now() - interval '1 day')::int AS day,
             count(*) FILTER (WHERE created_at > now() - interval '7 days')::int AS week,
             count(*) FILTER (WHERE created_at > now() - interval '30 days')::int AS month
-       FROM meme
-      WHERE deleted_at IS NULL`
+       FROM meme m
+      WHERE m.deleted_at IS NULL
+        AND NOT ${mutedSql('m.id', '$1')}`,
+    [viewerParam(viewerId)]
   );
   const window = (['day', 'week', 'month'] as const).find((w) => counts[w] >= limit) ?? 'all';
   const since = window === 'all' ? null : WINDOW_INTERVALS[window];
@@ -345,10 +362,60 @@ export async function listTopMemes(
        FROM meme m
        JOIN app_user u ON u.id = m.uploader_id
       WHERE m.deleted_at IS NULL
+        AND NOT ${mutedSql('m.id', '$1')}
         AND ($2::interval IS NULL OR m.created_at > now() - $2::interval)
       ORDER BY "likeCount" DESC, m.created_at DESC, m.id DESC
       LIMIT $3`,
     [viewerParam(viewerId), since, limit]
   );
   return { window, memes };
+}
+
+export interface ForYouCard extends MemeCard {
+  // The followed tags standing on this meme: why it is in the first part of the feed. Empty
+  // for everything after.
+  followedTags: string[];
+}
+
+// Explore's "For you": memes carrying a tag the viewer follows (standing on it, net score of
+// at least 1), then everything else. Each part goes newest day first, most liked first within
+// a day, so a liked meme from this morning is not buried under one posted a minute ago.
+// Muted tags are left out as everywhere else. Paged by offset, like Top.
+export async function listForYou(
+  viewerId: string,
+  options: { page?: number; limit?: number } = {}
+): Promise<{ memes: ForYouCard[]; nextPage: number | null }> {
+  const limit = options.limit ?? FEED_PAGE_SIZE;
+  const page = Math.max(0, Math.floor(options.page ?? 0));
+  const rows = await db<ForYouCard>(
+    `WITH followed AS (
+       SELECT mt.meme_id, array_agg(t.name ORDER BY lower(t.name)) AS names
+         FROM tag_preference p
+         JOIN meme_tag mt ON mt.tag_id = p.tag_id
+         JOIN tag t ON t.id = p.tag_id
+        WHERE p.user_id = $1::uuid
+          AND p.kind = 'follow'
+          AND (SELECT COALESCE(sum(v.vote), 0)
+                 FROM counted_tag_vote v
+                WHERE v.meme_id = mt.meme_id AND v.tag_id = mt.tag_id) >= 1
+        GROUP BY mt.meme_id
+     )
+     SELECT ${CARD_COLUMNS},
+            COALESCE(f.names, '{}') AS "followedTags"
+       FROM meme m
+       JOIN app_user u ON u.id = m.uploader_id
+       LEFT JOIN followed f ON f.meme_id = m.id
+      WHERE m.deleted_at IS NULL
+        AND NOT ${mutedSql('m.id', '$1')}
+      ORDER BY f.meme_id IS NULL,
+               date_trunc('day', m.created_at) DESC,
+               "likeCount" DESC,
+               m.created_at DESC,
+               m.id DESC
+      LIMIT $2 OFFSET $3`,
+    [viewerParam(viewerId), limit + 1, page * limit]
+  );
+
+  const hasMore = rows.length > limit;
+  return { memes: rows.slice(0, limit), nextPage: hasMore ? page + 1 : null };
 }

@@ -13,6 +13,7 @@ import DeleteMemeButton from './DeleteMemeButton';
 import SendMemeButton from './SendMemeButton';
 import SaveMemeButton from './SaveMemeButton';
 import SearchSnippet from './SearchSnippet';
+import FeedReason from './FeedReason';
 import Tooltip from './Tooltip';
 import likeStyles from './LikeButton.module.scss';
 import type { MemeCard } from '@/db/queries/memes';
@@ -21,12 +22,14 @@ import type { FeedView } from '@/server/feedView';
 
 // Memes arrive newest first from the query. `view` is the viewer's layout choice
 // (FeedViewToggle): a multi-column grid, or a single centered column. Search results pass
-// `snippets`, the matching text by meme id, shown under each card's title row.
+// `snippets`, the matching text by meme id, shown under each card's title row. For you passes
+// `reasons`, the followed tags behind each meme by id, shown in the same place.
 export function GalleryMasonry(props: {
   memes: MemeCard[];
   currentUserId: string;
   view?: FeedView;
   snippets?: Record<string, string | null>;
+  reasons?: Record<string, string[]>;
 }) {
   const [, forceUpdate] = useState({});
   const router = useRouter();
@@ -109,6 +112,7 @@ export function GalleryMasonry(props: {
           </div>
         </div>
         {props.snippets?.[meme.id] && <SearchSnippet text={props.snippets[meme.id]!} />}
+        {props.reasons?.[meme.id] && <FeedReason followedTags={props.reasons[meme.id]} />}
       </div>
     </div>
   );

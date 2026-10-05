@@ -24,9 +24,11 @@
   gap: 10px;
 }
 
+// Name, count, Follow and Mute, then "See all" at the far end. Wraps on phones.
 .rowHeader {
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
 }
 

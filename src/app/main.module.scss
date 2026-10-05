@@ -392,3 +392,22 @@
     margin: 0;
   }
 }
+
+// A prompt above a feed that has nothing of its own to show yet: For you with no followed tags.
+.feed-prompt {
+  margin-bottom: 1rem;
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--sub-text-color);
+
+  p {
+    margin: 0;
+  }
+
+  a {
+    color: var(--text-color);
+    font-weight: 500;
+  }
+}

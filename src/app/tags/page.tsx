@@ -8,10 +8,13 @@ import FooterBar from '@/components/FooterBar';
 import { listTagRows } from '@/db/queries/tags';
 import { supportedVideoTypes } from '@/constants/mimeTypes';
 import WarningCover from '@/components/WarningCover';
+import TagFollowButtons from '@/components/TagFollowButtons';
+import { getUserFromAccessToken } from '@/auth/lib';
+import { getTagPreferences } from '@/db/queries/tagPreferences';
 
 // Browse by tag: a shuffled set of tags, each with a strip of its most-liked memes. The
 // shuffle's seed rides in the URL, so "More tags" continues the same order without repeats.
-// Following and muting tags will hang off these rows later.
+// Members get Follow and Mute on each row. Muted tags, and memes carrying them, are left out.
 export default async function BrowseTags(props: {
   searchParams: Promise<{ seed?: string; page?: string }>;
 }) {
@@ -19,7 +22,12 @@ export default async function BrowseTags(props: {
   const seed = searchParams.seed?.slice(0, 16) || randomBytes(4).toString('hex');
   const freshSeed = randomBytes(4).toString('hex');
   const page = Number(searchParams.page) || 0;
-  const { rows, nextPage } = await listTagRows({ seed, page });
+  const user = await getUserFromAccessToken();
+  const { rows, nextPage } = await listTagRows({ seed, page, viewerId: user?.id });
+  const preferences = await getTagPreferences(
+    user?.id,
+    rows.map((row) => row.id)
+  );
 
   const secondary = `${styles.button} ${styles['button-secondary']} ${styles['button-small']}`;
 
@@ -54,6 +62,9 @@ export default async function BrowseTags(props: {
                     <span className={b.uses}>
                       {row.uses.toLocaleString()} {row.uses === 1 ? 'meme' : 'memes'}
                     </span>
+                    {user && (
+                      <TagFollowButtons tagId={row.id} tagName={row.name} preference={preferences[row.id] ?? null} />
+                    )}
                     <Link href={href} className={b.seeAll}>
                       See all <ChevronRight size={14} />
                     </Link>

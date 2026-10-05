@@ -1,0 +1,16 @@
+.reason {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--sub-text-color);
+  overflow-wrap: anywhere;
+}
+
+.tag {
+  font-weight: 600;
+  color: var(--text-color);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
