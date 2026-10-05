@@ -1,4 +1,5 @@
 import { getTagAdder, hasOthersUpvote, removeTagFromMeme } from '@/db/queries/tags';
+import { notify } from '@/db/queries/notifications';
 import { isModerator } from '@/auth/role';
 import { HttpError, route } from '@/server/route';
 import { requireMeme } from '@/server/require';
@@ -21,6 +22,15 @@ export const DELETE = route({
         throw new HttpError(403, 'Someone else has upvoted this tag, so it stays.');
       }
     }
+    // Written before the removal, which can delete the tag itself and with it the name
+    // the notification copies. Taking back your own tag tells nobody.
+    await notify({
+      recipientId: adder,
+      kind: 'tag_removed',
+      actorId: user.id,
+      memeId: meme.id,
+      tagId: params.tagId,
+    });
     await removeTagFromMeme(meme.id, params.tagId);
     return { ok: true };
   },

@@ -96,15 +96,18 @@ export async function voteOnTag(memeId: string, tagId: string, voterId: string, 
 }
 
 // One row per (meme, tag). The first person to add it is its adder and gets an automatic
-// upvote. Anyone adding it again is upvoting it.
-export async function addTagToMeme(memeId: string, tagId: string, userId: string) {
-  await db(
+// upvote. Anyone adding it again is upvoting it. Returns true when the tag was new on this
+// meme, false when this was an upvote.
+export async function addTagToMeme(memeId: string, tagId: string, userId: string): Promise<boolean> {
+  const inserted = await db(
     `INSERT INTO meme_tag (meme_id, tag_id, added_by)
      VALUES ($1, $2, $3)
-     ON CONFLICT DO NOTHING`,
+     ON CONFLICT DO NOTHING
+     RETURNING tag_id`,
     [memeId, tagId, userId]
   );
   await voteOnTag(memeId, tagId, userId, 1);
+  return inserted.length > 0;
 }
 
 export interface TagSuggestion {

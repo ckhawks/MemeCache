@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { getTagAdder, voteOnTag } from '@/db/queries/tags';
+import { notifyIfTagConfirmed } from '@/db/queries/notifications';
 import { HttpError, route } from '@/server/route';
 import { requireMeme } from '@/server/require';
 
@@ -22,6 +23,9 @@ export const POST = route({
     }
 
     await voteOnTag(meme.id, params.tagId, user.id, body.vote);
+    if (body.vote === 1) {
+      await notifyIfTagConfirmed(meme.id, params.tagId, user.id);
+    }
     return { ok: true };
   },
 });

@@ -5,6 +5,7 @@ import {
   getTranscriptionAuthor,
   reviewTranscription,
 } from '@/db/queries/transcriptions';
+import { notify } from '@/db/queries/notifications';
 import { HttpError, route } from '@/server/route';
 import { requireMeme } from '@/server/require';
 
@@ -37,8 +38,8 @@ export const POST = route({
   }),
   handler: async ({ user, body, params }) => {
     const meme = await requireMeme(params.memeId);
+    const fixed = body.fixes ? await getTranscriptionAuthor(body.fixes) : null;
     if (body.fixes) {
-      const fixed = await getTranscriptionAuthor(body.fixes);
       if (!fixed || fixed.memeId !== meme.id) {
         throw new HttpError(400, 'That transcription is not on this meme.');
       }
@@ -47,6 +48,24 @@ export const POST = route({
       }
     }
     const transcription = await addTranscription(meme.id, body.text, user.id);
+    // The fixed version's author hears it was fixed, not that it was rejected, though a
+    // reject is what was recorded. The uploader hears about every new version.
+    if (body.fixes && fixed) {
+      await notify({
+        recipientId: fixed.editedBy,
+        kind: 'transcription_fixed',
+        actorId: user.id,
+        memeId: meme.id,
+        transcriptionId: body.fixes,
+      });
+    }
+    await notify({
+      recipientId: meme.uploaderId,
+      kind: 'meme_transcribed',
+      actorId: user.id,
+      memeId: meme.id,
+      transcriptionId: transcription.id,
+    });
     return { transcription, pending: transcription.pending };
   },
 });

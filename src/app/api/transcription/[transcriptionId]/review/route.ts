@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { getTranscriptionAuthor, reviewTranscription } from '@/db/queries/transcriptions';
+import { notify } from '@/db/queries/notifications';
 import { HttpError, route } from '@/server/route';
 
 // POST { verdict }: 1 confirms this version of a meme's text, -1 rejects it. Not on your
@@ -18,6 +19,13 @@ export const POST = route({
       throw new HttpError(403, 'You cannot review your own transcription.');
     }
     await reviewTranscription(params.transcriptionId, user.id, body.verdict);
+    await notify({
+      recipientId: version.editedBy,
+      kind: body.verdict === 1 ? 'transcription_confirmed' : 'transcription_rejected',
+      actorId: user.id,
+      memeId: version.memeId,
+      transcriptionId: params.transcriptionId,
+    });
     return { ok: true };
   },
 });

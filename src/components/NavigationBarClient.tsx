@@ -6,6 +6,7 @@ import navStyles from './NavigationBar.module.scss';
 import { usePathname } from 'next/navigation';
 import Tooltip from './Tooltip';
 import UserMenu from './UserMenu';
+import NotificationBell from './NotificationBell';
 import { CheckSquare, Compass, Grid, Home, LogIn, PlusSquare, User } from 'react-feather';
 
 interface NavItem {
@@ -21,6 +22,7 @@ export default function NavigationBarClient(props: {
   username: string;
   avatarKey: string | null;
   karma: number;
+  unreadNotifications: number;
   isAdmin: boolean;
 }) {
   const pathname = usePathname();
@@ -142,6 +144,8 @@ export default function NavigationBarClient(props: {
           </div>
 
           <div className={navStyles['navbar-right']}>
+            {/* On phones too: the tab bar has no room for it. */}
+            {props.username && <NotificationBell unread={props.unreadNotifications} />}
             {props.username && (
               <UserMenu
                 username={props.username}
