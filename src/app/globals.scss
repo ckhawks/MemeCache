@@ -246,3 +246,28 @@ input[type='number']::-webkit-outer-spin-button {
     padding-bottom: calc(56px + env(safe-area-inset-bottom));
   }
 }
+
+// react-masonry-css (GalleryMasonry). Global, and here rather than in the component, so the
+// server-rendered HTML is already laid out before the page hydrates.
+.my-masonry-grid {
+  display: flex;
+  margin-left: -20px; // gutter size offset
+  width: auto;
+}
+
+.my-masonry-grid_column {
+  padding-left: 20px; // gutter size
+  background-clip: padding-box;
+}
+
+// The server renders the default three columns; the column count only follows the screen
+// once the page hydrates. On phones, stack them full width until then.
+@media (max-width: 600px) {
+  .my-masonry-grid {
+    display: block;
+  }
+
+  .my-masonry-grid_column {
+    width: 100% !important;
+  }
+}

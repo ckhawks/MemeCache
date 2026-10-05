@@ -7,6 +7,13 @@ const nextConfig = {
     'bcrypt',
     'pg',
   ],
+  // Lets a phone on the home network or the tailnet load the dev server's scripts. Without
+  // it Next blocks them as cross-origin and pages never hydrate (feeds stay in the
+  // server-rendered three columns). Development only; production ignores it.
+  allowedDevOrigins: [
+    '192.168.1.*',
+    '100.*.*.*',
+  ],
 };
 
 export default nextConfig;

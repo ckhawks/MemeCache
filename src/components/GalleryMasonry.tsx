@@ -114,38 +114,19 @@ export function GalleryMasonry(props: {
   }
 
   return (
-    <>
-      <div className={styles.gallery}>
-        <Masonry
-          // Keys are max viewport widths in px. Cards fill their column at every width.
-          breakpointCols={{
-            default: 3,
-            1100: 2,
-            600: 1,
-          }}
-          className="my-masonry-grid"
-          columnClassName="my-masonry-grid_column"
-        >
-          {props.memes.map(card)}
-        </Masonry>
-      </div>
-      <style jsx global>
-        {`
-          .gallery {
-            margin: auto;
-            max-width: 1200px;
-          }
-          .my-masonry-grid {
-            display: flex;
-            margin-left: -20px; /* gutter size offset */
-            width: auto;
-          }
-          .my-masonry-grid_column {
-            padding-left: 20px; /* gutter size */
-            background-clip: padding-box;
-          }
-        `}
-      </style>
-    </>
+    <div className={styles.gallery}>
+      <Masonry
+        // Keys are max viewport widths in px. Cards fill their column at every width.
+        breakpointCols={{
+          default: 3,
+          1100: 2,
+          600: 1,
+        }}
+        className="my-masonry-grid"
+        columnClassName="my-masonry-grid_column"
+      >
+        {props.memes.map(card)}
+      </Masonry>
+    </div>
   );
 }
