@@ -16,9 +16,6 @@ export function warningLabels(warnings: readonly ContentWarning[]) {
 // touch screens have no hover, so there 'hover' behaves like 'blur'. A video under the
 // cover only ever shows its first frame, blurred: nothing autoplays.
 //
-// Labels that do not blur (AI-made), and every label for a viewer who chose never to blur,
-// show as a small badge in the corner instead.
-//
 // `compact` is for small thumbnails inside a link: just the labels, and no button of its
 // own, so a click follows the link to the meme page (which is blurred too).
 export default function WarningCover(props: {
@@ -34,21 +31,11 @@ export default function WarningCover(props: {
   const [revealed, setRevealed] = useState(false);
   const warnings = props.warnings ?? [];
   const blurring = display === 'show' ? [] : warnings.filter(blursMeme);
-  const badges = warnings.filter((warning) => !blurring.includes(warning));
 
-  if (warnings.length === 0) {
-    return <>{props.children}</>;
-  }
-
+  // Nothing ever sits on top of a meme that is not blurred: labels that do not blur
+  // (AI-made) show as chips on the meme's page instead.
   if (blurring.length === 0) {
-    return (
-      <div className={`${styles.labelled} ${props.className ?? ''}`} style={props.style}>
-        {props.children}
-        <span className={`${styles.badge} ${props.compact ? styles.badgeCompact : ''}`}>
-          {warningLabels(badges)}
-        </span>
-      </div>
-    );
+    return <>{props.children}</>;
   }
 
   // Under a blur every label is named, AI-made included.

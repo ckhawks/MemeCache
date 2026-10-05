@@ -29,8 +29,7 @@ export default function DetailMedia(props: {
   const countView = useViewBeacon(props.meme.id, !blurred || revealed);
   const src = '/api/resource/' + props.meme.id;
   const width = ratio ? { width: `min(100%, calc(75vh * ${ratio}))` } : undefined;
-  const covered = (props.meme.warnings?.length ?? 0) > 0 && display !== 'show';
-  const style = covered ? undefined : width;
+  const style = blurred ? undefined : width;
 
   let media: React.ReactNode;
   if (supportedImageTypes.includes(props.meme.contentType)) {
@@ -75,7 +74,7 @@ export default function DetailMedia(props: {
     return <div>Unsupported media type {props.meme.contentType}.</div>;
   }
 
-  if (!covered) {
+  if (!blurred) {
     return media;
   }
   return (
