@@ -15,13 +15,13 @@ export function getRelativeTimeString(
   date: Date,
   now: Date = new Date()
 ): string {
-  // offset the date by 5 hours because CENTRAL TIME ZONE
-  date.setTime(date.getTime() - 1000 * 60 * 60 * 5);
-  // Allow dates or times to be passed
+  // Stored times are timestamptz (migration 002), so a Date here is already the right
+  // instant. This used to subtract 5 hours for a central-time column that no longer exists,
+  // which made everything read 5 hours older, and it changed the caller's Date in place.
   const timeMs = typeof date === 'number' ? date : new Date(date).getTime();
 
   // Get the amount of seconds between the given date and now
-  const deltaSeconds = Math.round((timeMs - Date.now()) / 1000);
+  const deltaSeconds = Math.round((timeMs - now.getTime()) / 1000);
 
   // Array reprsenting one minute, hour, day, week, month, etc in seconds
   const cutoffs = [
@@ -56,7 +56,9 @@ export function getRelativeTimeString(
 
   // Intl.RelativeTimeFormat do its magic
   const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
-  return rtf.format(Math.floor(deltaSeconds / divisor), units[unitIndex]);
+  // trunc, not floor: floor rounds a past time away from zero, so 90 seconds ago read as
+  // "2 minutes ago".
+  return rtf.format(Math.trunc(deltaSeconds / divisor), units[unitIndex]);
 }
 
 // "just now", "5 minutes ago", "yesterday", "3 weeks ago". Unlike the two above it leaves
