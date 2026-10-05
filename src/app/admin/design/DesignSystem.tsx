@@ -17,6 +17,7 @@ import { TagChip } from '@/components/TagChip';
 import BackButton from '@/components/BackButton';
 import ThemeToggle from '@/components/ThemeToggle';
 import FeedViewToggle from '@/components/FeedViewToggle';
+import CountBadge from '@/components/CountBadge';
 import { GalleryMasonry } from '@/components/GalleryMasonry';
 import type { MemeCard } from '@/db/queries/memes';
 
@@ -233,6 +234,13 @@ export default function DesignSystem(props: { memes: MemeCard[]; userId: string 
             </Labeled>
             <Labeled label="Pager">
               <span className={`${main['button']} ${main['button-secondary']}`}>Older memes</span>
+            </Labeled>
+            <Labeled label="Count badge (CountBadge: unread notifications; nothing at 0, 99+ past 99)">
+              <div className={ds.row}>
+                <CountBadge count={3} />
+                <CountBadge count={42} />
+                <CountBadge count={250} />
+              </div>
             </Labeled>
           </div>
         </Themed>

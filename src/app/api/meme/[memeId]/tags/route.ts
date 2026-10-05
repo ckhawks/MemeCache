@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { addTagToMeme, findOrCreateTag, listTagsForMeme } from '@/db/queries/tags';
+import { notify, notifyIfTagConfirmed } from '@/db/queries/notifications';
 import { route } from '@/server/route';
 import { requireMeme } from '@/server/require';
 
@@ -28,7 +29,18 @@ export const POST = route({
   handler: async ({ user, body, params }) => {
     const meme = await requireMeme(params.memeId);
     const tagId = await findOrCreateTag(body.name, user.id);
-    await addTagToMeme(meme.id, tagId, user.id);
+    const added = await addTagToMeme(meme.id, tagId, user.id);
+    if (added) {
+      await notify({
+        recipientId: meme.uploaderId,
+        kind: 'meme_tagged',
+        actorId: user.id,
+        memeId: meme.id,
+        tagId,
+      });
+    } else {
+      await notifyIfTagConfirmed(meme.id, tagId, user.id);
+    }
     return { ok: true };
   },
 });
