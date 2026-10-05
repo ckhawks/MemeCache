@@ -16,11 +16,24 @@ import {
   hashPassword,
 } from '@/auth/lib';
 import {
-  createUser,
   getUserForLogin,
   isEmailTaken,
   isUsernameTaken,
 } from '@/db/queries/users';
+import {
+  checkInviteCode,
+  createInvitedUser,
+  type InviteCheck,
+} from '@/db/queries/invites';
+
+// What registration says about an access code that cannot be used. Null: it can.
+const INVITE_MESSAGES: Record<InviteCheck, string | null> = {
+  active: null,
+  unknown: "We're sorry, that access code is not valid.",
+  disabled: "We're sorry, that access code has been turned off.",
+  expired: "We're sorry, that access code has expired.",
+  'used-up': "We're sorry, that access code has been used as many times as it allows.",
+};
 
 // Must match the JWT's own expiry. When these disagreed -- a 15 minute cookie holding a
 // token that middleware was supposed to refresh -- the browser dropped a still-valid
@@ -40,7 +53,7 @@ export async function register(prevState: any, formData: FormData) {
   const username = formData.get('username')?.toString() ?? '';
   const email = formData.get('email')?.toString() ?? '';
   const password = formData.get('password')?.toString() ?? '';
-  const accessCode = formData.get('access_code')?.toString() ?? '';
+  const accessCode = formData.get('access_code')?.toString().trim() ?? '';
 
   if (username === '') {
     return { message: 'Please provide a username.' };
@@ -58,8 +71,14 @@ export async function register(prevState: any, formData: FormData) {
     return { message: 'Please provide an access code.' };
   }
 
-  if (accessCode !== process.env.ACCESS_CODE) {
-    return { message: "We're sorry, that access code is not valid." };
+  // Invite codes come from /admin/invites (migration 009). ACCESS_CODE in the environment
+  // is the old shared code: it still works, but only until the first invite code exists,
+  // so production keeps taking signups until an admin makes one. After that it can be
+  // removed from .env.
+  const fallbackCode = process.env.ACCESS_CODE;
+  const codeMessage = INVITE_MESSAGES[await checkInviteCode(accessCode, fallbackCode)];
+  if (codeMessage) {
+    return { message: codeMessage };
   }
 
   if (await isEmailTaken(email)) {
@@ -76,11 +95,20 @@ export async function register(prevState: any, formData: FormData) {
     };
   }
 
-  const user = await createUser({
-    username,
-    email,
-    passwordHash: await hashPassword(password),
-  });
+  const user = await createInvitedUser(
+    {
+      username,
+      email,
+      passwordHash: await hashPassword(password),
+    },
+    accessCode,
+    fallbackCode
+  );
+  if (!user) {
+    // Usable a moment ago: someone else took its last use, or it was disabled, in between.
+    const nowMessage = INVITE_MESSAGES[await checkInviteCode(accessCode, fallbackCode)];
+    return { message: nowMessage ?? INVITE_MESSAGES['used-up'] };
+  }
 
   await setSessionCookie(await createAccessToken(user));
 

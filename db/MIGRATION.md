@@ -272,6 +272,10 @@ LiveKit calls, so avoid deploying during a scheduled DJ broadcast.
 Verify with `systemctl is-active memecache-nextjs` and
 `curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3007/`.
 
+### Invite codes (migration 009)
+
+Registration takes invite codes from the `invite_code` table, made at `/admin/invites`. Apply it with `npm run db:migrate` before restarting. `ACCESS_CODE` in `.env` is still accepted, but only while that table is empty, so deploying 009 changes nothing for people signing up. Once an admin creates the first code (disabled ones count), `ACCESS_CODE` stops working and can be deleted from `/root/memecache/.env`. To bring back the old shared code, make an invite code with the same value and no limit.
+
 ### Still open
 
 - [x] Confirm a `memecache` dump appears in the Chicago backup. Verified 2026-10-03:

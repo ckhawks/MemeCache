@@ -13,5 +13,7 @@ export default defineConfig({
     setupFiles: ['./tests/env.ts'],
     // Test files share one database and truncate it between tests.
     fileParallelism: false,
+    // Agent worktrees live inside the repo and carry their own copies of the tests.
+    exclude: ['**/node_modules/**', '.claude/**'],
   },
 });

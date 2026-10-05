@@ -16,6 +16,11 @@ const TOOLS = [
     title: 'Reports',
     description: 'Memes members reported, to dismiss or delete. Moderators can use this one too.',
   },
+  {
+    href: '/admin/invites',
+    title: 'Invite codes',
+    description: 'Make and turn off the codes people sign up with, and see who used each.',
+  },
 ];
 
 export default async function Admin() {

@@ -12,7 +12,7 @@ A personal **meme library** — upload, tag, transcribe, and search the memes yo
 - **Transcription** — memes carry their text, so the raw material for searching by what they *say* is there.
 - **Tags** — tag memes and browse by tag (`/t/…`) to make a big collection searchable.
 - **Explore & Library** — an Explore feed of shared memes and your own personal Library.
-- **Accounts** — registration and login, gated behind a shared access code.
+- **Accounts** — registration and login, gated behind invite codes that admins make with a use limit and expiry.
 
 Search itself is not built yet, and it is the main gap — the transcriptions and tags are
 the inputs to it. See [`TODO.md`](TODO.md), Phase 9a. Contribution scoring is likewise

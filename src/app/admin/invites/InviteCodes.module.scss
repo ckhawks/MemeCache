@@ -1,0 +1,113 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding-bottom: 40px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sectionTitle {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+// Two columns on wide screens, one on phones.
+.fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+
+  @media (max-width: 600px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.invite {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.inviteHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.code {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  word-break: break-all;
+}
+
+.status {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--border-color);
+  color: var(--sub-text-color);
+}
+
+.active {
+  color: var(--button-success-color);
+  background-color: var(--button-success-bg-color);
+  border-color: var(--button-success-bg-color);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  font-size: 14px;
+  color: var(--sub-text-color);
+
+  a {
+    color: var(--text-color);
+  }
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.error {
+  font-size: 14px;
+  color: var(--danger-color);
+}
+
+.empty {
+  margin: 0;
+  color: var(--sub-text-color);
+}
