@@ -1,6 +1,8 @@
 import { db } from '@/db/db';
 import { isSlug, isUuid } from './ids';
 import { karmaSql } from './users';
+import { warningsSql } from './warnings';
+import type { ContentWarning } from '@/constants/contentWarnings';
 
 export interface MemeCard {
   id: string;
@@ -18,6 +20,8 @@ export interface MemeCard {
   hasLiked: boolean;
   // Whether the viewer saved it to their Library. Saves are private, so no count.
   hasSaved: boolean;
+  // Content warnings (migration 007). Any at all and the meme is shown blurred.
+  warnings: ContentWarning[];
 }
 
 export interface MemePage {
@@ -55,7 +59,8 @@ const CARD_COLUMNS = `
   ) AS "hasLiked",
   EXISTS (
     SELECT 1 FROM meme_save s WHERE s.meme_id = m.id AND s.user_id = $1::uuid
-  ) AS "hasSaved"
+  ) AS "hasSaved",
+  ${warningsSql('m.id')} AS warnings
 `;
 
 // Shared by the feed and its count, which number their parameters differently. Postgres
@@ -171,7 +176,8 @@ export async function getMeme(idOrSlug: string, viewerId?: string): Promise<Meme
   return meme ?? null;
 }
 
-// Returns the slug the database generated for it.
+// Returns the slug the database generated for it. Warnings go in with the meme, in the same
+// statement, so it is never visible without the labels its uploader gave it.
 export async function createMeme(meme: {
   id: string;
   uploaderId: string;
@@ -179,12 +185,27 @@ export async function createMeme(meme: {
   contentType: string;
   // The post it was imported from, normalized. Null for a file upload.
   sourceUrl?: string | null;
+  warnings?: ContentWarning[];
 }): Promise<string> {
   const [row] = await db<{ slug: string }>(
-    `INSERT INTO meme (id, uploader_id, s3_key, content_type, source_url)
-     VALUES ($1, $2, $3, $4, $5)
-     RETURNING slug`,
-    [meme.id, meme.uploaderId, meme.s3Key, meme.contentType, meme.sourceUrl ?? null]
+    `WITH created AS (
+       INSERT INTO meme (id, uploader_id, s3_key, content_type, source_url)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, slug
+     ),
+     labelled AS (
+       INSERT INTO meme_content_warning (meme_id, warning, added_by)
+       SELECT created.id, unnest($6::text[]), $2 FROM created
+     )
+     SELECT slug FROM created`,
+    [
+      meme.id,
+      meme.uploaderId,
+      meme.s3Key,
+      meme.contentType,
+      meme.sourceUrl ?? null,
+      [...new Set(meme.warnings ?? [])],
+    ]
   );
   return row.slug;
 }

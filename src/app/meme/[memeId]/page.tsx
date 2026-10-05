@@ -8,6 +8,7 @@ import DetailMedia from './DetailMedia';
 import { MemePosted, PostActions, PostAuthor } from './PostParts';
 import MemeTranscriptionEditor from '@/components/MemeTranscriptionEditor';
 import MemeTagsEditor from '@/components/MemeTagsEditor';
+import MemeWarningsEditor from '@/components/MemeWarningsEditor';
 import { getUserFromAccessToken } from '@/auth/lib';
 import { isModerator } from '@/auth/role';
 import { getMeme, listRelatedMemes } from '@/db/queries/memes';
@@ -15,6 +16,7 @@ import { GalleryMasonry } from '@/components/GalleryMasonry';
 import { getKarma } from '@/db/queries/users';
 import { getCurrentTranscription } from '@/db/queries/transcriptions';
 import { listTagsForMeme } from '@/db/queries/tags';
+import { listWarningsForMeme } from '@/db/queries/warnings';
 
 export default async function MemeDetails(props: { params: Promise<{ memeId: string }> }) {
   const params = await props.params;
@@ -32,9 +34,10 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
 
   // Loaded with the page, so the panel is complete on first paint instead of showing
   // "Loading..." while the editors fetch their own data.
-  const [transcription, tags, karma, related] = await Promise.all([
+  const [transcription, tags, warnings, karma, related] = await Promise.all([
     getCurrentTranscription(meme.id),
     listTagsForMeme(meme.id, user?.id),
+    listWarningsForMeme(meme.id, user?.id),
     getKarma(meme.uploaderId),
     listRelatedMemes(meme, user?.id),
   ]);
@@ -63,6 +66,12 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
             </div>
             <aside className={d.side}>
               <PostAuthor username={meme.username} avatarKey={meme.avatarKey} karma={karma} />
+              <MemeWarningsEditor
+                memeId={meme.id}
+                userId={user?.id || ''}
+                initial={warnings}
+                canModerate={!!user && isModerator(user)}
+              />
               <MemeTranscriptionEditor plain memeId={meme.id} userId={user?.id || ''} initial={initialTranscription} />
               <MemeTagsEditor
                 plain

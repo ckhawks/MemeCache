@@ -1,12 +1,14 @@
 import { db } from '@/db/db';
 import { isUuid } from './ids';
 import { STANDS, VERSION_COLUMNS } from './transcriptions';
+import { warningsSql } from './warnings';
 import {
   CONFIRMATIONS_NEEDED,
   QUEUE_TASKS,
   TAGS_NEEDED,
   type QueueTask,
 } from '@/constants/queue';
+import type { ContentWarning } from '@/constants/contentWarnings';
 
 export { QUEUE_TASKS, type QueueTask };
 
@@ -16,6 +18,7 @@ export interface QueueMeme {
   contentType: string;
   username: string;
   avatarKey: string | null;
+  warnings: ContentWarning[];
 }
 
 export interface QueueVersion {
@@ -37,7 +40,8 @@ const MEME_COLUMNS = `
   m.slug,
   m.content_type AS "contentType",
   u.username,
-  u.avatar_s3_key AS "avatarKey"
+  u.avatar_s3_key AS "avatarKey",
+  ${warningsSql('m.id')} AS warnings
 `;
 
 // The viewer skipped this meme for this task after `since` (null: ever). A skip only lasts
@@ -153,6 +157,7 @@ export async function nextQueueItem(task: QueueTask, viewerId: string): Promise<
     contentType: row.contentType,
     username: row.username,
     avatarKey: row.avatarKey,
+    warnings: row.warnings,
   };
   if (task !== 'transcription') {
     return { meme };

@@ -1,0 +1,99 @@
+// A meme with content warnings: blurred, with its labels over it. See WarningCover.tsx.
+.cover {
+  position: relative;
+  overflow: hidden;
+}
+
+// Takes the corners of whatever holds it (a feed card's top, a thumbnail). :where() keeps
+// it weaker than a className passed in, such as the meme page's rounded frame.
+:where(.cover) {
+  border-radius: inherit;
+}
+
+.content {
+  // Fills a cover given a fixed height (a square thumbnail); otherwise sized by the media.
+  height: 100%;
+  filter: blur(28px);
+  // Scaled up a little so the blur's soft edge falls outside the cover, not inside it.
+  transform: scale(1.1);
+  transition:
+    filter 0.15s ease-in-out,
+    transform 0.15s ease-in-out;
+
+  img,
+  video {
+    display: block;
+  }
+}
+
+.compact .content {
+  filter: blur(12px);
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px;
+  border: none;
+  // The page background, see-through, so the labels read on any meme in either theme.
+  background-color: color-mix(in srgb, var(--background-color) 45%, transparent);
+  color: var(--text-color);
+  font-size: 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: opacity 0.15s ease-in-out;
+}
+
+.compact .overlay {
+  gap: 4px;
+  padding: 6px;
+  font-size: 12px;
+  // The link under it takes the click.
+  pointer-events: none;
+}
+
+.labels {
+  font-weight: 600;
+}
+
+.action {
+  font-size: 12px;
+  color: var(--mostly-text-color);
+}
+
+.tap {
+  display: none;
+}
+
+.revealed .content {
+  filter: none;
+  transform: none;
+}
+
+@media (hover: none) {
+  .click {
+    display: none;
+  }
+
+  .tap {
+    display: inline;
+  }
+}
+
+// 'hover' setting: shown while the pointer is over it. Only where a pointer can hover.
+@media (hover: hover) {
+  .hover:hover .content {
+    filter: none;
+    transform: none;
+  }
+
+  .hover:hover .overlay {
+    opacity: 0;
+    pointer-events: none;
+  }
+}

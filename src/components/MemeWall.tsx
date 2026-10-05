@@ -7,10 +7,13 @@ const COLUMNS = 4;
 // A slowly drifting wall of real memes, for the login, register and signed-out home
 // pages. Pure CSS animation; each column is doubled so the loop is seamless, and it
 // holds still for people who prefer reduced motion. Decorative, so hidden from screen
-// readers.
+// readers. Memes with content warnings are left out: nobody can reveal a tile here, and
+// these pages are the first thing a visitor sees.
 export default async function MemeWall(props: { className?: string }) {
   const { memes } = await listMemes({}, null, 40);
-  const images = memes.filter((m) => supportedImageTypes.includes(m.contentType)).slice(0, 16);
+  const images = memes
+    .filter((m) => supportedImageTypes.includes(m.contentType) && m.warnings.length === 0)
+    .slice(0, 16);
   if (images.length === 0) {
     return <div className={`${styles.wall} ${props.className ?? ''}`} aria-hidden="true" />;
   }

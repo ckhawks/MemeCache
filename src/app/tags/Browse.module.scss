@@ -99,6 +99,11 @@
   }
 }
 
+// A WarningCover inside a thumbnail fills it, as the media would.
+.thumbCover {
+  height: 100%;
+}
+
 .empty {
   color: var(--sub-text-color);
 }

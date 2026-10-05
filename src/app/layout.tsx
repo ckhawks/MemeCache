@@ -7,6 +7,9 @@ import './globals.scss';
 import { LightThemeProvider } from '@/contexts/LightThemeContext';
 import { getInitialLightTheme } from '@/contexts/getInitialLightTheme';
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
+import { WarningDisplayProvider } from '@/contexts/WarningDisplayContext';
+import { getUserFromAccessToken } from '@/auth/lib';
+import { getWarningDisplay } from '@/db/queries/warnings';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -36,12 +39,17 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const initialTheme = await getInitialLightTheme();
+  // How content warnings are shown. Visitors always get the blur.
+  const user = await getUserFromAccessToken();
+  const warningDisplay = user ? await getWarningDisplay(user.id) : 'blur';
 
   return (
     <html lang="en" data-theme={initialTheme} data-bs-theme={initialTheme}>
       <body className={inter.className}>
         <LightThemeProvider initialTheme={initialTheme}>
-          {children}
+          <WarningDisplayProvider display={warningDisplay}>
+            {children}
+          </WarningDisplayProvider>
           <ServiceWorkerRegister />
         </LightThemeProvider>
       </body>

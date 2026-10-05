@@ -11,6 +11,8 @@ import { api } from '@/util/api';
 import { cropFile } from '@/util/cropImage';
 import type { Box } from '@/util/imageEdges';
 import CropEditor from './CropEditor';
+import { WarningToggles } from '@/components/WarningToggles';
+import type { ContentWarning } from '@/constants/contentWarnings';
 
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 const MAX_VIDEO_BYTES = 30 * 1024 * 1024;
@@ -45,6 +47,8 @@ export default function UploadComponent() {
   const [sourceUrl, setSourceUrl] = useState<string | null>(null);
   // Set when that post was already imported: the existing meme's slug.
   const [duplicate, setDuplicate] = useState<string | null>(null);
+  // Content warnings ticked for this file, sent with the upload.
+  const [warnings, setWarnings] = useState<ContentWarning[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const isImage = !!file && supportedImageTypes.includes(file.type);
@@ -65,6 +69,7 @@ export default function UploadComponent() {
     }
     setFile(next);
     setCrop(null);
+    setWarnings([]);
     const reader = new FileReader();
     reader.onloadend = () => setPreview(reader.result as string);
     reader.readAsDataURL(next);
@@ -78,6 +83,7 @@ export default function UploadComponent() {
     setNote('');
     setSourceUrl(null);
     setDuplicate(null);
+    setWarnings([]);
     if (inputRef.current) {
       inputRef.current.value = '';
     }
@@ -208,6 +214,9 @@ export default function UploadComponent() {
       if (sourceUrl) {
         formData.append('sourceUrl', sourceUrl);
       }
+      for (const warning of warnings) {
+        formData.append('warnings', warning);
+      }
       const result = await api<{ id: string; slug: string }>('/api/upload', { body: formData });
       reset();
       setUploadedId(result.slug);
@@ -337,6 +346,23 @@ export default function UploadComponent() {
               </>
             )}
             {isVideo && <video src={preview} controls className={u.media} />}
+          </div>
+
+          <div className={u.warnings}>
+            <div className={u.muted}>
+              Content warnings, if any. A labelled meme is blurred until someone chooses to see it.
+            </div>
+            <WarningToggles
+              selected={warnings}
+              disabled={uploading}
+              onToggle={(warning) =>
+                setWarnings((current) =>
+                  current.includes(warning)
+                    ? current.filter((w) => w !== warning)
+                    : [...current, warning]
+                )
+              }
+            />
           </div>
 
           <div className={u.footer}>

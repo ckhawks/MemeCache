@@ -6,9 +6,11 @@ import { maxBytesForType, supportedTypes } from '@/constants/mimeTypes';
 import { createMeme } from '@/db/queries/memes';
 import { HttpError, route } from '@/server/route';
 import { normalizeImportUrl } from '@/server/mediaImport';
+import { isContentWarning } from '@/constants/contentWarnings';
 
-// POST multipart { file, sourceUrl? }: stores a new meme. The uploader is the session user.
-// sourceUrl is the post an imported file came from (see /api/import).
+// POST multipart { file, sourceUrl?, warnings* }: stores a new meme. The uploader is the
+// session user. sourceUrl is the post an imported file came from (see /api/import).
+// warnings is repeated once per content warning the uploader ticked.
 export const POST = route({
   auth: 'required',
   handler: async ({ user, request }) => {
@@ -37,6 +39,11 @@ export const POST = route({
     const sourceUrl =
       typeof rawSourceUrl === 'string' && rawSourceUrl ? normalizeImportUrl(rawSourceUrl).url : null;
 
+    const warnings = formData.getAll('warnings');
+    if (!warnings.every(isContentWarning)) {
+      throw new HttpError(400, 'Unknown content warning.');
+    }
+
     const id = crypto.randomUUID();
 
     await getS3Client().send(
@@ -56,6 +63,7 @@ export const POST = route({
         s3Key: id,
         contentType: file.type,
         sourceUrl,
+        warnings,
       });
     } catch (error) {
       // The object is already in the bucket at this point. Without this the bucket
