@@ -6,16 +6,19 @@ import { Button, Modal } from 'react-bootstrap';
 import { usePathname, useRouter } from 'next/navigation';
 import { api } from '@/util/api';
 import Tooltip from './Tooltip';
+import form from './AuthForm.module.scss';
 
 export default function DeleteMemeButton(props: {
   memeId: string;
-  // Deleting someone else's meme as a moderator. Only changes the label.
+  // Deleting someone else's meme as a moderator. Changes the label and asks for a reason.
   asModerator?: boolean;
   labeled?: boolean;
 }) {
   const [show, setShow] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
+  // A moderator says why, for the moderation log. Optional.
+  const [reason, setReason] = useState('');
   const router = useRouter();
   const pathname = usePathname();
 
@@ -35,7 +38,10 @@ export default function DeleteMemeButton(props: {
     setError('');
 
     try {
-      await api(`/api/meme/${props.memeId}`, { method: 'DELETE' });
+      await api(`/api/meme/${props.memeId}`, {
+        method: 'DELETE',
+        body: props.asModerator ? { reason: reason.trim() || undefined } : undefined,
+      });
       setShow(false);
       // The meme's own page would 404 now. Anywhere else, re-render without it.
       if (pathname.startsWith('/meme/')) {
@@ -81,6 +87,22 @@ export default function DeleteMemeButton(props: {
           </Modal.Header>
           <Modal.Body>
             <div>Are you sure you want to delete this meme?</div>
+            {props.asModerator && (
+              <div className={form.field} style={{ marginTop: '0.75rem' }}>
+                <label htmlFor={`delete-reason-${props.memeId}`} className={form.label}>
+                  Reason (optional)
+                </label>
+                <textarea
+                  id={`delete-reason-${props.memeId}`}
+                  className={form.input}
+                  rows={2}
+                  maxLength={500}
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="Kept in the moderation log"
+                />
+              </div>
+            )}
             {error && <div style={{ color: 'var(--danger-color)', marginTop: '0.5rem' }}>{error}</div>}
           </Modal.Body>
           <Modal.Footer>

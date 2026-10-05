@@ -14,6 +14,7 @@ import type { UserPayload } from '@/auth/lib';
 import { avatarUrl } from '@/util/avatarUrl';
 import { getRelativeTimeString, getServerSideRelativeTime } from '@/util/datetimeFormat';
 import { formatCount } from '@/util/formatCount';
+import { track } from '@/util/track';
 
 // Pieces of the meme page: the author line, the action bar, and the posted date.
 
@@ -59,7 +60,12 @@ export function PostActions(props: {
       />
       {props.user && <SaveMemeButton labeled memeId={meme.id} saved={meme.hasSaved} />}
       <SendMemeButton labeled memeId={meme.id} slug={meme.slug} contentType={meme.contentType} />
-      <a href={`/api/resource/${meme.id}`} download className={likeStyles['pill']}>
+      <a
+        href={`/api/resource/${meme.id}`}
+        download
+        className={likeStyles['pill']}
+        onClick={() => track('meme_download', { memeId: meme.id })}
+      >
         <Download size={16} />
         Download
       </a>

@@ -84,7 +84,7 @@ describe('creating', () => {
     const tag = await findOrCreateTag('typo', alice);
     await addTagToMeme(meme, tag, alice);
 
-    // The route writes the notification first, then removes.
+    // The name is copied when the notification is written.
     await notify({
       recipientId: alice,
       kind: 'tag_removed',

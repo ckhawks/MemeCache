@@ -54,6 +54,7 @@ export async function listTagsForMeme(memeId: string, viewerId?: string): Promis
        FROM meme_tag mt
        JOIN tag t ON t.id = mt.tag_id
       WHERE mt.meme_id = $1
+        AND mt.removed_at IS NULL
      ) tags
      WHERE score >= 1 OR NOT "adderHeld" OR own
      ORDER BY score DESC, name`,
@@ -75,18 +76,30 @@ export async function findOrCreateTag(name: string, createdBy: string): Promise<
   return tag.id;
 }
 
-// Who added this tag to this meme, or null if the meme does not carry it.
+// Who added this tag to this meme, or null if the meme does not carry it (or it was removed).
 export async function getTagAdder(memeId: string, tagId: string): Promise<string | null> {
   if (!isUuid(memeId) || !isUuid(tagId)) {
     return null;
   }
   const [row] = await db<{ addedBy: string }>(
-    `SELECT added_by AS "addedBy" FROM meme_tag WHERE meme_id = $1 AND tag_id = $2`,
+    `SELECT added_by AS "addedBy"
+       FROM meme_tag
+      WHERE meme_id = $1 AND tag_id = $2 AND removed_at IS NULL`,
     [memeId, tagId]
   );
   return row?.addedBy ?? null;
 }
 
+export async function getTagName(tagId: string): Promise<string | null> {
+  if (!isUuid(tagId)) {
+    return null;
+  }
+  const [row] = await db<{ name: string }>(`SELECT name FROM tag WHERE id = $1`, [tagId]);
+  return row?.name ?? null;
+}
+
+// The current vote only. Every new vote and every change is also copied to
+// tag_vote_history by a trigger (migration 017), so flips stay on record.
 export async function voteOnTag(memeId: string, tagId: string, voterId: string, vote: 1 | -1) {
   await db(
     `INSERT INTO meme_tag_vote (meme_id, tag_id, voter_id, vote)
@@ -99,16 +112,24 @@ export async function voteOnTag(memeId: string, tagId: string, voterId: string, 
 // One row per (meme, tag). The first person to add it is its adder and gets an automatic
 // upvote. Anyone adding it again is upvoting it. Returns true when the tag was new on this
 // meme, false when this was an upvote.
+//
+// A removed tag (migration 017) comes back as the same row: the same adder, the votes it
+// had, and this person's upvote. Taking a tag off and putting it back does not wipe its
+// votes, and someone re-adding a tag another person added does not inherit their record.
+// That counts as new on the meme, since it was not showing.
 export async function addTagToMeme(memeId: string, tagId: string, userId: string): Promise<boolean> {
-  const inserted = await db(
+  const added = await db(
     `INSERT INTO meme_tag (meme_id, tag_id, added_by)
      VALUES ($1, $2, $3)
-     ON CONFLICT DO NOTHING
+     ON CONFLICT (meme_id, tag_id) DO UPDATE
+       SET removed_at = NULL,
+           removed_by = NULL
+       WHERE meme_tag.removed_at IS NOT NULL
      RETURNING tag_id`,
     [memeId, tagId, userId]
   );
   await voteOnTag(memeId, tagId, userId, 1);
-  return inserted.length > 0;
+  return added.length > 0;
 }
 
 export interface TagSuggestion {
@@ -119,7 +140,8 @@ export interface TagSuggestion {
 }
 
 // Autocomplete for the tag field. Names starting with the query come first, then names
-// containing it, each most-used first. An empty query returns the most-used tags.
+// containing it, each most-used first. An empty query returns the most-used tags. A tag
+// that is on no meme any more (every use removed) is not offered.
 export async function searchTags(query: string, limit = 8): Promise<TagSuggestion[]> {
   // The query is matched literally, so LIKE's own wildcards are escaped.
   const pattern = query.trim().toLowerCase().replace(/[\\%_]/g, (c) => '\\' + c);
@@ -130,12 +152,14 @@ export async function searchTags(query: string, limit = 8): Promise<TagSuggestio
                FROM meme_tag mt
                JOIN meme m ON m.id = mt.meme_id
               WHERE mt.tag_id = t.id
+                AND mt.removed_at IS NULL
                 AND m.deleted_at IS NULL
                 AND (SELECT COALESCE(sum(v.vote), 0)
                        FROM counted_tag_vote v
                       WHERE v.meme_id = mt.meme_id AND v.tag_id = mt.tag_id) >= 1) AS uses
        FROM tag t
       WHERE lower(t.name) LIKE '%' || $1 || '%'
+        AND EXISTS (SELECT 1 FROM meme_tag mt WHERE mt.tag_id = t.id AND mt.removed_at IS NULL)
       ORDER BY lower(t.name) LIKE $1 || '%' DESC, uses DESC, lower(t.name)
       LIMIT $2`,
     [pattern, limit]
@@ -146,22 +170,31 @@ export async function hasOthersUpvote(memeId: string, tagId: string): Promise<bo
   const [row] = await db<{ upvoted: boolean }>(
     `SELECT ${OTHERS_UPVOTED} AS upvoted
        FROM meme_tag mt
-      WHERE mt.meme_id = $1 AND mt.tag_id = $2`,
+      WHERE mt.meme_id = $1 AND mt.tag_id = $2 AND mt.removed_at IS NULL`,
     [memeId, tagId]
   );
   return row?.upvoted ?? false;
 }
 
-// Takes a tag off a meme, with its votes. A tag left on no meme at all goes too, so a typo
-// does not linger in the suggestions.
-export async function removeTagFromMeme(memeId: string, tagId: string) {
-  await db(`DELETE FROM meme_tag WHERE meme_id = $1 AND tag_id = $2`, [memeId, tagId]);
-  await db(
-    `DELETE FROM tag t
-      WHERE t.id = $1
-        AND NOT EXISTS (SELECT 1 FROM meme_tag mt WHERE mt.tag_id = t.id)`,
-    [tagId]
+// Takes a tag off a meme. The row and its votes stay, stamped removed (migration 017): the
+// tag stops showing and counting everywhere, but the votes still count toward its adder's
+// trust, so taking back a tag that is being voted down does not erase the downvotes. A tag
+// left on no meme stays in the tag table; suggestions skip it. Returns false when the tag
+// was not on the meme.
+export async function removeTagFromMeme(
+  memeId: string,
+  tagId: string,
+  removedBy: string | null = null
+): Promise<boolean> {
+  const rows = await db(
+    `UPDATE meme_tag
+        SET removed_at = now(),
+            removed_by = $3
+      WHERE meme_id = $1 AND tag_id = $2 AND removed_at IS NULL
+      RETURNING tag_id`,
+    [memeId, tagId, removedBy]
   );
+  return rows.length > 0;
 }
 
 export interface TagRow {
@@ -189,10 +222,11 @@ export async function listTagRows(options: {
   const rows = await db<TagRow>(
     `WITH standing AS (
        SELECT mt.tag_id, m.id, m.slug, m.content_type, m.created_at,
-              (SELECT count(*) FROM meme_like l WHERE l.meme_id = m.id) AS likes
+              (SELECT count(*) FROM meme_like l WHERE l.meme_id = m.id AND l.removed_at IS NULL) AS likes
          FROM meme_tag mt
          JOIN meme m ON m.id = mt.meme_id
         WHERE m.deleted_at IS NULL
+          AND mt.removed_at IS NULL
           AND (SELECT COALESCE(sum(v.vote), 0)
                  FROM counted_tag_vote v
                 WHERE v.meme_id = mt.meme_id AND v.tag_id = mt.tag_id) >= 1

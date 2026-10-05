@@ -79,7 +79,7 @@ export async function notifyIfTagConfirmed(memeId: string, tagId: string, actorI
               WHERE v.meme_id = mt.meme_id AND v.tag_id = mt.tag_id
                 AND v.voter_id <> mt.added_by) AS agreement
        FROM meme_tag mt
-      WHERE mt.meme_id = $1 AND mt.tag_id = $2`,
+      WHERE mt.meme_id = $1 AND mt.tag_id = $2 AND mt.removed_at IS NULL`,
     [memeId, tagId]
   );
   if (row && row.agreement >= CONFIRMATIONS_NEEDED) {

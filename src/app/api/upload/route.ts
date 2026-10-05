@@ -7,6 +7,7 @@ import { createMeme } from '@/db/queries/memes';
 import { HttpError, route } from '@/server/route';
 import { normalizeImportUrl } from '@/server/mediaImport';
 import { isContentWarning } from '@/constants/contentWarnings';
+import { recordEvent } from '@/db/queries/events';
 
 // POST multipart { file, sourceUrl?, warnings* }: stores a new meme. The uploader is the
 // session user. sourceUrl is the post an imported file came from (see /api/import).
@@ -72,6 +73,17 @@ export const POST = route({
       throw error;
     }
 
+    await recordEvent({
+      kind: 'upload',
+      userId: user.id,
+      memeId: id,
+      data: {
+        contentType: file.type,
+        bytes: file.size,
+        imported: sourceUrl !== null,
+        warnings,
+      },
+    });
     return { id, slug };
   },
 });

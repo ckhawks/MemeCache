@@ -131,7 +131,8 @@ export async function getTranscriptionAuthor(
   return row ?? null;
 }
 
-// One verdict per reviewer per version; changing your mind replaces it.
+// One verdict per reviewer per version; changing your mind replaces it. Every new verdict and
+// every change is also copied to transcription_review_history by a trigger (migration 017).
 export async function reviewTranscription(
   transcriptionId: string,
   reviewerId: string,

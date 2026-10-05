@@ -1,11 +1,13 @@
-import { getTagAdder, hasOthersUpvote, removeTagFromMeme } from '@/db/queries/tags';
+import { getTagAdder, getTagName, hasOthersUpvote, removeTagFromMeme } from '@/db/queries/tags';
 import { notify } from '@/db/queries/notifications';
+import { logModeration } from '@/db/queries/moderation';
 import { isModerator } from '@/auth/role';
 import { HttpError, route } from '@/server/route';
 import { requireMeme } from '@/server/require';
 
 // DELETE: takes a tag off a meme. The person who added it can, until someone else upvotes
-// it; moderators always can.
+// it; moderators always can, and a moderator taking off someone else's tag goes in the
+// moderation log. The row and its votes are kept (removeTagFromMeme).
 export const DELETE = route({
   auth: 'required',
   handler: async ({ user, params }) => {
@@ -22,8 +24,10 @@ export const DELETE = route({
         throw new HttpError(403, 'Someone else has upvoted this tag, so it stays.');
       }
     }
-    // Written before the removal, which can delete the tag itself and with it the name
-    // the notification copies. Taking back your own tag tells nobody.
+    if (!(await removeTagFromMeme(meme.id, params.tagId, user.id))) {
+      throw new HttpError(404, 'That tag is not on this meme.');
+    }
+    // Taking back your own tag tells nobody.
     await notify({
       recipientId: adder,
       kind: 'tag_removed',
@@ -31,7 +35,19 @@ export const DELETE = route({
       memeId: meme.id,
       tagId: params.tagId,
     });
-    await removeTagFromMeme(meme.id, params.tagId);
+    if (adder !== user.id) {
+      await logModeration({
+        actorId: user.id,
+        action: 'tag_remove',
+        targetType: 'meme',
+        targetId: meme.id,
+        data: {
+          tagId: params.tagId,
+          tagName: await getTagName(params.tagId),
+          addedBy: adder,
+        },
+      });
+    }
     return { ok: true };
   },
 });

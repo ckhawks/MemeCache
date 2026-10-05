@@ -16,6 +16,7 @@ export function mutedSql(memeColumn: string, viewerParam: string) {
       JOIN meme_tag mt ON mt.tag_id = p.tag_id AND mt.meme_id = ${memeColumn}
      WHERE p.user_id = ${viewerParam}::uuid
        AND p.kind = 'mute'
+       AND mt.removed_at IS NULL
        AND (SELECT COALESCE(sum(v.vote), 0)
               FROM counted_tag_vote v
              WHERE v.meme_id = mt.meme_id AND v.tag_id = mt.tag_id) >= 1
