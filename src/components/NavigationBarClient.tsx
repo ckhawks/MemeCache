@@ -6,7 +6,8 @@ import navStyles from './NavigationBar.module.scss';
 import { usePathname } from 'next/navigation';
 import Tooltip from './Tooltip';
 import UserMenu from './UserMenu';
-import { CheckSquare, Compass, Grid, Home, LogIn, PlusSquare, User } from 'react-feather';
+import SearchBox from './SearchBox';
+import { CheckSquare, Compass, Grid, Home, LogIn, PlusSquare, Search, User } from 'react-feather';
 
 interface NavItem {
   href: string;
@@ -142,6 +143,16 @@ export default function NavigationBarClient(props: {
           </div>
 
           <div className={navStyles['navbar-right']}>
+            {/* The search page has its own box. Narrow screens get an icon to it instead: the
+                phone tab bar is full, and the links fill a small desktop bar. */}
+            {pathname !== '/search' && (
+              <div className={navStyles['search-field']}>
+                <SearchBox compact shortcut />
+              </div>
+            )}
+            <Link href="/search" aria-label="Search" className={navStyles['search-icon']}>
+              <Search size={20} />
+            </Link>
             {props.username && (
               <UserMenu
                 username={props.username}

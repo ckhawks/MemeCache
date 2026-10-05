@@ -34,6 +34,7 @@
 .navbar-right {
   display: flex;
   flex-direction: row;
+  align-items: center;
   gap: 8px;
 }
 
@@ -178,6 +179,32 @@ $phone: 700px;
 .navbar-links {
   @media (max-width: $phone) {
     display: none;
+  }
+}
+
+// Search: a box where the bar has room for it, an icon to the search page where it does not.
+$search-box-fits: 1000px;
+
+.search-field {
+  @media (max-width: $search-box-fits) {
+    display: none;
+  }
+}
+
+.search-icon {
+  display: none;
+  padding: 4px;
+  border-radius: 4px;
+  color: var(--sub-text-color);
+
+  &:hover {
+    color: var(--text-color);
+    background-color: var(--hover-background-color);
+  }
+
+  @media (max-width: $search-box-fits) {
+    display: flex;
+    align-items: center;
   }
 }
 

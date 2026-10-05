@@ -40,7 +40,8 @@ export const FEED_PAGE_SIZE = 60;
 
 // Counts are subqueries rather than joins. Joining likes and votes into the same FROM
 // multiplies one by the other, which is how like counts and tag scores used to inflate.
-const CARD_COLUMNS = `
+// Every query using it passes the viewer (or null) as $1.
+export const CARD_COLUMNS = `
   m.id,
   m.slug,
   m.content_type AS "contentType",

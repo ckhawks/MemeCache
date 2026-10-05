@@ -12,6 +12,7 @@ import MemeMediaRenderer from './MemeMediaRenderer';
 import DeleteMemeButton from './DeleteMemeButton';
 import SendMemeButton from './SendMemeButton';
 import SaveMemeButton from './SaveMemeButton';
+import SearchSnippet from './SearchSnippet';
 import Tooltip from './Tooltip';
 import likeStyles from './LikeButton.module.scss';
 import type { MemeCard } from '@/db/queries/memes';
@@ -19,11 +20,13 @@ import { avatarUrl } from '@/util/avatarUrl';
 import type { FeedView } from '@/server/feedView';
 
 // Memes arrive newest first from the query. `view` is the viewer's layout choice
-// (FeedViewToggle): a multi-column grid, or a single centered column.
+// (FeedViewToggle): a multi-column grid, or a single centered column. Search results pass
+// `snippets`, the matching text by meme id, shown under each card's title row.
 export function GalleryMasonry(props: {
   memes: MemeCard[];
   currentUserId: string;
   view?: FeedView;
+  snippets?: Record<string, string | null>;
 }) {
   const [, forceUpdate] = useState({});
   const router = useRouter();
@@ -105,6 +108,7 @@ export function GalleryMasonry(props: {
             />
           </div>
         </div>
+        {props.snippets?.[meme.id] && <SearchSnippet text={props.snippets[meme.id]!} />}
       </div>
     </div>
   );

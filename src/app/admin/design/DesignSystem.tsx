@@ -17,6 +17,8 @@ import { TagChip } from '@/components/TagChip';
 import BackButton from '@/components/BackButton';
 import ThemeToggle from '@/components/ThemeToggle';
 import FeedViewToggle from '@/components/FeedViewToggle';
+import SearchBox from '@/components/SearchBox';
+import SearchSnippet from '@/components/SearchSnippet';
 import { GalleryMasonry } from '@/components/GalleryMasonry';
 import type { MemeCard } from '@/db/queries/memes';
 
@@ -198,6 +200,15 @@ export default function DesignSystem(props: { memes: MemeCard[]; userId: string 
 
       <Section title="Inputs">
         <Themed>
+          <Labeled label="Search (SearchBox; compact is the top bar's, live: submits to /search)">
+            <div className={ds.row}>
+              <SearchBox />
+              <SearchBox compact />
+            </div>
+          </Labeled>
+          <Labeled label="Search result text (SearchSnippet)">
+            <SearchSnippet text={'My disappointment is immeasurable, and my day is ruined.'} />
+          </Labeled>
           <div className={ds.row}>
             <input type="text" placeholder="Add a new tag" aria-label="Example tag input" className={tagEditor['tag-input']} />
             <button type="button" className={main['button']}>Add tag</button>

@@ -1,0 +1,52 @@
+.box {
+  margin-bottom: 12px;
+}
+
+// Tag filters: the ones in use, removable, then tags matching the words.
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.filters-label {
+  font-size: 12px;
+  color: var(--sub-text-color);
+}
+
+// Shaped like TagChip, but a plain link: no score votes here.
+.filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 30px;
+  font-size: 12px;
+  color: var(--mostly-text-color);
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease-in-out,
+    color 0.15s ease-in-out;
+
+  &:hover {
+    border-color: var(--border-color-hover);
+    color: var(--text-color);
+  }
+
+  &.active {
+    border-color: var(--text-color);
+    color: var(--text-color);
+  }
+}
+
+.uses {
+  color: var(--sub-text-color);
+  font-variant-numeric: tabular-nums;
+}
+
+.help {
+  color: var(--sub-text-color);
+}

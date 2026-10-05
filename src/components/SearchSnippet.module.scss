@@ -1,0 +1,18 @@
+.snippet {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--sub-text-color);
+  overflow-wrap: anywhere;
+  // Three lines at most; a long transcription is cut, not the card stretched.
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.match {
+  padding: 0;
+  font-weight: 600;
+  color: var(--text-color);
+  background: none;
+}

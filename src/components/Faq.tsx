@@ -36,9 +36,11 @@ const QUESTIONS: { q: string; a: React.ReactNode }[] = [
     q: 'How does search find memes?',
     a: (
       <>
-        By the text on each meme and by its tags. Members write both, and other members check
-        them in the <Link href="/queue">Queue</Link>: each transcription and tag needs two
-        people to confirm it.
+        By the words on each meme and by its tags. You do not need the exact wording: part of
+        a phrase, half a word or a typo still finds it, and a meme tagged with what you typed
+        comes first. Add tag:name to only see memes with that tag. Members write the text and
+        tags, and other members check them in the <Link href="/queue">Queue</Link>; text or a
+        tag that gets voted down stops counting.
       </>
     ),
   },
