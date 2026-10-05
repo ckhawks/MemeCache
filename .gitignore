@@ -47,3 +47,6 @@ next-env.d.ts
 .env
 # Claude Code agent worktrees
 .claude/worktrees/
+
+# Playwright MCP output (screenshots belong in the OS temp dir)
+.playwright-mcp/
