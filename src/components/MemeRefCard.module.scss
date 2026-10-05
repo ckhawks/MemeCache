@@ -1,0 +1,79 @@
+// A meme attached to a comment, and the square thumbnails the picker offers.
+
+.card {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  align-self: flex-start;
+  padding: 6px 12px 6px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background-color: var(--background-color);
+  color: var(--mostly-text-color);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.link {
+  transition:
+    background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out;
+
+  &:hover {
+    background-color: var(--hover-background-color);
+    border-color: var(--border-color-hover);
+
+    strong {
+      text-decoration: underline;
+    }
+  }
+}
+
+.thumb {
+  flex: none;
+  width: 88px;
+  height: 88px;
+  overflow: hidden;
+  border-radius: 6px;
+  background-color: var(--hover-background-color);
+}
+
+// Holds a square box whatever the meme's shape; also the WarningCover's size.
+.thumb-cover {
+  width: 100%;
+  height: 100%;
+}
+
+.thumb-media {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.caption {
+  strong {
+    color: var(--text-color);
+    font-weight: 600;
+  }
+}
+
+.remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-left: 4px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--sub-text-color);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text-color);
+    background-color: var(--hover-background-color);
+  }
+}

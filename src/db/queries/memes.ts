@@ -17,6 +17,8 @@ export interface MemeCard {
   // The uploader's karma, shown beside their name.
   karma: number;
   likeCount: number;
+  // Comments still standing (migration 014).
+  commentCount: number;
   hasLiked: boolean;
   // Whether the viewer saved it to their Library. Saves are private, so no count.
   hasSaved: boolean;
@@ -55,6 +57,9 @@ export const CARD_COLUMNS = `
   u.avatar_s3_key AS "avatarKey",
   ${karmaSql('m.uploader_id')} AS karma,
   (SELECT count(*)::int FROM meme_like l WHERE l.meme_id = m.id) AS "likeCount",
+  (
+    SELECT count(*)::int FROM meme_comment c_c WHERE c_c.meme_id = m.id AND c_c.deleted_at IS NULL
+  ) AS "commentCount",
   EXISTS (
     SELECT 1 FROM meme_like l WHERE l.meme_id = m.id AND l.user_id = $1::uuid
   ) AS "hasLiked",

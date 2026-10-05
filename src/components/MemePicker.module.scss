@@ -1,0 +1,78 @@
+// The comment box's meme search: a field like SearchBox's, then a row of square thumbnails.
+
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--full-background-color);
+}
+
+.field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.icon {
+  position: absolute;
+  left: 10px;
+  color: var(--sub-text-color);
+  pointer-events: none;
+}
+
+// AuthForm.module.scss .input, a size smaller, with room for the icon.
+.input {
+  width: 100%;
+  padding: 7px 10px 7px 34px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color-hover);
+  border-radius: 6px;
+
+  &::placeholder {
+    color: var(--sub-text-color);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--text-color);
+    box-shadow: 0 0 0 3px var(--hover-background-color);
+  }
+}
+
+.note {
+  font-size: 13px;
+  color: var(--sub-text-color);
+}
+
+.results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.result {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background-color: var(--hover-background-color);
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    border-color: var(--text-color);
+  }
+}

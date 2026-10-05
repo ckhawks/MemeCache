@@ -9,6 +9,7 @@ import { MemePosted, PostActions, PostAuthor } from './PostParts';
 import MemeTranscriptionEditor from '@/components/MemeTranscriptionEditor';
 import MemeTagsEditor from '@/components/MemeTagsEditor';
 import MemeWarningsEditor from '@/components/MemeWarningsEditor';
+import Comments from '@/components/Comments';
 import { getUserFromAccessToken } from '@/auth/lib';
 import { isModerator } from '@/auth/role';
 import { getMeme, listRelatedMemes } from '@/db/queries/memes';
@@ -17,6 +18,7 @@ import { getKarma } from '@/db/queries/users';
 import { getCurrentTranscription } from '@/db/queries/transcriptions';
 import { listTagsForMeme } from '@/db/queries/tags';
 import { listWarningsForMeme } from '@/db/queries/warnings';
+import { listComments } from '@/db/queries/comments';
 
 export default async function MemeDetails(props: { params: Promise<{ memeId: string }> }) {
   const params = await props.params;
@@ -34,12 +36,13 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
 
   // Loaded with the page, so the panel is complete on first paint instead of showing
   // "Loading..." while the editors fetch their own data.
-  const [transcription, tags, warnings, karma, related] = await Promise.all([
+  const [transcription, tags, warnings, karma, related, comments] = await Promise.all([
     getCurrentTranscription(meme.id),
     listTagsForMeme(meme.id, user?.id),
     listWarningsForMeme(meme.id, user?.id),
     getKarma(meme.uploaderId),
     listRelatedMemes(meme, user?.id),
+    listComments(meme.id),
   ]);
 
   const initialTranscription = transcription && {
@@ -56,7 +59,7 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
           <div className={styles.description}>
             <BackButton to={'/explore'} text={'Back'} />
           </div>
-          {/* The meme with its actions under it, the details beside it. */}
+          {/* The meme with its actions and comments under it, the details beside it. */}
           <div className={d.post}>
             <div className={d.frame}>
               <DetailMedia meme={meme} />
@@ -82,6 +85,15 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
               />
               <MemePosted createdAt={meme.createdAt} />
             </aside>
+            <div className={d.commentsArea}>
+              <Comments
+                memeId={meme.id}
+                memeSlug={meme.slug}
+                initial={comments}
+                viewerId={user?.id || ''}
+                canModerate={!!user && isModerator(user)}
+              />
+            </div>
           </div>
 
           {related.length > 0 && (

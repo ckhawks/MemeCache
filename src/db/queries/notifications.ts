@@ -1,7 +1,7 @@
 import { db } from '@/db/db';
 import { CONFIRMATIONS_NEEDED } from '@/constants/queue';
 
-// Migration 012. Rows are written by the API routes after the action they describe has
+// Migrations 012 and 014. Rows are written by the API routes after the action they describe has
 // succeeded, and grouped when read.
 
 export type NotificationKind =
@@ -12,7 +12,9 @@ export type NotificationKind =
   | 'transcription_rejected'
   | 'transcription_fixed'
   | 'tag_confirmed'
-  | 'tag_removed';
+  | 'tag_removed'
+  | 'comment'
+  | 'meme_quoted';
 
 export interface NewNotification {
   // Who it is for. Nothing is written when this is the actor.
@@ -22,10 +24,12 @@ export interface NewNotification {
   memeId: string;
   transcriptionId?: string;
   tagId?: string;
+  // The comment kinds: the comment, so every new comment is news.
+  commentId?: string;
 }
 
 // Writes one notification unless the recipient already has the same one: same kind, meme,
-// version or tag, and person. tag_confirmed happens once per tag, whoever tipped it.
+// version, tag or comment, and person. tag_confirmed happens once per tag, whoever tipped it.
 //
 // A notification is a side effect. Failing to write one is logged and does not fail the
 // like or vote that caused it.
@@ -35,9 +39,10 @@ export async function notify(n: NewNotification) {
   }
   try {
     await db(
-      `INSERT INTO notification (user_id, kind, actor_id, meme_id, transcription_id, tag_id, tag_name)
+      `INSERT INTO notification (user_id, kind, actor_id, meme_id, transcription_id, tag_id, tag_name, comment_id)
        SELECT $1::uuid, $2::text, $3::uuid, $4::uuid, $5::bigint, $6::uuid,
-              (SELECT name FROM tag WHERE id = $6::uuid)
+              (SELECT name FROM tag WHERE id = $6::uuid),
+              $7::bigint
         WHERE NOT EXISTS (
           SELECT 1 FROM notification x
            WHERE x.user_id = $1
@@ -45,6 +50,7 @@ export async function notify(n: NewNotification) {
              AND x.meme_id = $4
              AND x.transcription_id IS NOT DISTINCT FROM $5
              AND x.tag_id IS NOT DISTINCT FROM $6
+             AND x.comment_id IS NOT DISTINCT FROM $7
              AND (x.actor_id = $3 OR x.kind = 'tag_confirmed')
         )
        ON CONFLICT DO NOTHING`,
@@ -55,6 +61,7 @@ export async function notify(n: NewNotification) {
         n.memeId,
         n.transcriptionId ?? null,
         n.tagId ?? null,
+        n.commentId ?? null,
       ]
     );
   } catch (error) {
@@ -113,7 +120,14 @@ export interface NotificationGroup {
 }
 
 // What makes two rows one group, beyond kind and meme (alias n). Reviews group per version,
-// tag news per tag. Likes, tagging and transcribing group per meme.
+// tag news per tag. Likes, tagging, transcribing and comments group per meme.
+// Rows about a comment that was since deleted are left out (alias n).
+const COMMENT_STANDS = `
+  NOT EXISTS (
+    SELECT 1 FROM meme_comment c WHERE c.id = n.comment_id AND c.deleted_at IS NOT NULL
+  )
+`;
+
 const GROUP_DETAIL = `
   CASE
     WHEN n.kind IN ('transcription_confirmed', 'transcription_rejected', 'transcription_fixed')
@@ -149,6 +163,7 @@ export async function listNotifications(
        JOIN app_user a ON a.id = n.actor_id
       WHERE n.user_id = $1
         AND m.deleted_at IS NULL
+        AND ${COMMENT_STANDS}
       GROUP BY n.kind, n.meme_id, m.slug, m.content_type, ${GROUP_DETAIL}
       ORDER BY max(n.created_at) DESC, max(n.id) DESC
       LIMIT $2`,
@@ -180,7 +195,8 @@ export async function countUnreadNotifications(userId: string): Promise<number> 
        JOIN meme m ON m.id = n.meme_id
       WHERE n.user_id = $1
         AND n.read_at IS NULL
-        AND m.deleted_at IS NULL`,
+        AND m.deleted_at IS NULL
+        AND ${COMMENT_STANDS}`,
     [userId]
   );
   return row.count;

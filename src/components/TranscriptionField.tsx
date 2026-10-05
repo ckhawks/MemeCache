@@ -9,8 +9,9 @@ import styles from './MemeTranscriptionEditor.module.scss';
 // The picker is large, so it loads the first time someone opens it.
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
-// The text box for a meme's transcription, used on the meme page and in the queue. Memes
-// are full of emoji, so a picker sits in the corner and inserts at the cursor.
+// The text box for a meme's transcription, used on the meme page and in the queue, and for
+// comments (with their own label and placeholder). Memes are full of emoji, so a picker sits
+// in the corner and inserts at the cursor.
 export default function TranscriptionField(props: {
   value: string;
   onChange: (value: string) => void;
@@ -18,6 +19,11 @@ export default function TranscriptionField(props: {
   onSubmit?: () => void;
   autoFocus?: boolean;
   rows?: number;
+  // Defaults are the transcription's.
+  label?: string;
+  placeholder?: string;
+  maxLength?: number;
+  onPaste?: (event: React.ClipboardEvent<HTMLTextAreaElement>) => void;
 }) {
   const [picking, setPicking] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -84,10 +90,12 @@ export default function TranscriptionField(props: {
             props.onSubmit();
           }
         }}
+        onPaste={props.onPaste}
         rows={props.rows ?? 4}
         autoFocus={props.autoFocus}
-        aria-label="Transcription"
-        placeholder="Type the text on the meme, top to bottom."
+        maxLength={props.maxLength}
+        aria-label={props.label ?? 'Transcription'}
+        placeholder={props.placeholder ?? 'Type the text on the meme, top to bottom.'}
       />
       <button
         type="button"

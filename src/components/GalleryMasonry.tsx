@@ -3,7 +3,7 @@
 import Masonry from 'react-masonry-css';
 import styles from '../app/main.module.scss';
 import { getRelativeTimeString, getServerSideRelativeTime } from '@/util/datetimeFormat';
-import { Download } from 'react-feather';
+import { Download, MessageCircle } from 'react-feather';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -100,6 +100,19 @@ export function GalleryMasonry(props: {
             </Tooltip>
             <SendMemeButton memeId={meme.id} slug={meme.slug} contentType={meme.contentType} />
             {props.currentUserId && <SaveMemeButton memeId={meme.id} saved={meme.hasSaved} />}
+            {meme.commentCount > 0 && (
+              <Tooltip label={meme.commentCount === 1 ? '1 comment' : `${meme.commentCount} comments`}>
+                <Link
+                  href={`/meme/${meme.slug}#comments`}
+                  aria-label={`Comments (${meme.commentCount})`}
+                  className={likeStyles['wrapper']}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MessageCircle size={14} className={likeStyles['icon']} />
+                  <span className={likeStyles['likes']}>{meme.commentCount}</span>
+                </Link>
+              </Tooltip>
+            )}
             <LikeButton
               memeId={meme.id}
               userId={props.currentUserId}

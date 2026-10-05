@@ -1,12 +1,13 @@
-// The meme page. Desktop: the meme with its action bar under it on the left, the details
-// in a column beside it. Phones: meme, actions, details, stacked.
+// The meme page. Desktop: the meme with its action bar and comments under it on the left,
+// the details in a column beside it. Phones: meme, actions, details, comments, stacked.
 .post {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
   grid-template-areas:
     'media side'
-    'actions side';
-  grid-template-rows: auto 1fr;
+    'actions side'
+    'comments side';
+  grid-template-rows: auto auto 1fr;
   gap: 16px 48px;
   align-items: start;
 
@@ -15,7 +16,8 @@
     grid-template-areas:
       'media'
       'actions'
-      'side';
+      'side'
+      'comments';
     grid-template-rows: auto;
     gap: 16px;
   }
@@ -23,6 +25,18 @@
 
 .actionsArea {
   grid-area: actions;
+}
+
+.commentsArea {
+  grid-area: comments;
+  min-width: 0;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-color);
+
+  @media (max-width: 900px) {
+    margin-top: 8px;
+  }
 }
 
 // The details column: author, caption, tags, date. Stays in view beside a tall meme.

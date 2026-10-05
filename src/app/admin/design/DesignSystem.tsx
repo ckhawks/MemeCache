@@ -31,6 +31,10 @@ import { WarningToggles } from '@/components/WarningToggles';
 import WarningCover from '@/components/WarningCover';
 import { WarningDisplayProvider } from '@/contexts/WarningDisplayContext';
 import type { ContentWarning } from '@/constants/contentWarnings';
+import { CommentComposer, CommentItem } from '@/components/Comments';
+import MemeRefCard from '@/components/MemeRefCard';
+import MemePicker from '@/components/MemePicker';
+import type { MemeComment, MemeRef } from '@/db/queries/comments';
 
 // A meme id that does not exist: interactive examples hit the real API and get a 404, so
 // clicking them shows the error and rollback paths without changing any data.
@@ -95,6 +99,76 @@ function Labeled(props: { label: string; children: React.ReactNode }) {
 
 // Example cooldowns relative to when the page opened: one far off, one a few seconds from
 // done so the finish state can be seen.
+// Example comments around the first real meme. Their Edit and Delete only change this page.
+function CommentExamples(props: { memes: MemeCard[]; userId: string }) {
+  const [opened] = useState(() => Date.now());
+  const meme = props.memes[0];
+  const ref: MemeRef | null = meme
+    ? {
+        id: meme.id,
+        slug: meme.slug,
+        contentType: meme.contentType,
+        username: meme.username,
+        warnings: [],
+      }
+    : null;
+  const base: MemeComment = {
+    id: '1',
+    memeId: FAKE_MEME,
+    authorId: props.userId,
+    username: meme?.username ?? 'someone',
+    avatarKey: meme?.avatarKey ?? null,
+    karma: 42,
+    body: 'This is the one I was looking for.',
+    ref: null,
+    refGone: false,
+    createdAt: new Date(opened - 2 * 60_000),
+    editedAt: null,
+    deleted: null,
+  };
+  const examples: [string, MemeComment][] = [
+    ['Your own, inside the edit window: Edit and Delete', base],
+    [
+      "Someone else's, with a meme and edited (moderators see Delete)",
+      { ...base, id: '2', authorId: FAKE_MEME, body: 'Same energy', ref, editedAt: new Date(opened) },
+    ],
+    ['Only a meme, warned', { ...base, id: '3', authorId: FAKE_MEME, body: '', ref: ref && { ...ref, warnings: ['spoiler'] } }],
+    ['Removed by a moderator', { ...base, id: '4', authorId: FAKE_MEME, body: '', deleted: 'moderator' }],
+  ];
+  const fail = async () => {
+    throw new Error('Example only: nothing was sent.');
+  };
+  return (
+    <>
+      {examples.map(([label, comment]) => (
+        <Labeled key={comment.id} label={label}>
+          <ul style={{ margin: 0, padding: 0, listStyle: 'none', width: '100%' }}>
+            <CommentItem comment={comment} viewerId={props.userId} canModerate={false} onEdit={fail} onDelete={fail} />
+          </ul>
+        </Labeled>
+      ))}
+      {ref && (
+        <Labeled label="Attached meme (MemeRefCard), and its preview in the comment box">
+          <div className={ds.row}>
+            <MemeRefCard meme={ref} />
+            <MemeRefCard meme={ref} onRemove={() => undefined} />
+          </div>
+        </Labeled>
+      )}
+      <Labeled label="Comment box (live search; sending fails, the meme does not exist)">
+        <div style={{ width: '100%' }}>
+          <CommentComposer memeId={FAKE_MEME} submitLabel="Comment" onSubmit={fail} />
+        </div>
+      </Labeled>
+      <Labeled label="Meme picker (MemePicker, live search)">
+        <div style={{ width: '100%' }}>
+          <MemePicker onPick={() => undefined} onClose={() => undefined} />
+        </div>
+      </Labeled>
+    </>
+  );
+}
+
 function CooldownExamples() {
   const [opened] = useState(() => Date.now());
   const day = 24 * 60 * 60 * 1000;
@@ -313,6 +387,15 @@ export default function DesignSystem(props: { memes: MemeCard[]; userId: string 
             <option value="a">First option</option>
             <option value="b">Second option</option>
           </select>
+        </Themed>
+      </Section>
+
+      <Section
+        title="Comments"
+        note="components/Comments: flat, oldest first. Text and/or a meme replied with, shown as a MemeRefCard thumbnail that respects content warnings. Edit for 10 minutes; delete leaves a note in place."
+      >
+        <Themed>
+          <CommentExamples memes={props.memes} userId={props.userId} />
         </Themed>
       </Section>
 
