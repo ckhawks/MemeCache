@@ -1,0 +1,194 @@
+// Comments under a meme: the list, each comment, and the box to write one. See Comments.tsx.
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  // Clears the sticky top bar when opened at #comments.
+  scroll-margin-top: 72px;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.count {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--sub-text-color);
+}
+
+.empty {
+  margin: 0;
+  font-size: 14px;
+  color: var(--sub-text-color);
+
+  a {
+    color: var(--text-color);
+    font-weight: 500;
+  }
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.comment {
+  display: flex;
+  gap: 10px;
+}
+
+.avatar-link {
+  flex: none;
+}
+
+.avatar {
+  display: block;
+  width: 32px;
+  height: 32px;
+  border-radius: 100%;
+  object-fit: cover;
+  border: 1px solid var(--border-color);
+}
+
+.deleted .avatar {
+  opacity: 0.5;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+// Name, karma, time, edited, and the actions pushed to the end.
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 6px;
+  font-size: 13px;
+  color: var(--sub-text-color);
+}
+
+.author {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.karma {
+  color: var(--sub-text-color);
+}
+
+.actions {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-left: auto;
+}
+
+// Text buttons, like MemeTranscriptionEditor's inline edit.
+.action {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--sub-text-color);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text-color);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  &.danger {
+    color: var(--danger-color);
+    font-weight: 500;
+  }
+}
+
+// What they wrote, with its line breaks, and long links broken rather than overflowing.
+.body {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.note {
+  font-size: 14px;
+  font-style: italic;
+  color: var(--sub-text-color);
+}
+
+.error {
+  font-size: 14px;
+  color: var(--danger-color);
+}
+
+.composer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.composer-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.attach {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 100px;
+  background-color: var(--background-color);
+  color: var(--mostly-text-color);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out;
+
+  &:hover,
+  &[aria-expanded='true'] {
+    background-color: var(--hover-background-color);
+    border-color: var(--border-color-hover);
+  }
+}
+
+.counter {
+  font-size: 12px;
+  color: var(--sub-text-color);
+}
+
+.composer-buttons {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}

@@ -69,8 +69,15 @@ function sentence(group: Group) {
       return <>Your tag {tags(group.tagNames)} was confirmed</>;
     case 'tag_removed':
       return <>A moderator removed your tag {tags(group.tagNames)}</>;
+    case 'comment':
+      return <>{people(group)} commented on your meme</>;
+    case 'meme_quoted':
+      return <>{people(group)} replied with your meme in a comment</>;
   }
 }
+
+// These open the meme page at its comments.
+const COMMENT_KINDS: NotificationGroup['kind'][] = ['comment', 'meme_quoted'];
 
 // "just now", "5m", "3h", "2d", then the date.
 function ago(value: Date | string) {
@@ -99,7 +106,7 @@ export default function NotificationList(props: { groups: Group[] }) {
         return (
           <li key={group.kind + group.id}>
             <Link
-              href={`/meme/${group.memeSlug}`}
+              href={`/meme/${group.memeSlug}${COMMENT_KINDS.includes(group.kind) ? '#comments' : ''}`}
               className={`${styles['item']} ${group.unread ? styles['unread'] : ''}`}
             >
               {actor && (

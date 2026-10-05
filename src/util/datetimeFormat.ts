@@ -58,3 +58,24 @@ export function getRelativeTimeString(
   const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
   return rtf.format(Math.floor(deltaSeconds / divisor), units[unitIndex]);
 }
+
+// "just now", "5 minutes ago", "yesterday", "3 weeks ago". Unlike the two above it leaves
+// its argument alone and applies no time zone offset: timestamptz values arrive as the
+// right instant already. Takes a string too, for dates that came through JSON.
+export function timeAgo(value: Date | string, now: number = Date.now()): string {
+  const seconds = Math.round((new Date(value).getTime() - now) / 1000);
+  if (Math.abs(seconds) < 60) {
+    return 'just now';
+  }
+  const units: [Intl.RelativeTimeFormatUnit, number][] = [
+    ['year', 86400 * 365],
+    ['month', 86400 * 30],
+    ['week', 86400 * 7],
+    ['day', 86400],
+    ['hour', 3600],
+    ['minute', 60],
+  ];
+  const [unit, size] = units.find(([, unitSeconds]) => Math.abs(seconds) >= unitSeconds)!;
+  const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+  return rtf.format(Math.trunc(seconds / size), unit);
+}
