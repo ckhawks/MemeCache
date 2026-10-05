@@ -84,6 +84,8 @@
 // never taller than 75% of the screen, so the action bar under it stays in view.
 .media {
   display: block;
+  // Double tap likes the meme; without this the browser zooms instead.
+  touch-action: manipulation;
   width: 100%;
   height: auto;
   max-height: 75vh;

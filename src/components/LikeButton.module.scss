@@ -81,3 +81,26 @@
     border-color: var(--danger-color);
   }
 }
+
+// Double tap to like: the heart pops once.
+.pulse {
+  animation: like-pulse 0.45s ease-out;
+}
+
+@keyframes like-pulse {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.45);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse {
+    animation: none;
+  }
+}

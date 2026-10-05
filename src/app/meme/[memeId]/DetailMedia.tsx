@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { DOUBLE_TAP_MS, requestLike } from '@/util/likeSignal';
 import { supportedImageTypes, supportedVideoTypes } from '@/constants/mimeTypes';
 import WarningCover from '@/components/WarningCover';
 import MemeVideo from '@/components/MemeVideo';
@@ -38,6 +39,18 @@ export default function DetailMedia(props: {
   const width = ratio ? { width: `min(100%, calc(75vh * ${ratio}))` } : undefined;
   const style = blurred ? undefined : width;
 
+  // Double tap or double click the meme to like it (only ever likes).
+  const lastTap = useRef(0);
+  const onTap = () => {
+    const now = Date.now();
+    if (now - lastTap.current < DOUBLE_TAP_MS) {
+      lastTap.current = 0;
+      requestLike(props.meme.id);
+    } else {
+      lastTap.current = now;
+    }
+  };
+
   let media: React.ReactNode;
   if (supportedImageTypes.includes(props.meme.contentType)) {
     media = (
@@ -47,6 +60,7 @@ export default function DetailMedia(props: {
         alt={`Meme by ${props.meme.username}`}
         className={d.media}
         style={style}
+        onClick={onTap}
         // A cached image can finish loading before React attaches onLoad, so also read it
         // when the element mounts already complete.
         ref={(img) => {
@@ -68,6 +82,7 @@ export default function DetailMedia(props: {
         hold={blurred && !revealed}
         className={d.media}
         style={style}
+        onClick={onTap}
         onPlay={countView}
         onLoadedMetadata={(e) => {
           const video = e.currentTarget;

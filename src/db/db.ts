@@ -43,20 +43,29 @@ function createPool(): Pool {
   return pool;
 }
 
-// One pool for the process. Cached on globalThis because Next's dev server re-evaluates
-// modules on every hot reload, and a fresh Pool per reload leaks connections until the
-// server refuses new ones.
-const pool = global.__memecachePool ?? createPool();
+// One pool for the process, made on the first query rather than at import: `next build`
+// loads route modules to read their config with no DATABASE_URL set (CI has none), and a
+// pool made at import threw there. Cached on globalThis because Next's dev server
+// re-evaluates modules on every hot reload, and a fresh Pool per reload leaks connections
+// until the server refuses new ones. (So after changing DATABASE_URL, restart the dev
+// server.)
+let pool: Pool | undefined = global.__memecachePool;
 
-if (process.env.NODE_ENV !== 'production') {
-  global.__memecachePool = pool;
+function getPool(): Pool {
+  if (!pool) {
+    pool = createPool();
+    if (process.env.NODE_ENV !== 'production') {
+      global.__memecachePool = pool;
+    }
+  }
+  return pool;
 }
 
 export async function db<T = Record<string, unknown>>(
   query: string,
   params: unknown[] = []
 ): Promise<T[]> {
-  const result = await pool.query(query, params);
+  const result = await getPool().query(query, params);
   return result.rows as T[];
 }
 
@@ -66,7 +75,7 @@ export type Query = <T = Record<string, unknown>>(query: string, params?: unknow
 // back if it throws. `fn` gets a db()-shaped function bound to that connection; plain db()
 // calls inside it would run on other connections, outside the transaction.
 export async function transaction<T>(fn: (query: Query) => Promise<T>): Promise<T> {
-  const client = await pool.connect();
+  const client = await getPool().connect();
   try {
     await client.query('BEGIN');
     const query: Query = async <R,>(text: string, params: unknown[] = []) =>

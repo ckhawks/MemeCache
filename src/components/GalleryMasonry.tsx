@@ -4,7 +4,8 @@ import Masonry from 'react-masonry-css';
 import styles from '../app/main.module.scss';
 import { getRelativeTimeString, getServerSideRelativeTime } from '@/util/datetimeFormat';
 import { Download, MessageCircle } from 'react-feather';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { DOUBLE_TAP_MS, requestLike } from '@/util/likeSignal';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import LikeButton from './LikeButton';
@@ -39,13 +40,40 @@ export function GalleryMasonry(props: {
     return () => clearInterval(timer);
   }, []);
 
+  const pendingTap = useRef<{ id: string; timer: ReturnType<typeof setTimeout> } | null>(null);
+
+  const onMediaTap = (event: React.MouseEvent, meme: MemeCard) => {
+    event.stopPropagation();
+    const pending = pendingTap.current;
+    if (pending && pending.id === meme.id) {
+      clearTimeout(pending.timer);
+      pendingTap.current = null;
+      requestLike(meme.id);
+      return;
+    }
+    if (pending) {
+      clearTimeout(pending.timer);
+    }
+    pendingTap.current = {
+      id: meme.id,
+      timer: setTimeout(() => {
+        pendingTap.current = null;
+        router.push(`/meme/${meme.slug}`);
+      }, DOUBLE_TAP_MS),
+    };
+  };
+
   const card = (meme: MemeCard) => (
     <div
       onClick={() => router.push(`/meme/${meme.slug}`)}
       key={meme.id}
       className={`${styles['meme']}`}
     >
-      <MemeMediaRenderer meme={meme} />
+      {/* One tap opens the meme, two like it (only ever like). The single tap waits a
+          moment to see if a second follows; taps outside the picture open it at once. */}
+      <div onClick={(e) => onMediaTap(e, meme)}>
+        <MemeMediaRenderer meme={meme} />
+      </div>
       <div className={styles['meme-body']}>
         {/* One row: who, then when, then the actions. */}
         <div className={styles['meme-body-title']}>

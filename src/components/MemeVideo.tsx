@@ -17,6 +17,8 @@ export default function MemeVideo(props: {
   style?: React.CSSProperties;
   onPlay?: () => void;
   onLoadedMetadata?: (event: React.SyntheticEvent<HTMLVideoElement>) => void;
+  // GIF mode only: a video with controls keeps its clicks for the player.
+  onClick?: (event: React.MouseEvent<HTMLVideoElement>) => void;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -66,6 +68,7 @@ export default function MemeVideo(props: {
         style={props.style}
         onPlay={props.onPlay}
         onLoadedMetadata={props.onLoadedMetadata}
+        onClick={props.onClick}
       >
         <source src={props.src} />
       </video>

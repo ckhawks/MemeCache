@@ -234,6 +234,8 @@
 
 .meme-media {
   max-width: 100%;
+  // Double tap likes the meme; without this the browser zooms instead.
+  touch-action: manipulation;
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
   width: 100%;
