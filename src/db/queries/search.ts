@@ -150,6 +150,7 @@ export async function searchMemes(
             GROUP BY meme_id, tag_id
            HAVING sum(vote) >= 1
          ) s ON s.meme_id = mt.meme_id AND s.tag_id = mt.tag_id
+        WHERE mt.removed_at IS NULL
         GROUP BY mt.meme_id
      ),
      -- Versions with any of the words, or close to the whole query: what the two indexes
@@ -229,7 +230,7 @@ export async function searchMemes(
               count(*) OVER () AS total
          FROM matched mt
          LEFT JOIN (
-           SELECT meme_id, count(*) AS likes FROM meme_like GROUP BY meme_id
+           SELECT meme_id, count(*) AS likes FROM meme_like WHERE removed_at IS NULL GROUP BY meme_id
          ) l ON l.meme_id = mt.id
         ORDER BY mt.score DESC, likes DESC, mt.created_at DESC, mt.id DESC
         LIMIT $5 OFFSET $6

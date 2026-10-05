@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { headers } from 'next/headers';
+import { after } from 'next/server';
 import { X } from 'react-feather';
 import styles from '../main.module.scss';
 import s from './Search.module.scss';
@@ -12,6 +14,10 @@ import { getUserFromAccessToken } from '@/auth/lib';
 import { getFeedView } from '@/server/feedView';
 import { formatSearch, parseSearch, searchMemes } from '@/db/queries/search';
 import { searchTags } from '@/db/queries/tags';
+import { FEED_PAGE_SIZE } from '@/db/queries/memes';
+import { recordEvent } from '@/db/queries/events';
+import { isBot } from '@/server/isBot';
+import { existingVisitorKey } from '@/server/visitor';
 
 export async function generateMetadata(props: { searchParams: Promise<{ q?: string }> }) {
   const q = (await props.searchParams).q?.trim();
@@ -42,6 +48,33 @@ export default async function SearchPage(props: {
   ]);
   const suggestions = tags.filter((t) => t.uses > 0);
   const snippets = Object.fromEntries(results.memes.map((m) => [m.id, m.snippet]));
+  const page = Number(searchParams.page) || 0;
+
+  // A search event, for what people look for and what finds nothing. Only the first page,
+  // so paging through results is one search, and never for bots or the router prefetching
+  // a link it has not been asked to follow. Written after the page is sent.
+  const requestHeaders = await headers();
+  if (
+    asked &&
+    page === 0 &&
+    !requestHeaders.get('next-router-prefetch') &&
+    !isBot(requestHeaders.get('user-agent'))
+  ) {
+    const visitorKey = user ? null : await existingVisitorKey();
+    after(() =>
+      recordEvent({
+        kind: 'search',
+        userId: user?.id,
+        visitorKey,
+        data: {
+          query: raw,
+          text: query.text,
+          tags: query.tags,
+          results: results.total,
+        },
+      })
+    );
+  }
 
   return (
     <>
@@ -113,6 +146,7 @@ export default async function SearchPage(props: {
               memes={results.memes}
               currentUserId={user?.id || ''}
               snippets={snippets}
+              search={{ query: raw, offset: page * FEED_PAGE_SIZE }}
             />
           </div>
           <FeedPager basePath="/search" nextPage={results.nextPage} params={{ q: raw }} />

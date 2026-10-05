@@ -79,6 +79,7 @@ const TAG_AGREEMENT = `
            WHERE v.meme_id = mt.meme_id AND v.tag_id = mt.tag_id
              AND v.voter_id <> mt.added_by) AS agreement
     FROM meme_tag mt
+   WHERE mt.removed_at IS NULL
 `;
 
 // Each task's candidates for viewer $1, best first. Used both for "next" (LIMIT 1) and for
@@ -135,7 +136,7 @@ function candidatesSql(task: QueueTask) {
               )
          )
        )
-       AND NOT ${skippedSince(task, `(SELECT max(mt.created_at) FROM meme_tag mt WHERE mt.meme_id = m.id)`)}
+       AND NOT ${skippedSince(task, `(SELECT max(mt.created_at) FROM meme_tag mt WHERE mt.meme_id = m.id AND mt.removed_at IS NULL)`)}
      ORDER BY
        (SELECT count(*) FROM (${TAG_AGREEMENT}) a
          WHERE a.meme_id = m.id AND a.agreement >= ${CONFIRMATIONS_NEEDED}) ASC,

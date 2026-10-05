@@ -87,7 +87,7 @@ describe('tags', () => {
     expect(upvoted.removable).toBe(false);
   });
 
-  it('removes a tag with its votes, and drops a tag left on no meme', async () => {
+  it('removes a tag, and stops suggesting a tag left on no meme', async () => {
     const alice = await makeUser('alice');
     const bob = await makeUser('bob');
     const meme = await makeMeme(alice);

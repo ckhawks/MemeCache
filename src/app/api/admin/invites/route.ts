@@ -1,10 +1,11 @@
 import { z } from 'zod';
 import { isAdmin } from '@/auth/role';
 import { createInviteCode, generateInviteCode } from '@/db/queries/invites';
+import { logModeration } from '@/db/queries/moderation';
 import { HttpError, route } from '@/server/route';
 
 // POST { code?, note?, maxUses?, expiresAt? }: makes an invite code (migration 009). No code
-// generates a readable random one. Admins only.
+// generates a readable random one. Admins only. Goes in the moderation log.
 export const POST = route({
   auth: 'required',
   body: z.object({
@@ -34,11 +35,26 @@ export const POST = route({
       createdBy: user.id,
     };
 
+    const log = (created: { id: string; code: string }) =>
+      logModeration({
+        actorId: user.id,
+        action: 'invite_create',
+        targetType: 'invite',
+        targetId: created.id,
+        data: {
+          code: created.code,
+          note: invite.note,
+          maxUses: invite.maxUses,
+          expiresAt: invite.expiresAt,
+        },
+      });
+
     if (body.code) {
       const created = await createInviteCode({ ...invite, code: body.code });
       if (!created) {
         throw new HttpError(409, 'That code already exists.');
       }
+      await log(created);
       return created;
     }
 
@@ -46,6 +62,7 @@ export const POST = route({
     for (let attempt = 0; attempt < 3; attempt++) {
       const created = await createInviteCode({ ...invite, code: generateInviteCode() });
       if (created) {
+        await log(created);
         return created;
       }
     }

@@ -71,7 +71,9 @@ export const CARD_COLUMNS = `
   u.username,
   u.avatar_s3_key AS "avatarKey",
   ${karmaSql('m.uploader_id')} AS karma,
-  (SELECT count(*)::int FROM meme_like l WHERE l.meme_id = m.id) AS "likeCount",
+  (
+    SELECT count(*)::int FROM meme_like l WHERE l.meme_id = m.id AND l.removed_at IS NULL
+  ) AS "likeCount",
   m.view_count AS "viewCount",
   m.width,
   m.height,
@@ -81,10 +83,12 @@ export const CARD_COLUMNS = `
     SELECT count(*)::int FROM meme_comment c_c WHERE c_c.meme_id = m.id AND c_c.deleted_at IS NULL
   ) AS "commentCount",
   EXISTS (
-    SELECT 1 FROM meme_like l WHERE l.meme_id = m.id AND l.user_id = $1::uuid
+    SELECT 1 FROM meme_like l
+     WHERE l.meme_id = m.id AND l.user_id = $1::uuid AND l.removed_at IS NULL
   ) AS "hasLiked",
   EXISTS (
-    SELECT 1 FROM meme_save s WHERE s.meme_id = m.id AND s.user_id = $1::uuid
+    SELECT 1 FROM meme_save s
+     WHERE s.meme_id = m.id AND s.user_id = $1::uuid AND s.removed_at IS NULL
   ) AS "hasSaved",
   ${warningsSql('m.id')} AS warnings
 `;
@@ -104,7 +108,10 @@ function filterSql(
     AND (
       ${savedByParam}::uuid IS NULL
       OR EXISTS (
-        SELECT 1 FROM meme_save s WHERE s.meme_id = m.id AND s.user_id = ${savedByParam}::uuid
+        SELECT 1 FROM meme_save s
+         WHERE s.meme_id = m.id
+           AND s.user_id = ${savedByParam}::uuid
+           AND s.removed_at IS NULL
       )
     )
     AND (
@@ -114,6 +121,7 @@ function filterSql(
           FROM meme_tag mt
           JOIN tag t ON t.id = mt.tag_id
          WHERE mt.meme_id = m.id
+           AND mt.removed_at IS NULL
            AND lower(t.name) = lower(${tagParam}::text)
            AND (
              SELECT COALESCE(sum(v.vote), 0)
@@ -263,9 +271,22 @@ export async function findMemeBySourceUrl(sourceUrl: string): Promise<{ slug: st
 }
 
 // Soft delete. The row and the stored file stay, so a takedown can hold content and a
-// mistaken delete can be undone. Every read above filters deleted_at.
-export async function softDeleteMeme(id: string) {
-  await db(`UPDATE meme SET deleted_at = now() WHERE id = $1 AND deleted_at IS NULL`, [id]);
+// mistaken delete can be undone. Every read above filters deleted_at. Records who deleted it
+// and why (migration 017). Returns false when it was already deleted.
+export async function softDeleteMeme(
+  id: string,
+  by: { deletedBy?: string | null; reason?: string | null } = {}
+): Promise<boolean> {
+  const rows = await db(
+    `UPDATE meme
+        SET deleted_at = now(),
+            deleted_by = $2,
+            delete_reason = $3
+      WHERE id = $1 AND deleted_at IS NULL
+      RETURNING id`,
+    [id, by.deletedBy ?? null, by.reason ?? null]
+  );
+  return rows.length > 0;
 }
 
 // The stored file behind a meme, or null when it does not exist or has been deleted. The
@@ -294,7 +315,8 @@ export async function listRelatedMemes(
     `WITH confirmed AS (
        SELECT mt.meme_id, mt.tag_id
          FROM meme_tag mt
-        WHERE (SELECT COALESCE(sum(v.vote), 0)
+        WHERE mt.removed_at IS NULL
+          AND (SELECT COALESCE(sum(v.vote), 0)
                  FROM counted_tag_vote v
                 WHERE v.meme_id = mt.meme_id AND v.tag_id = mt.tag_id) >= 1
      ),
@@ -422,6 +444,7 @@ export async function listForYou(
          JOIN tag t ON t.id = p.tag_id
         WHERE p.user_id = $1::uuid
           AND p.kind = 'follow'
+          AND mt.removed_at IS NULL
           AND (SELECT COALESCE(sum(v.vote), 0)
                  FROM counted_tag_vote v
                 WHERE v.meme_id = mt.meme_id AND v.tag_id = mt.tag_id) >= 1

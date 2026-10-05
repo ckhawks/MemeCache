@@ -1,6 +1,7 @@
 import { db } from '@/db/db';
 import { isUuid } from './ids';
 import { isUsernameReserved } from './usernames';
+import { recordActive } from './events';
 
 // What goes into the session token.
 export interface SessionUser {
@@ -76,8 +77,11 @@ export async function getSessionState(
   return row ?? null;
 }
 
+// last_active is overwritten each time, so it also notes the day in the event table
+// (recordActive), which is what "active users per day or week" is counted from.
 export async function touchLastActive(id: string) {
   await db(`UPDATE app_user SET last_active = now() WHERE id = $1`, [id]);
+  await recordActive(id);
 }
 
 export async function listUsers(): Promise<PublicUser[]> {
@@ -141,11 +145,14 @@ export async function getProfileStats(userId: string): Promise<ProfileStats> {
        (SELECT count(*)::int
           FROM meme_like l
           JOIN meme m ON m.id = l.meme_id
-         WHERE m.uploader_id = u.id AND m.deleted_at IS NULL AND l.user_id <> u.id) AS "likesReceived",
+         WHERE m.uploader_id = u.id
+           AND m.deleted_at IS NULL
+           AND l.user_id <> u.id
+           AND l.removed_at IS NULL) AS "likesReceived",
        (SELECT count(*)::int
           FROM meme_tag mt
           JOIN meme m ON m.id = mt.meme_id
-         WHERE mt.added_by = u.id AND m.deleted_at IS NULL) AS "tagsAdded",
+         WHERE mt.added_by = u.id AND m.deleted_at IS NULL AND mt.removed_at IS NULL) AS "tagsAdded",
        (SELECT count(DISTINCT t.meme_id)::int
           FROM meme_transcription t
           JOIN meme m ON m.id = t.meme_id
@@ -164,6 +171,8 @@ export async function getProfileStats(userId: string): Promise<ProfileStats> {
 //   post karma      likes on their memes
 //   curation karma  net votes on tags they added, plus confirms minus rejects of their
 //                   transcriptions
+// Unliked likes and removed tags do not count (migration 017); trust, in user_trust, still
+// counts the votes on removed tags.
 // docs/xp-levels.md has the full design. `userId` is a SQL expression (a column or
 // parameter), so feeds can select it per row. Inner aliases are prefixed so they never
 // shadow the caller's (a feed's `m.uploader_id`).
@@ -172,7 +181,10 @@ export function postKarmaSql(userId: string) {
     SELECT count(*)::int
       FROM meme_like k_l
       JOIN meme k_m ON k_m.id = k_l.meme_id
-     WHERE k_m.uploader_id = ${userId} AND k_m.deleted_at IS NULL AND k_l.user_id <> ${userId}
+     WHERE k_m.uploader_id = ${userId}
+       AND k_m.deleted_at IS NULL
+       AND k_l.user_id <> ${userId}
+       AND k_l.removed_at IS NULL
   )`;
 }
 
@@ -182,7 +194,10 @@ export function curationKarmaSql(userId: string) {
        FROM counted_tag_vote k_v
        JOIN meme_tag k_mt ON k_mt.meme_id = k_v.meme_id AND k_mt.tag_id = k_v.tag_id
        JOIN meme k_m ON k_m.id = k_mt.meme_id
-      WHERE k_mt.added_by = ${userId} AND k_m.deleted_at IS NULL AND k_v.voter_id <> ${userId})
+      WHERE k_mt.added_by = ${userId}
+        AND k_m.deleted_at IS NULL
+        AND k_mt.removed_at IS NULL
+        AND k_v.voter_id <> ${userId})
   + (SELECT COALESCE(sum(k_r.verdict), 0)::int
        FROM counted_transcription_review k_r
        JOIN meme_transcription k_t ON k_t.id = k_r.transcription_id
@@ -237,6 +252,19 @@ export async function getTrust(userId: string): Promise<Trust> {
   return row ?? { approved: 0, rejected: 0, override: null, held: false };
 }
 
-export async function setTrustOverride(userId: string, override: 'trusted' | 'held' | null) {
-  await db(`UPDATE app_user SET trust_override = $2 WHERE id = $1`, [userId, override]);
+// Returns what the override was before, for the moderation log, or undefined when there is
+// no such user.
+export async function setTrustOverride(
+  userId: string,
+  override: 'trusted' | 'held' | null
+): Promise<'trusted' | 'held' | null | undefined> {
+  const [row] = await db<{ previous: 'trusted' | 'held' | null }>(
+    `UPDATE app_user u
+        SET trust_override = $2
+       FROM (SELECT trust_override AS previous FROM app_user WHERE id = $1) before
+      WHERE u.id = $1
+      RETURNING before.previous`,
+    [userId, override]
+  );
+  return row ? row.previous : undefined;
 }

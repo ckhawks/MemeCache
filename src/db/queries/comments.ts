@@ -177,18 +177,20 @@ export async function editComment(
 }
 
 // Soft delete, by its author or a moderator (the route decides who may). Deleting twice
-// keeps the first.
-export async function deleteComment(id: string, deletedBy: string) {
+// keeps the first, and returns false.
+export async function deleteComment(id: string, deletedBy: string): Promise<boolean> {
   if (!isCommentId(id)) {
-    return;
+    return false;
   }
-  await db(
+  const rows = await db(
     `UPDATE meme_comment
         SET deleted_at = now(),
             deleted_by = $2
-      WHERE id = $1 AND deleted_at IS NULL`,
+      WHERE id = $1 AND deleted_at IS NULL
+      RETURNING id`,
     [id, deletedBy]
   );
+  return rows.length > 0;
 }
 
 // A live meme to attach, by uuid or slug, with its uploader's id for the notification.

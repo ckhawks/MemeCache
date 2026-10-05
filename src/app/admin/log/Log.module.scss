@@ -1,0 +1,53 @@
+.log {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 40px;
+}
+
+.muted {
+  margin: 0;
+  color: var(--sub-text-color);
+}
+
+// One action per row: when, then who did what to what, then the reason and details.
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.when {
+  font-size: 13px;
+  color: var(--sub-text-color);
+  font-variant-numeric: tabular-nums;
+}
+
+.what {
+  overflow-wrap: anywhere;
+
+  a {
+    color: var(--mostly-text-color);
+  }
+}
+
+.action {
+  font-weight: 600;
+}
+
+.reason {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.details {
+  font-size: 13px;
+  color: var(--sub-text-color);
+  overflow-wrap: anywhere;
+}
+
+.pager {
+  padding-top: 16px;
+}

@@ -10,6 +10,7 @@ import { isContentWarning } from '@/constants/contentWarnings';
 import { probeMedia } from '@/server/mediaProbe';
 import { after } from 'next/server';
 import { fingerprintAndMatch } from '@/server/mediaMatch';
+import { recordEvent } from '@/db/queries/events';
 
 // POST multipart { file, sourceUrl?, warnings* }: stores a new meme. The uploader is the
 // session user. sourceUrl is the post an imported file came from (see /api/import).
@@ -83,6 +84,17 @@ export const POST = route({
     // failure there never fails the upload.
     after(() => fingerprintAndMatch(id, bytes, file.type));
 
+    await recordEvent({
+      kind: 'upload',
+      userId: user.id,
+      memeId: id,
+      data: {
+        contentType: file.type,
+        bytes: file.size,
+        imported: sourceUrl !== null,
+        warnings,
+      },
+    });
     return { id, slug };
   },
 });

@@ -1,6 +1,7 @@
 import { isModerator } from '@/auth/role';
 import { deleteComment, editComment, getComment, isCommentEditable } from '@/db/queries/comments';
 import { notify } from '@/db/queries/notifications';
+import { logModeration } from '@/db/queries/moderation';
 import { HttpError, route } from '@/server/route';
 import { requireMeme } from '@/server/require';
 import { commentSchema, resolveCommentMeme } from '@/server/comments';
@@ -53,7 +54,7 @@ export const PUT = route({
 });
 
 // DELETE: deletes a comment, leaving "deleted" in its place. Its author can, and moderators
-// can delete anyone's.
+// can delete anyone's, which goes in the moderation log.
 export const DELETE = route({
   auth: 'required',
   handler: async ({ user, params }) => {
@@ -62,7 +63,19 @@ export const DELETE = route({
     if (comment.authorId !== user.id && !isModerator(user)) {
       throw new HttpError(403, 'Only the person who wrote a comment, or a moderator, can delete it.');
     }
-    await deleteComment(comment.id, user.id);
+    const deleted = await deleteComment(comment.id, user.id);
+    if (deleted && comment.authorId !== user.id) {
+      await logModeration({
+        actorId: user.id,
+        action: 'comment_delete',
+        targetType: 'comment',
+        targetId: comment.id,
+        data: {
+          memeId: meme.id,
+          authorId: comment.authorId,
+        },
+      });
+    }
     return { comment: await getComment(comment.id) };
   },
 });
