@@ -19,6 +19,8 @@ import { getCurrentTranscription } from '@/db/queries/transcriptions';
 import { listTagsForMeme } from '@/db/queries/tags';
 import { listWarningsForMeme } from '@/db/queries/warnings';
 import { listComments } from '@/db/queries/comments';
+import { listMatchedMemes } from '@/db/queries/mediaHash';
+import SameTemplate from './SameTemplate';
 
 export default async function MemeDetails(props: { params: Promise<{ memeId: string }> }) {
   const params = await props.params;
@@ -36,13 +38,14 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
 
   // Loaded with the page, so the panel is complete on first paint instead of showing
   // "Loading..." while the editors fetch their own data.
-  const [transcription, tags, warnings, karma, related, comments] = await Promise.all([
+  const [transcription, tags, warnings, karma, related, comments, sameTemplate] = await Promise.all([
     getCurrentTranscription(meme.id),
     listTagsForMeme(meme.id, user?.id),
     listWarningsForMeme(meme.id, user?.id),
     getKarma(meme.uploaderId),
     listRelatedMemes(meme, user?.id),
     listComments(meme.id),
+    listMatchedMemes(meme.id),
   ]);
 
   const initialTranscription = transcription && {
@@ -95,6 +98,8 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
               />
             </div>
           </div>
+
+          <SameTemplate memes={sameTemplate} />
 
           {related.length > 0 && (
             <section className={d.related}>

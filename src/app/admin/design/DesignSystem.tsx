@@ -28,6 +28,8 @@ import CooldownTimer from '@/components/CooldownTimer';
 import TagFollowButtons from '@/components/TagFollowButtons';
 import FeedReason from '@/components/FeedReason';
 import YourTags from '@/components/YourTags';
+import MemeThumbStrip from '@/components/MemeThumbStrip';
+import DuplicateWarning from '../../upload/DuplicateWarning';
 import type { MemeCard } from '@/db/queries/memes';
 import { WarningChip } from '@/components/WarningChip';
 import { WarningToggles } from '@/components/WarningToggles';
@@ -495,6 +497,17 @@ export default function DesignSystem(props: { memes: MemeCard[]; userId: string 
               or <span className={upload.linkish}>browse</span>, or paste with Ctrl+V
             </div>
           </div>
+        </Themed>
+      </Section>
+
+      <Section
+        title="Meme thumbnail strip"
+        note="MemeThumbStrip: square links to memes. Medium is a page section (Same template on a meme page); small sits inside a notice, like the upload page's duplicate warning below it."
+      >
+        <Themed>
+          <MemeThumbStrip memes={props.memes} />
+          <MemeThumbStrip memes={props.memes} size="small" />
+          <DuplicateWarning memes={props.memes.slice(0, 1)} />
         </Themed>
       </Section>
 

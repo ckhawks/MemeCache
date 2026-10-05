@@ -8,6 +8,8 @@ import { HttpError, route } from '@/server/route';
 import { normalizeImportUrl } from '@/server/mediaImport';
 import { isContentWarning } from '@/constants/contentWarnings';
 import { probeMedia } from '@/server/mediaProbe';
+import { after } from 'next/server';
+import { fingerprintAndMatch } from '@/server/mediaMatch';
 
 // POST multipart { file, sourceUrl?, warnings* }: stores a new meme. The uploader is the
 // session user. sourceUrl is the post an imported file came from (see /api/import).
@@ -76,6 +78,10 @@ export const POST = route({
       await DeleteS3ObjectByKey(id);
       throw error;
     }
+
+    // Fingerprinted after the response: the uploader is not kept waiting on it, and a
+    // failure there never fails the upload.
+    after(() => fingerprintAndMatch(id, bytes, file.type));
 
     return { id, slug };
   },
