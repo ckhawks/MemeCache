@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import Link from 'next/link';
 import styles from '../../main.module.scss';
 import p from './Profile.module.scss';
@@ -12,6 +12,8 @@ import { avatarUrl } from '@/util/avatarUrl';
 import { getKarmaBreakdown, getProfile, getProfileStats, getTrust } from '@/db/queries/users';
 import { isAdmin, isModerator } from '@/auth/role';
 import TrustOverride from './TrustOverride';
+import AdminRename from './AdminRename';
+import { findRenamedUsername, listUsernameHistory } from '@/db/queries/usernames';
 import { countMemes, listMemes } from '@/db/queries/memes';
 import { getFeedView } from '@/server/feedView';
 
@@ -34,16 +36,22 @@ export default async function Profile(props: {
   }
   const profile = await getProfile(params.username);
   if (!profile) {
+    // Someone's old name, from before a rename: send old links to where they are now.
+    const renamed = await findRenamedUsername(params.username);
+    if (renamed) {
+      permanentRedirect('/me/' + encodeURIComponent(renamed));
+    }
     notFound();
   }
 
   const filter = { viewerId: user?.id, uploaderId: profile.id };
-  const [page, total, stats, karma, trust] = await Promise.all([
+  const [page, total, stats, karma, trust, nameHistory] = await Promise.all([
     listMemes(filter, searchParams.cursor),
     countMemes(filter),
     getProfileStats(profile.id),
     getKarmaBreakdown(profile.id),
     getTrust(profile.id),
+    listUsernameHistory(profile.id),
   ]);
 
   const isCurrentUser = user?.id === profile.id;
@@ -89,6 +97,24 @@ export default async function Profile(props: {
                   })}
                 </div>
               )}
+              {/* Closed until asked for: old names are there to check, not to show off. */}
+              {nameHistory.length > 0 && (
+                <details className={p.nameHistory}>
+                  <summary>Name history</summary>
+                  <ul>
+                    {nameHistory.map((change) => (
+                      <li key={new Date(change.changedAt).toISOString() + change.oldUsername}>
+                        Previously known as <strong>{change.oldUsername}</strong>, until{' '}
+                        {new Date(change.changedAt).toLocaleDateString('en-US', {
+                          month: 'long',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
             </div>
             <dl className={p.stats}>
               {statItems.map((item) => (
@@ -129,7 +155,10 @@ export default async function Profile(props: {
             </p>
           )}
           {user && isAdmin(user) && !isCurrentUser && (
-            <TrustOverride userId={profile.id} override={trust.override} />
+            <>
+              <TrustOverride userId={profile.id} override={trust.override} />
+              <AdminRename userId={profile.id} username={profile.username} />
+            </>
           )}
 
           <div className={styles['feed-header']}>

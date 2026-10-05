@@ -81,6 +81,32 @@
   color: var(--sub-text-color);
 }
 
+// "Name history": a quiet toggle under the join date, closed by default.
+.nameHistory {
+  font-size: 13px;
+  color: var(--sub-text-color);
+
+  summary {
+    width: fit-content;
+    cursor: pointer;
+    user-select: none;
+
+    &:hover {
+      color: var(--text-color);
+    }
+  }
+
+  ul {
+    margin: 4px 0 0;
+    padding-left: 18px;
+  }
+
+  strong {
+    font-weight: 600;
+    color: var(--mostly-text-color);
+  }
+}
+
 .stats {
   grid-area: stats;
   display: flex;
@@ -164,7 +190,9 @@
   font-size: 13px;
   color: var(--sub-text-color);
 
-  select {
+  select,
+  input,
+  button {
     padding: 2px 6px;
     border: 1px solid var(--border-color);
     border-radius: 6px;

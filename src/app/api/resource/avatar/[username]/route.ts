@@ -1,4 +1,5 @@
 import { getProfile } from '@/db/queries/users';
+import { findRenamedUsername } from '@/db/queries/usernames';
 import getS3Client from '@/util/s3/GetS3Client';
 import { GetObjectCommand, GetObjectCommandInput } from '@aws-sdk/client-s3';
 import { NextResponse } from 'next/server';
@@ -24,7 +25,12 @@ export async function GET(
     return new NextResponse('Please provide a username.', { status: 404 });
   }
 
-  const user = await getProfile(params.username);
+  // Pages rendered before a rename still point at the old name (migration 011).
+  let user = await getProfile(params.username);
+  if (!user) {
+    const renamed = await findRenamedUsername(params.username);
+    user = renamed ? await getProfile(renamed) : null;
+  }
 
   if (!user) {
     return new NextResponse('Could not find user by that username.', {

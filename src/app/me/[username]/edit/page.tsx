@@ -3,7 +3,7 @@
 import { getProfile } from '@/db/queries/users';
 import { avatarUrl } from '@/util/avatarUrl';
 import styles from '../../../main.module.scss';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import NavigationBar from '@/components/NavigationBar';
 import { getUserFromAccessToken } from '@/auth/lib';
 
@@ -12,6 +12,13 @@ import FooterBar from '@/components/FooterBar';
 import EditAvatarComponent from './EditAvatarComponent';
 import f from '@/components/AuthForm.module.scss';
 import BackButton from '@/components/BackButton';
+import EditUsernameForm from './EditUsernameForm';
+import {
+  findRenamedUsername,
+  getUsernameCooldown,
+  USERNAME_COOLDOWN_DAYS,
+  USERNAME_RESERVED_DAYS,
+} from '@/db/queries/usernames';
 
 export default async function Profile(props: { params: Promise<{ username: string }> }) {
   const params = await props.params;
@@ -29,6 +36,11 @@ export default async function Profile(props: { params: Promise<{ username: strin
   const userFromDb = await getProfile(params.username);
 
   if (!userFromDb) {
+    // An old name, from before a rename.
+    const renamed = await findRenamedUsername(params.username);
+    if (renamed) {
+      permanentRedirect('/me/' + encodeURIComponent(renamed) + '/edit');
+    }
     notFound();
   }
 
@@ -38,6 +50,8 @@ export default async function Profile(props: { params: Promise<{ username: strin
     notFound();
   }
 
+  const cooldown = await getUsernameCooldown(userFromDb.id);
+
   return (
     <>
       <NavigationBar />
@@ -45,24 +59,29 @@ export default async function Profile(props: { params: Promise<{ username: strin
         <div className={styles.content}>
           <div className={styles.description}>
             {/* <h1>MemeCache</h1> */}
-            <BackButton to={'/me/' + user?.username} text="Back" />
+            <BackButton to={'/me/' + encodeURIComponent(userFromDb.username)} text="Back" />
             <h1>Edit profile</h1>
-            {/* What you log in with, for reference. Neither can be changed from here yet. */}
+            {/* The username can be changed, on a cooldown (migration 011). The email is
+                shown for reference only. */}
             <div className={'card'} style={{ marginBottom: '16px' }}>
               <h5>Account</h5>
               <div className={f.form} style={{ maxWidth: '420px' }}>
-                <div className={f.field}>
-                  <label htmlFor="account-username" className={f.label}>
-                    Username
-                  </label>
-                  <input id="account-username" className={f.input} value={userFromDb.username} readOnly />
-                </div>
+                <EditUsernameForm
+                  // A fresh form after a rename, so it starts from the new name.
+                  key={userFromDb.username}
+                  username={userFromDb.username}
+                  cooldownDays={USERNAME_COOLDOWN_DAYS}
+                  reservedDays={USERNAME_RESERVED_DAYS}
+                  lastChangedAt={cooldown.lastChangedAt?.toISOString() ?? null}
+                  availableAt={cooldown.availableAt?.toISOString() ?? null}
+                  now={cooldown.now.toISOString()}
+                />
                 <div className={f.field}>
                   <label htmlFor="account-email" className={f.label}>
                     Email
                   </label>
                   <input id="account-email" className={f.input} value={user?.email ?? ''} readOnly />
-                  <span className={f.hint}>Only you can see your email. Neither can be changed yet.</span>
+                  <span className={f.hint}>Only you can see your email. It cannot be changed yet.</span>
                 </div>
               </div>
             </div>

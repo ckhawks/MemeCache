@@ -1,5 +1,6 @@
 import { db } from '@/db/db';
 import { isUuid } from './ids';
+import { isUsernameReserved } from './usernames';
 
 // What goes into the session token.
 export interface SessionUser {
@@ -40,9 +41,10 @@ export async function isEmailTaken(email: string): Promise<boolean> {
   return rows.length > 0;
 }
 
+// In use, or given up recently by someone who has a while to take it back (migration 011).
 export async function isUsernameTaken(username: string): Promise<boolean> {
   const rows = await db(`SELECT 1 FROM app_user WHERE lower(username) = lower($1)`, [username]);
-  return rows.length > 0;
+  return rows.length > 0 || (await isUsernameReserved(username));
 }
 
 export async function createUser(user: {
@@ -59,15 +61,16 @@ export async function createUser(user: {
   return created;
 }
 
-// The per-request session check: is the user still there, and what is their role now.
+// The per-request session check: is the user still there, and what are their role and
+// name now. The name can change after the token was issued (migration 011).
 export async function getSessionState(
   id: string
-): Promise<{ role: string; lastActive: Date | null } | null> {
+): Promise<{ role: string; username: string; lastActive: Date | null } | null> {
   if (!isUuid(id)) {
     return null;
   }
-  const [row] = await db<{ role: string; lastActive: Date | null }>(
-    `SELECT role, last_active AS "lastActive" FROM app_user WHERE id = $1`,
+  const [row] = await db<{ role: string; username: string; lastActive: Date | null }>(
+    `SELECT role, username, last_active AS "lastActive" FROM app_user WHERE id = $1`,
     [id]
   );
   return row ?? null;
