@@ -80,7 +80,7 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
                 initial={tags}
                 canModerate={!!user && isModerator(user)}
               />
-              <MemePosted createdAt={meme.createdAt} />
+              <MemePosted createdAt={meme.createdAt} viewCount={meme.viewCount} />
             </aside>
           </div>
 

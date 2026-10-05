@@ -13,6 +13,7 @@ import type { MemeCard } from '@/db/queries/memes';
 import type { UserPayload } from '@/auth/lib';
 import { avatarUrl } from '@/util/avatarUrl';
 import { getRelativeTimeString, getServerSideRelativeTime } from '@/util/datetimeFormat';
+import { formatCount } from '@/util/formatCount';
 
 // Pieces of the meme page: the author line, the action bar, and the posted date.
 
@@ -74,8 +75,8 @@ export function PostActions(props: {
   );
 }
 
-// When it was posted, as a date and as a relative time.
-export function MemePosted(props: { createdAt: Date }) {
+// When it was posted, as a date and as a relative time, and how many times it was viewed.
+export function MemePosted(props: { createdAt: Date; viewCount: number }) {
   const date = new Date(props.createdAt);
   // UTC on both server and browser, so the rendered date cannot differ between them.
   const exact = date.toLocaleDateString('en-US', {
@@ -86,10 +87,14 @@ export function MemePosted(props: { createdAt: Date }) {
   });
   const relative =
     typeof window === 'undefined' ? getServerSideRelativeTime(date) : getRelativeTimeString(date);
+  const views = props.viewCount;
 
   return (
     <div className={d.posted}>
-      Posted {exact} · {relative}
+      Posted {exact} · {relative} ·{' '}
+      <span title={views >= 1000 ? `${views.toLocaleString()} views` : undefined}>
+        {formatCount(views)} {views === 1 ? 'view' : 'views'}
+      </span>
     </div>
   );
 }

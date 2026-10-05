@@ -17,6 +17,8 @@ export interface MemeCard {
   // The uploader's karma, shown beside their name.
   karma: number;
   likeCount: number;
+  // Counted views of its page (migration 015), a running total kept on the meme row.
+  viewCount: number;
   hasLiked: boolean;
   // Whether the viewer saved it to their Library. Saves are private, so no count.
   hasSaved: boolean;
@@ -44,6 +46,8 @@ export const FEED_PAGE_SIZE = 60;
 
 // Counts are subqueries rather than joins. Joining likes and votes into the same FROM
 // multiplies one by the other, which is how like counts and tag scores used to inflate.
+// Views are the exception: there can be many per meme, so recordView keeps a total on the
+// meme row and no card counts them.
 // Every query using it passes the viewer (or null) as $1.
 export const CARD_COLUMNS = `
   m.id,
@@ -55,6 +59,7 @@ export const CARD_COLUMNS = `
   u.avatar_s3_key AS "avatarKey",
   ${karmaSql('m.uploader_id')} AS karma,
   (SELECT count(*)::int FROM meme_like l WHERE l.meme_id = m.id) AS "likeCount",
+  m.view_count AS "viewCount",
   EXISTS (
     SELECT 1 FROM meme_like l WHERE l.meme_id = m.id AND l.user_id = $1::uuid
   ) AS "hasLiked",
