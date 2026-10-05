@@ -11,6 +11,7 @@ import MemeTagsEditor from '@/components/MemeTagsEditor';
 import TranscriptionField from '@/components/TranscriptionField';
 import TranscriptionGuidelines from '@/components/TranscriptionGuidelines';
 import { api } from '@/util/api';
+import { displayUsername } from '@/auth/username';
 import { CONFIRMATIONS_NEEDED, type QueueTask } from '@/constants/queue';
 import type { QueueItem } from '@/db/queries/queue';
 import type { MemeTag } from '@/db/queries/tags';
@@ -197,7 +198,7 @@ export default function QueueClient(props: {
           </div>
           <aside className={d.side}>
             <div className={q.meta}>
-              Posted by {item.meme.username} ·{' '}
+              Posted by {displayUsername(item.meme.username)} ·{' '}
               <Link href={`/meme/${item.meme.slug}`} target="_blank">
                 Open meme
               </Link>
@@ -286,7 +287,7 @@ export default function QueueClient(props: {
                       <p className={`${q.transcription} ${q.muted}`}>Marked as having no text.</p>
                     )}
                     <div className={q.meta}>
-                      Transcribed by {item.transcription.editedByUsername} ·{' '}
+                      Transcribed by {displayUsername(item.transcription.editedByUsername)} ·{' '}
                       {item.transcription.confirms} of {CONFIRMATIONS_NEEDED} confirmations
                       {item.transcription.rejects > 0 && `, ${item.transcription.rejects} rejected`}
                     </div>

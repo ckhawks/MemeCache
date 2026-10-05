@@ -23,6 +23,9 @@ import {
   USERNAME_COOLDOWN_DAYS,
   USERNAME_RESERVED_DAYS,
 } from '@/db/queries/usernames';
+import { listSessions } from '@/db/queries/sessions';
+import SessionList from '@/components/SessionList';
+import DeleteAccountForm from './DeleteAccountForm';
 
 export default async function Profile(props: { params: Promise<{ username: string }> }) {
   const params = await props.params;
@@ -48,15 +51,15 @@ export default async function Profile(props: { params: Promise<{ username: strin
     notFound();
   }
 
-  const isCurrentUser = user?.id === userFromDb.id;
   // Someone else's edit page does not exist as far as this visitor is concerned.
-  if (!isCurrentUser) {
+  if (!user || user.id !== userFromDb.id) {
     notFound();
   }
 
   const warningDisplay = await getWarningDisplay(userFromDb.id);
   const cooldown = await getUsernameCooldown(userFromDb.id);
   const tagPreferences = await listTagPreferences(userFromDb.id);
+  const sessions = await listSessions(userFromDb.id);
 
   return (
     <>
@@ -137,6 +140,30 @@ export default async function Profile(props: { params: Promise<{ username: strin
                 Tags you follow come first in For you on Explore. Tags you mute are hidden from your feeds. Only you can see these.
               </p>
               <YourTags tags={tagPreferences} />
+            </div>
+            <div className={'card'} style={{ marginTop: '16px' }}>
+              <h5>Where you&apos;re logged in</h5>
+              <p style={{ fontSize: '14px' }}>
+                Every browser or device logged in to your account. Log out any you do not recognise.
+              </p>
+              <SessionList
+                sessions={sessions.map((session) => ({
+                  id: session.id,
+                  userAgent: session.userAgent,
+                  network: session.network,
+                  createdAt: new Date(session.createdAt).toISOString(),
+                  lastSeenAt: new Date(session.lastSeenAt).toISOString(),
+                }))}
+                currentId={user.sessionId}
+                now={cooldown.now.toISOString()}
+              />
+            </div>
+            <div className={'card'} style={{ marginTop: '16px' }}>
+              <h5>Delete account</h5>
+              <p style={{ fontSize: '14px' }}>
+                This cannot be undone. Your username, email, password, avatar, saved memes, settings and followed tags are removed, and you are logged out everywhere. What you added for everyone (uploads, tags, transcriptions, comments and votes) stays on the site, credited to &quot;deleted user&quot;.
+              </p>
+              <DeleteAccountForm username={userFromDb.username} />
             </div>
           </div>
         </div>

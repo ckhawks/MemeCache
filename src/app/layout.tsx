@@ -9,7 +9,7 @@ import { getInitialLightTheme } from '@/contexts/getInitialLightTheme';
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
 import { WarningDisplayProvider } from '@/contexts/WarningDisplayContext';
 import { getUserFromAccessToken } from '@/auth/lib';
-import { getWarningDisplay } from '@/db/queries/warnings';
+import { getSettings } from '@/db/queries/settings';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -38,15 +38,18 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const initialTheme = await getInitialLightTheme();
-  // How content warnings are shown. Visitors always get the blur.
+  // The member's settings (migration 018), or the defaults for a visitor: content warnings
+  // blurred, and the theme left to this browser.
   const user = await getUserFromAccessToken();
-  const warningDisplay = user ? await getWarningDisplay(user.id) : 'blur';
+  const settings = await getSettings(user?.id);
+  const warningDisplay = settings.warning_display;
+  // A theme saved on the account beats this browser's cookie, so it follows them around.
+  const initialTheme = settings.theme ?? (await getInitialLightTheme());
 
   return (
     <html lang="en" data-theme={initialTheme} data-bs-theme={initialTheme}>
       <body className={inter.className}>
-        <LightThemeProvider initialTheme={initialTheme}>
+        <LightThemeProvider initialTheme={initialTheme} accountTheme={settings.theme} loggedIn={!!user}>
           <WarningDisplayProvider display={warningDisplay}>
             {children}
           </WarningDisplayProvider>

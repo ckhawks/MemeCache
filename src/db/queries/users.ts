@@ -1,9 +1,9 @@
 import { db } from '@/db/db';
 import { isUuid } from './ids';
 import { isUsernameReserved } from './usernames';
-import { recordActive } from './events';
+import { isDeletedUsername } from '@/auth/username';
 
-// What goes into the session token.
+// What goes into the session token, apart from the session's own id.
 export interface SessionUser {
   id: string;
   username: string;
@@ -21,20 +21,37 @@ export interface Profile {
   username: string;
   createdAt: Date | null;
   avatarS3Key: string | null;
+  // Set when the account was deleted (anonymised, migration 018). The profile is a tombstone.
+  deletedAt: Date | null;
 }
 
 // Usernames and emails are unique case-insensitively, and looked up the same way.
 
+// A deleted account has no password and is never returned, so it cannot log in.
 export async function getUserForLogin(
   email: string
 ): Promise<(SessionUser & { passwordHash: string }) | null> {
   const [user] = await db<SessionUser & { passwordHash: string }>(
     `SELECT id, username, email, role, password_hash AS "passwordHash"
        FROM app_user
-      WHERE lower(email) = lower($1)`,
+      WHERE lower(email) = lower($1)
+        AND deleted_at IS NULL
+        AND password_hash IS NOT NULL`,
     [email]
   );
   return user ?? null;
+}
+
+// For confirming it is really them before something drastic, like deleting the account.
+export async function getPasswordHash(userId: string): Promise<string | null> {
+  if (!isUuid(userId)) {
+    return null;
+  }
+  const [row] = await db<{ passwordHash: string | null }>(
+    `SELECT password_hash AS "passwordHash" FROM app_user WHERE id = $1 AND deleted_at IS NULL`,
+    [userId]
+  );
+  return row?.passwordHash ?? null;
 }
 
 export async function isEmailTaken(email: string): Promise<boolean> {
@@ -43,7 +60,11 @@ export async function isEmailTaken(email: string): Promise<boolean> {
 }
 
 // In use, or given up recently by someone who has a while to take it back (migration 011).
+// Names that look like a deleted account's (migration 018) are never available.
 export async function isUsernameTaken(username: string): Promise<boolean> {
+  if (isDeletedUsername(username)) {
+    return true;
+  }
   const rows = await db(`SELECT 1 FROM app_user WHERE lower(username) = lower($1)`, [username]);
   return rows.length > 0 || (await isUsernameReserved(username));
 }
@@ -62,8 +83,9 @@ export async function createUser(user: {
   return created;
 }
 
-// The per-request session check: is the user still there, and what are their role and
-// name now. The name can change after the token was issued (migration 011).
+// Is the user still there, and what are their role and name now. The name can change after
+// the token was issued (migration 011). The per-request check is checkSession in
+// sessions.ts, which also looks at the session row.
 export async function getSessionState(
   id: string
 ): Promise<{ role: string; username: string; lastActive: Date | null } | null> {
@@ -75,13 +97,6 @@ export async function getSessionState(
     [id]
   );
   return row ?? null;
-}
-
-// last_active is overwritten each time, so it also notes the day in the event table
-// (recordActive), which is what "active users per day or week" is counted from.
-export async function touchLastActive(id: string) {
-  await db(`UPDATE app_user SET last_active = now() WHERE id = $1`, [id]);
-  await recordActive(id);
 }
 
 export async function listUsers(): Promise<PublicUser[]> {
@@ -107,7 +122,8 @@ export async function getProfile(username: string): Promise<Profile | null> {
     `SELECT id,
             username,
             created_at AS "createdAt",
-            avatar_s3_key AS "avatarS3Key"
+            avatar_s3_key AS "avatarS3Key",
+            deleted_at AS "deletedAt"
        FROM app_user
       WHERE lower(username) = lower($1)`,
     [username]

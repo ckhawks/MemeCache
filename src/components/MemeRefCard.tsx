@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { X } from 'react-feather';
 import styles from './MemeRefCard.module.scss';
 import WarningCover from './WarningCover';
+import { displayUsername } from '@/auth/username';
 import { supportedVideoTypes } from '@/constants/mimeTypes';
 import type { MemeRef } from '@/db/queries/comments';
 
@@ -17,7 +18,7 @@ export function MemeThumb(props: { meme: MemeRef }) {
         <video src={src + '#t=0.1'} preload="metadata" muted className={styles['thumb-media']} />
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt={`Meme by ${props.meme.username}`} loading="lazy" className={styles['thumb-media']} />
+        <img src={src} alt={`Meme by ${displayUsername(props.meme.username)}`} loading="lazy" className={styles['thumb-media']} />
       )}
     </WarningCover>
   );
@@ -33,7 +34,7 @@ export default function MemeRefCard(props: { meme: MemeRef; onRemove?: () => voi
         <MemeThumb meme={props.meme} />
       </span>
       <span className={styles['caption']}>
-        Meme by <strong>{props.meme.username}</strong>
+        Meme by <strong>{displayUsername(props.meme.username)}</strong>
       </span>
     </>
   );

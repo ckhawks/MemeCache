@@ -1,14 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { db } from '@/db/db';
 import { getMeme } from '@/db/queries/memes';
-import { getActivityNumbers, listFailedSearches, recordEvent } from '@/db/queries/events';
+import { getActivityNumbers, listFailedSearches, recordActive, recordEvent } from '@/db/queries/events';
 import { listModerationActions } from '@/db/queries/moderation';
 import { addTagToMeme, findOrCreateTag } from '@/db/queries/tags';
 import { addWarnings } from '@/db/queries/warnings';
 import { addComment } from '@/db/queries/comments';
 import { reportMeme } from '@/db/queries/reports';
-import { touchLastActive } from '@/db/queries/users';
 import { makeMeme, makeUser, resetDatabase } from './fixtures';
+
+// What the session check does on a request (touchSession in src/db/queries/sessions.ts):
+// last_active, then the day noted as an event.
+async function touchLastActive(id: string) {
+  await db(`UPDATE app_user SET last_active = now() WHERE id = $1`, [id]);
+  await recordActive(id);
+}
 
 // The routes read the session and the visitor cookie through Next. Both are swapped for plain
 // stand-ins here, as in views.test.ts, so routes can be called directly.
