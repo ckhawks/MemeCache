@@ -8,6 +8,7 @@ import LikeButton from '@/components/LikeButton';
 import SaveMemeButton from '@/components/SaveMemeButton';
 import SendMemeButton from '@/components/SendMemeButton';
 import DeleteMemeButton from '@/components/DeleteMemeButton';
+import ReportMemeButton from '@/components/ReportMemeButton';
 import type { MemeCard } from '@/db/queries/memes';
 import type { UserPayload } from '@/auth/lib';
 import { avatarUrl } from '@/util/avatarUrl';
@@ -44,6 +45,8 @@ export function PostActions(props: {
   canDelete: boolean;
 }) {
   const { meme } = props;
+  // Members can report other people's memes, not their own.
+  const canReport = !!props.user && props.user.id !== meme.uploaderId;
   return (
     <div className={d.postActions}>
       <LikeButton
@@ -59,9 +62,12 @@ export function PostActions(props: {
         <Download size={16} />
         Download
       </a>
-      {props.canDelete && (
+      {(canReport || props.canDelete) && (
         <span className={d.postDelete}>
-          <DeleteMemeButton labeled memeId={meme.id} asModerator={props.user?.id !== meme.uploaderId} />
+          {canReport && <ReportMemeButton memeId={meme.id} />}
+          {props.canDelete && (
+            <DeleteMemeButton labeled memeId={meme.id} asModerator={props.user?.id !== meme.uploaderId} />
+          )}
         </span>
       )}
     </div>

@@ -3,6 +3,7 @@ import styles from '../main.module.scss';
 import NavigationBar from '@/components/NavigationBar';
 import FooterBar from '@/components/FooterBar';
 import { requireAdmin } from '@/server/requireAdmin';
+import { countOpenReports } from '@/db/queries/reports';
 
 const TOOLS = [
   {
@@ -10,10 +11,20 @@ const TOOLS = [
     title: 'Design system',
     description: 'Every component, color and text style in one place, in light and dark.',
   },
+  {
+    href: '/admin/reports',
+    title: 'Reports',
+    description: 'Memes members reported, to dismiss or delete. Moderators can use this one too.',
+  },
 ];
 
 export default async function Admin() {
   const user = await requireAdmin();
+  const openReports = await countOpenReports();
+  // Shown after a tool's title when there is something waiting in it.
+  const badges: Record<string, string> = {
+    '/admin/reports': openReports.reports > 0 ? `${openReports.reports} open` : '',
+  };
 
   return (
     <>
@@ -38,7 +49,12 @@ export default async function Admin() {
                   color: 'var(--text-color)',
                 }}
               >
-                <div style={{ fontWeight: 600 }}>{tool.title}</div>
+                <div style={{ fontWeight: 600 }}>
+                  {tool.title}
+                  {badges[tool.href] && (
+                    <span style={{ marginLeft: '8px', color: 'var(--danger-color)', fontSize: '14px' }}>{badges[tool.href]}</span>
+                  )}
+                </div>
                 <div style={{ color: 'var(--sub-text-color)', fontSize: '14px' }}>{tool.description}</div>
               </Link>
             ))}

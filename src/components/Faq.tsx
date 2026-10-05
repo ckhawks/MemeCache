@@ -28,7 +28,8 @@ const QUESTIONS: { q: string; a: React.ReactNode }[] = [
       <>
         Anything legal that is meant to be funny. NSFW is fine as long as it is labelled. No
         influencer or brand content, no engagement bait, and nothing that exposes a private
-        person.
+        person. If you see something that breaks these, use Report on the meme&apos;s page and
+        a moderator will look at it.
       </>
     ),
   },

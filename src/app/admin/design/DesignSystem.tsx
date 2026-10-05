@@ -8,10 +8,12 @@ import upload from '../../upload/Upload.module.scss';
 import tagEditor from '@/components/MemeTagsEditor.module.scss';
 import transcription from '@/components/MemeTranscriptionEditor.module.scss';
 import likeStyles from '@/components/LikeButton.module.scss';
+import authForm from '@/components/AuthForm.module.scss';
 import LikeButton from '@/components/LikeButton';
 import SaveMemeButton from '@/components/SaveMemeButton';
 import SendMemeButton from '@/components/SendMemeButton';
 import DeleteMemeButton from '@/components/DeleteMemeButton';
+import ReportMemeButton from '@/components/ReportMemeButton';
 import Tooltip from '@/components/Tooltip';
 import { TagChip } from '@/components/TagChip';
 import BackButton from '@/components/BackButton';
@@ -176,6 +178,9 @@ export default function DesignSystem(props: { memes: MemeCard[]; userId: string 
                 <LikeButton memeId={FAKE_MEME} userId="" liked={false} likes={3} />
               </div>
             </Labeled>
+            <Labeled label="Report (meme page only, opens the form)">
+              <ReportMemeButton memeId={FAKE_MEME} />
+            </Labeled>
           </div>
         </Themed>
       </Section>
@@ -208,6 +213,13 @@ export default function DesignSystem(props: { memes: MemeCard[]; userId: string 
             rows={2}
             defaultValue="Transcription text area"
           />
+          <select aria-label="Example dropdown" className={authForm['select']} defaultValue="">
+            <option value="" disabled>
+              Dropdown (AuthForm.module.scss select)
+            </option>
+            <option value="a">First option</option>
+            <option value="b">Second option</option>
+          </select>
         </Themed>
       </Section>
 

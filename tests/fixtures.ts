@@ -3,7 +3,7 @@ import { db } from '@/db/db';
 
 export async function resetDatabase() {
   await db(`
-    TRUNCATE queue_skip, transcription_review, meme_save, meme_like, meme_tag_vote, meme_tag,
+    TRUNCATE meme_report, queue_skip, transcription_review, meme_save, meme_like, meme_tag_vote, meme_tag,
       meme_transcription, tag, meme, app_user
   `);
 }

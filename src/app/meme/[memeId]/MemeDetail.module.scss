@@ -121,7 +121,10 @@
   gap: 8px;
 }
 
+// Report and Delete, pushed to the end of the bar.
 .postDelete {
+  display: flex;
+  gap: 8px;
   margin-left: auto;
 }
 
