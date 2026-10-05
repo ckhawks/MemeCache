@@ -12,6 +12,8 @@ import FooterBar from '@/components/FooterBar';
 import EditAvatarComponent from './EditAvatarComponent';
 import f from '@/components/AuthForm.module.scss';
 import BackButton from '@/components/BackButton';
+import WarningDisplaySetting from './WarningDisplaySetting';
+import { getWarningDisplay } from '@/db/queries/warnings';
 
 export default async function Profile(props: { params: Promise<{ username: string }> }) {
   const params = await props.params;
@@ -37,6 +39,8 @@ export default async function Profile(props: { params: Promise<{ username: strin
   if (!isCurrentUser) {
     notFound();
   }
+
+  const warningDisplay = await getWarningDisplay(userFromDb.id);
 
   return (
     <>
@@ -98,6 +102,13 @@ export default async function Profile(props: { params: Promise<{ username: strin
                   />
                 </div>
               </Row>
+            </div>
+            <div className={'card'} style={{ marginTop: '16px' }}>
+              <h5>Content warnings</h5>
+              <p style={{ fontSize: '14px' }}>
+                How memes with a content warning (NSFW, gore and the like) are shown to you.
+              </p>
+              <WarningDisplaySetting display={warningDisplay} />
             </div>
           </div>
         </div>

@@ -78,6 +78,13 @@
   border-radius: 12px;
 }
 
+// The WarningCover over a meme with content warnings. DetailMedia sets its width as it
+// would the media's.
+.covered {
+  width: 100%;
+  border-radius: 12px;
+}
+
 .postAuthor {
   display: inline-flex;
   align-items: center;

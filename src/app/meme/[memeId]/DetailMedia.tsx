@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { supportedImageTypes, supportedVideoTypes } from '@/constants/mimeTypes';
+import type { ContentWarning } from '@/constants/contentWarnings';
+import WarningCover from '@/components/WarningCover';
+import { useWarningDisplay } from '@/contexts/WarningDisplayContext';
 import d from './MemeDetail.module.scss';
 
 // The meme on its own page: scaled to fill the column, small memes included, but never taller
@@ -9,15 +12,22 @@ import d from './MemeDetail.module.scss';
 // or crop), so the aspect ratio is read when the media loads and the width becomes
 // min(column, 75vh x ratio). Until then it fills the column, which is right for the common
 // wide and square memes.
+//
+// A meme with content warnings sits under a WarningCover, which takes that width instead,
+// and the media fills it.
 export default function DetailMedia(props: {
-  meme: { id: string; contentType: string; username: string };
+  meme: { id: string; contentType: string; username: string; warnings?: ContentWarning[] };
 }) {
   const [ratio, setRatio] = useState<number | null>(null);
+  const display = useWarningDisplay();
   const src = '/api/resource/' + props.meme.id;
-  const style = ratio ? { width: `min(100%, calc(75vh * ${ratio}))` } : undefined;
+  const width = ratio ? { width: `min(100%, calc(75vh * ${ratio}))` } : undefined;
+  const covered = (props.meme.warnings?.length ?? 0) > 0 && display !== 'show';
+  const style = covered ? undefined : width;
 
+  let media: React.ReactNode;
   if (supportedImageTypes.includes(props.meme.contentType)) {
-    return (
+    media = (
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={src}
@@ -37,10 +47,8 @@ export default function DetailMedia(props: {
         }}
       />
     );
-  }
-
-  if (supportedVideoTypes.includes(props.meme.contentType)) {
-    return (
+  } else if (supportedVideoTypes.includes(props.meme.contentType)) {
+    media = (
       <video
         controls
         loop
@@ -55,7 +63,16 @@ export default function DetailMedia(props: {
         <source src={src + '#t=0.1'} />
       </video>
     );
+  } else {
+    return <div>Unsupported media type {props.meme.contentType}.</div>;
   }
 
-  return <div>Unsupported media type {props.meme.contentType}.</div>;
+  if (!covered) {
+    return media;
+  }
+  return (
+    <WarningCover warnings={props.meme.warnings} className={d.covered} style={width}>
+      {media}
+    </WarningCover>
+  );
 }

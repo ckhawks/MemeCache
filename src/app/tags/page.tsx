@@ -7,6 +7,7 @@ import NavigationBar from '@/components/NavigationBar';
 import FooterBar from '@/components/FooterBar';
 import { listTagRows } from '@/db/queries/tags';
 import { supportedVideoTypes } from '@/constants/mimeTypes';
+import WarningCover from '@/components/WarningCover';
 
 // Browse by tag: a shuffled set of tags, each with a strip of its most-liked memes. The
 // shuffle's seed rides in the URL, so "More tags" continues the same order without repeats.
@@ -60,13 +61,16 @@ export default async function BrowseTags(props: {
                   <div className={b.strip}>
                     {row.memes.map((meme) => (
                       <Link key={meme.id} href={`/meme/${meme.slug}`} className={b.thumb}>
-                        {supportedVideoTypes.includes(meme.contentType) ? (
-                          // The first frame, as on feed cards.
-                          <video src={`/api/resource/${meme.id}#t=0.1`} preload="metadata" muted />
-                        ) : (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={`/api/resource/${meme.id}`} alt="" loading="lazy" />
-                        )}
+                        {/* Warned memes stay blurred here; the click opens the meme page. */}
+                        <WarningCover compact warnings={meme.warnings} className={b.thumbCover}>
+                          {supportedVideoTypes.includes(meme.contentType) ? (
+                            // The first frame, as on feed cards.
+                            <video src={`/api/resource/${meme.id}#t=0.1`} preload="metadata" muted />
+                          ) : (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={`/api/resource/${meme.id}`} alt="" loading="lazy" />
+                          )}
+                        </WarningCover>
                       </Link>
                     ))}
                   </div>

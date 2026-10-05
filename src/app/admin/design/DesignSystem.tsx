@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { UploadCloud } from 'react-feather';
 import { Download } from 'react-feather';
 import main from '../../main.module.scss';
@@ -19,6 +20,11 @@ import ThemeToggle from '@/components/ThemeToggle';
 import FeedViewToggle from '@/components/FeedViewToggle';
 import { GalleryMasonry } from '@/components/GalleryMasonry';
 import type { MemeCard } from '@/db/queries/memes';
+import { WarningChip } from '@/components/WarningChip';
+import { WarningToggles } from '@/components/WarningToggles';
+import WarningCover from '@/components/WarningCover';
+import { WarningDisplayProvider } from '@/contexts/WarningDisplayContext';
+import type { ContentWarning } from '@/constants/contentWarnings';
 
 // A meme id that does not exist: interactive examples hit the real API and get a 404, so
 // clicking them shows the error and rollback paths without changing any data.
@@ -83,6 +89,9 @@ function Labeled(props: { label: string; children: React.ReactNode }) {
 
 export default function DesignSystem(props: { memes: MemeCard[]; userId: string }) {
   const noVote = () => undefined;
+  const [picked, setPicked] = useState<ContentWarning[]>(['nsfw']);
+  // The first real meme, labelled, to show the blurred card.
+  const warned = props.memes.slice(0, 1).map((meme) => ({ ...meme, warnings: ['nsfw' as const] }));
 
   return (
     <div className={ds.system}>
@@ -194,6 +203,60 @@ export default function DesignSystem(props: { memes: MemeCard[]; userId: string 
             </Labeled>
           </div>
         </Themed>
+      </Section>
+
+      <Section
+        title="Content warnings"
+        note="A warning chip looks like a tag chip with an icon: no score, no link, and the remove button in the same hover popover. The type buttons are plain small buttons, primary when on (upload and the meme page)."
+      >
+        <Themed>
+          <div className={ds.row}>
+            <Labeled label="Removable (yours, or as a moderator)">
+              <WarningChip warning="nsfw" onRemove={noVote} />
+            </Labeled>
+            <Labeled label="Someone else's">
+              <WarningChip warning="spoiler" hint="Added by someone" />
+            </Labeled>
+          </div>
+          <Labeled label="Type buttons">
+            <WarningToggles
+              selected={picked}
+              onToggle={(warning) =>
+                setPicked((current) =>
+                  current.includes(warning) ? current.filter((w) => w !== warning) : [...current, warning]
+                )
+              }
+            />
+          </Labeled>
+        </Themed>
+      </Section>
+
+      <Section
+        title="Blurred memes"
+        note="WarningCover. Shown here with the blur setting whatever yours is: click a card's cover to reveal that one meme. Thumbnails (browse tags) show only the label and open the meme page."
+      >
+        {/* Fixed to 'blur' so the example shows even for an admin who never blurs. */}
+        <WarningDisplayProvider display="blur">
+          {warned.length > 0 && (
+            <div className={ds.row} style={{ alignItems: 'flex-start' }}>
+              <div style={{ width: 320 }}>
+                <GalleryMasonry memes={warned} currentUserId={props.userId} view="feed" />
+              </div>
+              <Labeled label="Thumbnail">
+                <div style={{ width: 120, height: 120, borderRadius: 8, overflow: 'hidden' }}>
+                  <WarningCover compact warnings={['gore', 'spoiler']} style={{ height: '100%' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`/api/resource/${warned[0].id}`}
+                      alt=""
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  </WarningCover>
+                </div>
+              </Labeled>
+            </div>
+          )}
+        </WarningDisplayProvider>
       </Section>
 
       <Section title="Inputs">

@@ -1,5 +1,7 @@
 import { db } from '@/db/db';
 import { isUuid } from './ids';
+import { warningsSql } from './warnings';
+import type { ContentWarning } from '@/constants/contentWarnings';
 
 export interface MemeTag {
   id: string;
@@ -163,7 +165,7 @@ export interface TagRow {
   name: string;
   // Memes where the tag stands (net score of at least 1), as on its tag page.
   uses: number;
-  memes: { id: string; slug: string; contentType: string }[];
+  memes: { id: string; slug: string; contentType: string; warnings: ContentWarning[] }[];
 }
 
 // The browse page: tags in a seeded shuffle (the same seed gives the same order on every
@@ -201,7 +203,12 @@ export async function listTagRows(options: {
      SELECT p.id,
             p.name,
             p.uses,
-            (SELECT json_agg(json_build_object('id', r.id, 'slug', r.slug, 'contentType', r.content_type))
+            (SELECT json_agg(json_build_object(
+                      'id', r.id,
+                      'slug', r.slug,
+                      'contentType', r.content_type,
+                      'warnings', ${warningsSql('r.id')}
+                    ))
                FROM (
                  SELECT s.id, s.slug, s.content_type
                    FROM standing s
