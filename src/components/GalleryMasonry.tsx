@@ -18,6 +18,7 @@ import Tooltip from './Tooltip';
 import likeStyles from './LikeButton.module.scss';
 import type { MemeCard } from '@/db/queries/memes';
 import { avatarUrl } from '@/util/avatarUrl';
+import { displayUsername } from '@/auth/username';
 import type { FeedView } from '@/server/feedView';
 
 // Memes arrive newest first from the query. `view` is the viewer's layout choice
@@ -64,7 +65,7 @@ export function GalleryMasonry(props: {
                 loading="lazy"
                 className={styles['meme-avatar']}
               />
-              {meme.username}
+              {displayUsername(meme.username)}
               <span className={styles['meme-karma']} title="Karma">
                 {meme.karma.toLocaleString()}
               </span>

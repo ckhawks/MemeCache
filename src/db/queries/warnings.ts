@@ -1,10 +1,7 @@
 import { db } from '@/db/db';
 import { isUuid } from './ids';
-import {
-  WARNING_DISPLAYS,
-  type ContentWarning,
-  type WarningDisplay,
-} from '@/constants/contentWarnings';
+import { getSetting, setSetting } from './settings';
+import type { ContentWarning, WarningDisplay } from '@/constants/contentWarnings';
 
 // Content warnings on memes (migration 007). Feeds get them through warningsSql in each
 // row; the meme page lists them with who added each one.
@@ -78,17 +75,11 @@ export async function removeWarning(memeId: string, warning: ContentWarning) {
   ]);
 }
 
+// Stored in user_setting since migration 018; app_user.warning_display is no longer read.
 export async function getWarningDisplay(userId: string): Promise<WarningDisplay> {
-  if (!isUuid(userId)) {
-    return 'blur';
-  }
-  const [row] = await db<{ display: WarningDisplay }>(
-    `SELECT warning_display AS display FROM app_user WHERE id = $1`,
-    [userId]
-  );
-  return row && WARNING_DISPLAYS.includes(row.display) ? row.display : 'blur';
+  return getSetting(userId, 'warning_display');
 }
 
 export async function setWarningDisplay(userId: string, display: WarningDisplay) {
-  await db(`UPDATE app_user SET warning_display = $2 WHERE id = $1`, [userId, display]);
+  await setSetting(userId, 'warning_display', display);
 }

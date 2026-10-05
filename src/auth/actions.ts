@@ -8,12 +8,11 @@
 
 import { redirect } from 'next/navigation';
 import { safeNext } from '@/util/safeNext';
-import { cookies } from 'next/headers';
 import {
-  ACCESS_TOKEN_TTL_SECONDS,
   checkPassword,
-  createAccessToken,
+  endCurrentSession,
   hashPassword,
+  startSession,
 } from '@/auth/lib';
 import {
   getUserForLogin,
@@ -34,20 +33,6 @@ const INVITE_MESSAGES: Record<InviteCheck, string | null> = {
   expired: "We're sorry, that access code has expired.",
   'used-up': "We're sorry, that access code has been used as many times as it allows.",
 };
-
-// Must match the JWT's own expiry. When these disagreed -- a 15 minute cookie holding a
-// token that middleware was supposed to refresh -- the browser dropped a still-valid
-// session and the user appeared logged out.
-const ACCESS_TOKEN_MAX_AGE = ACCESS_TOKEN_TTL_SECONDS;
-
-async function setSessionCookie(accessToken: string) {
-  (await cookies()).set('accessToken', accessToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: ACCESS_TOKEN_MAX_AGE,
-  });
-}
 
 export async function register(prevState: any, formData: FormData) {
   const username = formData.get('username')?.toString() ?? '';
@@ -110,7 +95,7 @@ export async function register(prevState: any, formData: FormData) {
     return { message: nowMessage ?? INVITE_MESSAGES['used-up'] };
   }
 
-  await setSessionCookie(await createAccessToken(user));
+  await startSession(user);
 
   redirect('/');
 }
@@ -132,16 +117,19 @@ export async function login(prevState: any, formData: FormData) {
     return { message: 'No account was found with that information.' };
   }
 
-  await setSessionCookie(await createAccessToken(user));
+  await startSession({
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    role: user.role,
+  });
 
   redirect(safeNext(formData.get('next')));
 }
 
+// Ends this browser's session on the server too (migration 018), not only the cookie.
 export async function logout() {
-  const cookieStore = await cookies();
-  cookieStore.set('accessToken', '', { maxAge: 0 });
-  // Sessions before migration 002 also carried a refresh token cookie. Clear it too.
-  cookieStore.set('refreshToken', '', { maxAge: 0 });
+  await endCurrentSession();
 
   redirect('/login');
 }

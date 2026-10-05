@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import styles from './Notifications.module.scss';
 import { avatarUrl } from '@/util/avatarUrl';
+import { displayUsername } from '@/auth/username';
 import { supportedVideoTypes } from '@/constants/mimeTypes';
 import type { NotificationGroup } from '@/db/queries/notifications';
 
@@ -15,18 +16,18 @@ function people(group: Group) {
     return <>Someone</>;
   }
   if (group.actorCount === 1) {
-    return <strong>{first.username}</strong>;
+    return <strong>{displayUsername(first.username)}</strong>;
   }
   if (group.actorCount === 2 && second) {
     return (
       <>
-        <strong>{first.username}</strong> and <strong>{second.username}</strong>
+        <strong>{displayUsername(first.username)}</strong> and <strong>{displayUsername(second.username)}</strong>
       </>
     );
   }
   return (
     <>
-      <strong>{first.username}</strong> and {group.actorCount - 1} others
+      <strong>{displayUsername(first.username)}</strong> and {group.actorCount - 1} others
     </>
   );
 }

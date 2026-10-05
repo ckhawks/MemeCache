@@ -9,6 +9,8 @@ import SaveMemeButton from '@/components/SaveMemeButton';
 import SendMemeButton from '@/components/SendMemeButton';
 import DeleteMemeButton from '@/components/DeleteMemeButton';
 import ReportMemeButton from '@/components/ReportMemeButton';
+import TakedownButton from '@/components/TakedownButton';
+import { displayUsername } from '@/auth/username';
 import type { MemeCard } from '@/db/queries/memes';
 import type { UserPayload } from '@/auth/lib';
 import { avatarUrl } from '@/util/avatarUrl';
@@ -33,7 +35,7 @@ export function PostAuthor(props: {
         className={d.postAvatar}
       />
       <span className={d.postAuthorText}>
-        <span className={d.postAuthorName}>{props.username}</span>
+        <span className={d.postAuthorName}>{displayUsername(props.username)}</span>
         <span className={d.postKarma}>{props.karma.toLocaleString()} karma</span>
       </span>
     </Link>
@@ -44,6 +46,8 @@ export function PostActions(props: {
   meme: MemeCard;
   user: UserPayload | undefined;
   canDelete: boolean;
+  // Admins: take it down for a copyright claim or similar (migration 018).
+  canTakeDown: boolean;
 }) {
   const { meme } = props;
   // Members can report other people's memes, not their own.
@@ -63,12 +67,13 @@ export function PostActions(props: {
         <Download size={16} />
         Download
       </a>
-      {(canReport || props.canDelete) && (
+      {(canReport || props.canDelete || props.canTakeDown) && (
         <span className={d.postDelete}>
           {canReport && <ReportMemeButton memeId={meme.id} />}
           {props.canDelete && (
             <DeleteMemeButton labeled memeId={meme.id} asModerator={props.user?.id !== meme.uploaderId} />
           )}
+          {props.canTakeDown && <TakedownButton memeId={meme.id} />}
         </span>
       )}
     </div>

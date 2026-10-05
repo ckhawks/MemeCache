@@ -6,15 +6,23 @@
 // unauthenticated endpoints. The three real form actions live in @/auth/actions instead.
 
 import { SignJWT, jwtVerify } from 'jose';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { cache } from 'react';
-import { getSessionState, touchLastActive } from '@/db/queries/users';
+import {
+  checkSession,
+  createSession,
+  revokeSession,
+  SESSION_TTL_SECONDS,
+  touchSession,
+} from '@/db/queries/sessions';
 
 export interface UserPayload {
   id: string;
   username: string;
   email: string;
   role: string;
+  // The user_session row this token belongs to (migration 018).
+  sessionId: string;
 }
 
 // THANKS TO https://github.com/balazsorban44/auth-poc-next/blob/main/lib.ts
@@ -35,19 +43,22 @@ const accessTokenKey = new TextEncoder().encode(accessTokenSecret);
 //
 // So the access token is the whole session, valid for a week, and there is nothing to
 // refresh. The refresh token that used to be issued alongside it was never redeemed, and
-// went away with migration 002. The cost is that a stolen token stays valid until it
-// expires; the only server-side revocation is the role check in validateAccessToken.
-// Acceptable for an invite-only site. If registration ever opens, see db/MIGRATION.md.
-export const ACCESS_TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60;
+// went away with migration 002.
+//
+// Since migration 018 the token names a user_session row (`sid`), and validateAccessToken
+// rejects it once that row is revoked: logging out, "log out everywhere else", or deleting
+// the account ends it on the server, not just in the browser that held it.
+export const ACCESS_TOKEN_TTL_SECONDS = SESSION_TTL_SECONDS;
 
 export async function createAccessToken(user: UserPayload) {
-  // Only these four fields. Spreading a database row in here would put whatever else the
-  // row carries into a token the browser holds.
+  // Only these fields. Spreading a database row in here would put whatever else the row
+  // carries into a token the browser holds.
   return await new SignJWT({
     id: user.id,
     username: user.username,
     email: user.email,
     role: user.role,
+    sid: user.sessionId,
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
@@ -55,8 +66,9 @@ export async function createAccessToken(user: UserPayload) {
     .sign(accessTokenKey);
 }
 
-// The session cookie lives exactly as long as the token inside it. @/auth/actions has its
-// own copy for login and registration; this one is for route handlers (renaming).
+// The session cookie lives exactly as long as the token inside it. When these disagreed --
+// a 15 minute cookie holding a token that middleware was supposed to refresh -- the browser
+// dropped a still-valid session and the user appeared logged out.
 export async function setSessionCookie(accessToken: string) {
   (await cookies()).set('accessToken', accessToken, {
     httpOnly: true,
@@ -66,34 +78,90 @@ export async function setSessionCookie(accessToken: string) {
   });
 }
 
-// How stale "lastActive" is allowed to get before it is worth a write.
-const ACTIVITY_WRITE_INTERVAL_MS = 5 * 60 * 1000;
+export async function clearSessionCookie() {
+  const cookieStore = await cookies();
+  cookieStore.set('accessToken', '', { maxAge: 0 });
+  // Sessions before migration 002 also carried a refresh token cookie. Clear it too.
+  cookieStore.set('refreshToken', '', { maxAge: 0 });
+}
 
-export async function validateAccessToken(token: string) {
+// The request's address, as the reverse proxy reported it. Only ever stored coarsened
+// (coarseNetwork) and only shown back to the user, so a spoofed header fools nobody but the
+// person sending it.
+function requestIp(headerList: Headers): string | null {
+  const forwarded = headerList.get('x-forwarded-for');
+  if (forwarded) {
+    return forwarded.split(',')[0].trim();
+  }
+  return headerList.get('x-real-ip');
+}
+
+// Logs a user in on this browser: a new session row, a token naming it, and the cookie.
+// For server actions and route handlers, where cookies can be set.
+export async function startSession(user: Omit<UserPayload, 'sessionId'>) {
+  const headerList = await headers();
+  const sessionId = await createSession({
+    userId: user.id,
+    userAgent: headerList.get('user-agent'),
+    ip: requestIp(headerList),
+  });
+  await setSessionCookie(await createAccessToken({ ...user, sessionId }));
+  return sessionId;
+}
+
+// Logout: revokes this browser's session on the server, then drops the cookie. The token
+// is checked only for its signature here, so an already revoked one still clears the
+// cookie.
+export async function endCurrentSession() {
+  const token = (await cookies()).get('accessToken')?.value;
+  if (token) {
+    try {
+      const { payload } = await jwtVerify(token, accessTokenKey, {
+        algorithms: ['HS256'],
+      });
+      if (typeof payload.id === 'string' && typeof payload.sid === 'string') {
+        await revokeSession(payload.id, payload.sid);
+      }
+    } catch {
+      // A forged or expired token has no session worth revoking.
+    }
+  }
+  await clearSessionCookie();
+}
+
+export async function validateAccessToken(token: string): Promise<UserPayload | null> {
   try {
     const { payload } = await jwtVerify(token, accessTokenKey, {
       algorithms: ['HS256'],
     });
 
-    // Check the user still exists and their role has not changed. With no short-lived
-    // token to expire, this role check is the main way a session stops being valid
-    // before logout, so it stays on the request path.
-    const user = await getSessionState(payload.id as string);
+    // Tokens from before migration 018 carry no session id. They are rejected, which logs
+    // everyone out once when it ships; letting them run to expiry would leave up to a week
+    // of sessions that "log out everywhere" could not reach.
+    if (typeof payload.id !== 'string' || typeof payload.sid !== 'string') {
+      return null;
+    }
 
-    if (!user || user.role !== payload.role) {
+    // The session is still open, the user still exists and is not deleted, and their role
+    // has not changed since the token was issued. One query, on every request.
+    const session = await checkSession(payload.id, payload.sid);
+    if (!session || session.role !== payload.role) {
       return null; // Token is no longer valid
     }
 
-    // This used to write on every single request. Only write when the value is actually
-    // stale -- getOnlineUsers() buckets to 15 minutes, so 5-minute resolution is ample.
-    const last = user.lastActive ? new Date(user.lastActive).getTime() : 0;
-    if (Date.now() - last > ACTIVITY_WRITE_INTERVAL_MS) {
-      await touchLastActive(payload.id as string);
-    }
+    // last_seen_at for the device list and last_active for "who's online", each written
+    // only when stale. getOnlineUsers() buckets to 15 minutes, so 5 minutes is ample.
+    await touchSession(payload.id, payload.sid, session);
 
     // The name in the token is the one they had when it was issued. Renaming re-issues the
     // cookie, but an admin rename or another device would still carry the old one.
-    return { ...(payload as unknown as UserPayload), username: user.username };
+    return {
+      id: payload.id,
+      username: session.username,
+      email: payload.email as string,
+      role: session.role,
+      sessionId: payload.sid,
+    };
   } catch (error) {
     return null;
   }

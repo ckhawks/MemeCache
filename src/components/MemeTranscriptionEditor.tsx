@@ -5,6 +5,7 @@ import globals from '../app/main.module.scss';
 import styles from './MemeTranscriptionEditor.module.scss';
 import { api } from '@/util/api';
 import TranscriptionField from './TranscriptionField';
+import { displayUsername } from '@/auth/username';
 import TranscriptionGuidelines from './TranscriptionGuidelines';
 
 interface TranscriptionData {
@@ -101,7 +102,7 @@ export default function MemeTranscriptionEditor(props: {
           )}
           {(current.editedByUsername || (props.plain && signedIn)) && (
             <div className={styles['transcription-author']}>
-              {current.editedByUsername && <>Transcribed by {current.editedByUsername}</>}
+              {current.editedByUsername && <>Transcribed by {displayUsername(current.editedByUsername)}</>}
               {props.plain && signedIn && (
                 <>
                   {current.editedByUsername && ' · '}

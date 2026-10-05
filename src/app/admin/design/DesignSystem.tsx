@@ -28,6 +28,8 @@ import CooldownTimer from '@/components/CooldownTimer';
 import TagFollowButtons from '@/components/TagFollowButtons';
 import FeedReason from '@/components/FeedReason';
 import YourTags from '@/components/YourTags';
+import SessionList from '@/components/SessionList';
+import TakedownButton from '@/components/TakedownButton';
 import type { MemeCard } from '@/db/queries/memes';
 import { WarningChip } from '@/components/WarningChip';
 import { WarningToggles } from '@/components/WarningToggles';
@@ -45,6 +47,10 @@ const FAKE_MEME = '00000000-0000-4000-8000-000000000000';
 // The same for tags: following or muting them fails and rolls back.
 const FAKE_TAG = '00000000-0000-4000-8000-000000000001';
 const FAKE_TAG_2 = '00000000-0000-4000-8000-000000000002';
+// And sessions: logging them out fails, and "everywhere else" is refused because none of
+// them is the viewer's own.
+const FAKE_SESSION = '00000000-0000-4000-8000-000000000003';
+const FAKE_SESSION_2 = '00000000-0000-4000-8000-000000000004';
 
 // The color tokens from globals.scss, in the order they are defined.
 const TOKENS = [
@@ -335,6 +341,46 @@ export default function DesignSystem(props: { memes: MemeCard[]; userId: string 
               ]}
             />
           </Labeled>
+        </Themed>
+      </Section>
+
+      <Section
+        title="Sessions"
+        note="components/SessionList, the &quot;Where you're logged in&quot; card on the edit profile page. These sessions do not exist: every button fails and nothing is logged out."
+      >
+        <Themed>
+          <SessionList
+            sessions={[
+              {
+                id: FAKE_SESSION,
+                userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:130.0) Gecko/20100101 Firefox/130.0',
+                network: '203.0.113.0/24',
+                createdAt: '2026-01-01T12:00:00.000Z',
+                lastSeenAt: '2026-01-08T11:58:00.000Z',
+              },
+              {
+                id: FAKE_SESSION_2,
+                userAgent:
+                  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
+                network: null,
+                createdAt: '2026-01-03T09:00:00.000Z',
+                lastSeenAt: '2026-01-06T20:00:00.000Z',
+              },
+            ]}
+            currentId={FAKE_SESSION}
+            now="2026-01-08T12:00:00.000Z"
+          />
+        </Themed>
+      </Section>
+
+      <Section
+        title="Take down"
+        note="components/TakedownButton, admins only, in the meme page's actions beside Delete. Deletes the file and leaves a notice. This one points at a meme that does not exist."
+      >
+        <Themed>
+          <div className={ds.row}>
+            <TakedownButton memeId={FAKE_MEME} />
+          </div>
         </Themed>
       </Section>
 

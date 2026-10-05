@@ -117,7 +117,8 @@ export async function renameUser(options: {
   try {
     return await transaction(async (query) => {
       const [user] = await query<{ username: string }>(
-        `SELECT username FROM app_user WHERE id = $1 FOR UPDATE`,
+        // A deleted account keeps its placeholder name (migration 018).
+        `SELECT username FROM app_user WHERE id = $1 AND deleted_at IS NULL FOR UPDATE`,
         [options.userId]
       );
       if (!user) {

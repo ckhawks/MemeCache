@@ -13,6 +13,7 @@ import { getKarmaBreakdown, getProfile, getProfileStats, getTrust } from '@/db/q
 import { isAdmin, isModerator } from '@/auth/role';
 import TrustOverride from './TrustOverride';
 import AdminRename from './AdminRename';
+import AdminDeleteUser from './AdminDeleteUser';
 import { findRenamedUsername, listUsernameHistory } from '@/db/queries/usernames';
 import { countMemes, listMemes } from '@/db/queries/memes';
 import { getFeedView } from '@/server/feedView';
@@ -42,6 +43,35 @@ export default async function Profile(props: {
       permanentRedirect('/me/' + encodeURIComponent(renamed));
     }
     notFound();
+  }
+
+  // A deleted account (migration 018): a tombstone, not a 404, since its content is still
+  // around and links to it. Nothing about who it was is shown.
+  if (profile.deletedAt) {
+    return (
+      <>
+        <NavigationBar />
+        <main className={styles.main}>
+          <div className={styles.content}>
+            <section className={p.header}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={avatarUrl(profile.username, null)}
+                alt=""
+                width={96}
+                height={96}
+                className={p.avatar}
+              />
+              <div className={p.identity}>
+                <h1 className={p.name}>Deleted user</h1>
+                <div className={p.since}>This account was deleted. What it added to MemeCache stays, credited to &quot;deleted user&quot;.</div>
+              </div>
+            </section>
+          </div>
+        </main>
+        <FooterBar />
+      </>
+    );
   }
 
   const filter = { viewerId: user?.id, uploaderId: profile.id };
@@ -158,6 +188,7 @@ export default async function Profile(props: {
             <>
               <TrustOverride userId={profile.id} override={trust.override} />
               <AdminRename userId={profile.id} username={profile.username} />
+              <AdminDeleteUser userId={profile.id} username={profile.username} />
             </>
           )}
 

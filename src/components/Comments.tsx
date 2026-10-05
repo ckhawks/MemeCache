@@ -10,6 +10,7 @@ import MemeRefCard from './MemeRefCard';
 import MemePicker from './MemePicker';
 import { api } from '@/util/api';
 import { avatarUrl } from '@/util/avatarUrl';
+import { displayUsername } from '@/auth/username';
 import { timeAgo } from '@/util/datetimeFormat';
 import { parseMemeLink } from '@/util/memeLink';
 import { COMMENT_EDIT_MINUTES, COMMENT_MAX } from '@/constants/comments';
@@ -209,7 +210,7 @@ export function CommentItem(props: {
       <div className={styles['main']}>
         <div className={styles['meta']}>
           <Link href={profile} className={styles['author']}>
-            {comment.username}
+            {displayUsername(comment.username)}
           </Link>
           <span className={styles['karma']} title="Karma">
             {comment.karma.toLocaleString()}
