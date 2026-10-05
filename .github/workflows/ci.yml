@@ -8,12 +8,28 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    # The tests build a throwaway database (tests/global-setup.ts) on the same server and
+    # port as docker-compose.yml, so the default TEST_DATABASE_URL works unchanged.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: memecache
+          POSTGRES_PASSWORD: memecache
+          POSTGRES_DB: memecache
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U memecache"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - run: npm ci
@@ -21,6 +37,8 @@ jobs:
       - run: npm run typecheck
 
       - run: npm run lint
+
+      - run: npm test
 
       # The build needs the public base URL at compile time. Everything else is read at
       # runtime, so no real secrets are required to prove the app compiles.
