@@ -44,6 +44,14 @@ const QUESTIONS: { q: string; a: React.ReactNode }[] = [
     ),
   },
   {
+    q: 'Can I follow or mute a tag?',
+    a: (
+      <>
+        Yes. Every tag&apos;s page and every row on <Link href="/tags">Browse tags</Link> has Follow and Mute. Memes with a tag you follow come first under For you on Explore, and each one says which of your tags put it there. Memes with a tag you mute are hidden from Explore, the home page, Browse tags, related memes, search and the Queue, though a link straight to one still opens it. Both are private, and you can undo them on the tag&apos;s page or under Your tags when you edit your profile.
+      </>
+    ),
+  },
+  {
     q: 'Can I bring in memes from other sites?',
     a: (
       <>

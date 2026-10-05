@@ -15,6 +15,8 @@ import BackButton from '@/components/BackButton';
 import WarningDisplaySetting from './WarningDisplaySetting';
 import { getWarningDisplay } from '@/db/queries/warnings';
 import EditUsernameForm from './EditUsernameForm';
+import YourTags from '@/components/YourTags';
+import { listTagPreferences } from '@/db/queries/tagPreferences';
 import {
   findRenamedUsername,
   getUsernameCooldown,
@@ -54,6 +56,7 @@ export default async function Profile(props: { params: Promise<{ username: strin
 
   const warningDisplay = await getWarningDisplay(userFromDb.id);
   const cooldown = await getUsernameCooldown(userFromDb.id);
+  const tagPreferences = await listTagPreferences(userFromDb.id);
 
   return (
     <>
@@ -127,6 +130,13 @@ export default async function Profile(props: { params: Promise<{ username: strin
                 How memes with a content warning (NSFW, gore and the like) are shown to you.
               </p>
               <WarningDisplaySetting display={warningDisplay} />
+            </div>
+            <div className={'card'} style={{ marginTop: '16px' }}>
+              <h5>Your tags</h5>
+              <p style={{ fontSize: '14px' }}>
+                Tags you follow come first in For you on Explore. Tags you mute are hidden from your feeds. Only you can see these.
+              </p>
+              <YourTags tags={tagPreferences} />
             </div>
           </div>
         </div>

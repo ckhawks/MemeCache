@@ -2,6 +2,7 @@ import { db } from '@/db/db';
 import { isUuid } from './ids';
 import { CARD_COLUMNS, FEED_PAGE_SIZE, type MemeCard } from './memes';
 import { CURRENT_TRANSCRIPTIONS } from './transcriptions';
+import { mutedSql } from './tagPreferences';
 
 // Search over the words on each meme (its current transcription) and its tags.
 //
@@ -16,7 +17,7 @@ import { CURRENT_TRANSCRIPTIONS } from './transcriptions';
 //
 // Ranked by: the query being exactly one of the meme's tags, then every word matching as a
 // whole word, then full-text rank (tags weigh more than text) plus similarity, then likes,
-// then newest.
+// then newest. Memes carrying a tag the viewer muted are left out.
 //
 // Each version's text vector is stored and indexed (migration 010). Which version is
 // current is worked out per query (CURRENT_TRANSCRIPTIONS), because that depends on
@@ -178,6 +179,7 @@ export async function searchMemes(
          LEFT JOIN meme_transcription t ON t.id = ct.id
          LEFT JOIN standing_tags st ON st.meme_id = m.id
         WHERE m.deleted_at IS NULL
+          AND NOT ${mutedSql('m.id', '$1')}
           AND COALESCE(st.names, '{}') @> $4::text[]
      ),
      doc AS (

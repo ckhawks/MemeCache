@@ -1,6 +1,7 @@
 import { db } from '@/db/db';
 import { isUuid } from './ids';
 import { warningsSql } from './warnings';
+import { mutedSql } from './tagPreferences';
 import type { ContentWarning } from '@/constants/contentWarnings';
 
 export interface MemeTag {
@@ -173,9 +174,11 @@ export interface TagRow {
 
 // The browse page: tags in a seeded shuffle (the same seed gives the same order on every
 // page), each with its most-liked memes. Only tags on at least `minMemes` memes, so a row
-// is never one lonely thumbnail.
+// is never one lonely thumbnail. Memes carrying a tag the viewer muted are left out before
+// counting, so a muted tag drops off the page and other rows only show what the viewer sees.
 export async function listTagRows(options: {
   seed: string;
+  viewerId?: string;
   page?: number;
   tagsPerPage?: number;
   memesPerTag?: number;
@@ -193,6 +196,7 @@ export async function listTagRows(options: {
           AND (SELECT COALESCE(sum(v.vote), 0)
                  FROM counted_tag_vote v
                 WHERE v.meme_id = mt.meme_id AND v.tag_id = mt.tag_id) >= 1
+          AND NOT ${mutedSql('m.id', '$6')}
      ),
      picked AS (
        SELECT t.id, t.name, count(*)::int AS uses
@@ -227,6 +231,7 @@ export async function listTagRows(options: {
       tagsPerPage + 1,
       page * tagsPerPage,
       options.memesPerTag ?? 6,
+      isUuid(options.viewerId) ? options.viewerId : null,
     ]
   );
   const hasMore = rows.length > tagsPerPage;

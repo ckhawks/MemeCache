@@ -2,6 +2,7 @@ import { db } from '@/db/db';
 import { isUuid } from './ids';
 import { STANDS, VERSION_COLUMNS } from './transcriptions';
 import { warningsSql } from './warnings';
+import { mutedSql } from './tagPreferences';
 import {
   CONFIRMATIONS_NEEDED,
   QUEUE_TASKS,
@@ -81,7 +82,7 @@ const TAG_AGREEMENT = `
 `;
 
 // Each task's candidates for viewer $1, best first. Used both for "next" (LIMIT 1) and for
-// the count on its tab.
+// the count on its tab. Memes carrying a tag the viewer muted are not offered.
 function candidatesSql(task: QueueTask) {
   if (task === 'transcription') {
     return `
@@ -90,6 +91,7 @@ function candidatesSql(task: QueueTask) {
         JOIN app_user u ON u.id = m.uploader_id
         LEFT JOIN (${OPEN_VERSION}) v ON v.meme_id = m.id
        WHERE m.deleted_at IS NULL
+         AND NOT ${mutedSql('m.id', '$1')}
          AND (
            -- Nothing to check: type it out.
            (v.id IS NULL
@@ -117,6 +119,7 @@ function candidatesSql(task: QueueTask) {
       FROM meme m
       JOIN app_user u ON u.id = m.uploader_id
      WHERE m.deleted_at IS NULL
+       AND NOT ${mutedSql('m.id', '$1')}
        AND (
          -- Room for more tags, or a tag still being decided.
          (SELECT count(*) FROM (${TAG_AGREEMENT}) a
