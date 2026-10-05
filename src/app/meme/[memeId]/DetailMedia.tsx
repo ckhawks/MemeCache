@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { supportedImageTypes, supportedVideoTypes } from '@/constants/mimeTypes';
 import WarningCover from '@/components/WarningCover';
+import MemeVideo from '@/components/MemeVideo';
 import { blursMeme, type ContentWarning } from '@/constants/contentWarnings';
 import { useWarningDisplay } from '@/contexts/WarningDisplayContext';
 import d from './MemeDetail.module.scss';
@@ -19,7 +20,13 @@ import { useViewBeacon } from './useViewBeacon';
 //
 // It also counts the view (useViewBeacon): after a second on screen, or when the video starts.
 export default function DetailMedia(props: {
-  meme: { id: string; contentType: string; username: string; warnings?: ContentWarning[] };
+  meme: {
+    id: string;
+    contentType: string;
+    username: string;
+    warnings?: ContentWarning[];
+    hasAudio?: boolean | null;
+  };
 }) {
   const [ratio, setRatio] = useState<number | null>(null);
   const display = useWarningDisplay();
@@ -55,10 +62,10 @@ export default function DetailMedia(props: {
     );
   } else if (supportedVideoTypes.includes(props.meme.contentType)) {
     media = (
-      <video
-        controls
-        loop
-        preload="metadata"
+      <MemeVideo
+        src={src}
+        hasAudio={props.meme.hasAudio}
+        hold={blurred && !revealed}
         className={d.media}
         style={style}
         onPlay={countView}
@@ -66,9 +73,7 @@ export default function DetailMedia(props: {
           const video = e.currentTarget;
           setRatio(video.videoWidth / video.videoHeight);
         }}
-      >
-        <source src={src + '#t=0.1'} />
-      </video>
+      />
     );
   } else {
     return <div>Unsupported media type {props.meme.contentType}.</div>;

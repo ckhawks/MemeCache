@@ -8,11 +8,24 @@ import {
 } from '@/constants/mimeTypes';
 import type { ContentWarning } from '@/constants/contentWarnings';
 import WarningCover from './WarningCover';
+import MemeVideo from './MemeVideo';
+import { useState } from 'react';
+import { blursMeme } from '@/constants/contentWarnings';
 
 export default function MemeMediaRenderer(props: {
-  meme: { id: string; contentType: string; username?: string; warnings?: ContentWarning[] };
+  meme: {
+    id: string;
+    contentType: string;
+    username?: string;
+    warnings?: ContentWarning[];
+    hasAudio?: boolean | null;
+  };
   large?: boolean;
 }) {
+  // A GIF-like video stays still while it is blurred.
+  const [revealed, setRevealed] = useState(false);
+  const blurred = (props.meme.warnings ?? []).some(blursMeme);
+
   if (supportedImageTypes.indexOf(props.meme?.contentType) > -1) {
     return (
       <div
@@ -36,22 +49,14 @@ export default function MemeMediaRenderer(props: {
       <div
         className={`${styles['meme-media']} ${props.large ? styles.large : ''}`}
       >
-        {/* preload + #t=0.1 shows the first frame instead of a blank box. Clicks on the
-            controls stay here: a feed card navigates on click, which made play open the
-            meme page. */}
-        <WarningCover warnings={props.meme.warnings}>
-          <video
-            controls
-            preload="metadata"
-            onClick={(e) => e.stopPropagation()}
-            className={`${styles['meme-media-item']} ${
-              props.large ? styles.large : ''
-            }`}
-            loop
+        <WarningCover warnings={props.meme.warnings} onReveal={() => setRevealed(true)}>
+          <MemeVideo
+            src={'/api/resource/' + props.meme.id}
+            hasAudio={props.meme.hasAudio}
+            hold={blurred && !revealed}
+            className={`${styles['meme-media-item']} ${props.large ? styles.large : ''}`}
             style={{ display: 'block' }}
-          >
-            <source src={'/api/resource/' + props.meme.id + '#t=0.1'} />
-          </video>
+          />
         </WarningCover>
       </div>
     );

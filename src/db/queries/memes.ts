@@ -1,4 +1,5 @@
 import { db } from '@/db/db';
+import type { MediaInfo } from '@/server/mediaProbe';
 import { isSlug, isUuid } from './ids';
 import { karmaSql } from './users';
 import { warningsSql } from './warnings';
@@ -27,6 +28,12 @@ export interface MemeCard {
   hasSaved: boolean;
   // Content warnings (migration 007). Any at all and the meme is shown blurred.
   warnings: ContentWarning[];
+  // What the file is like (migration 019). Null when not known yet.
+  width: number | null;
+  height: number | null;
+  durationMs: number | null;
+  // A video with no sound is shown like a GIF. Null (unknown) keeps the player controls.
+  hasAudio: boolean | null;
 }
 
 export interface MemePage {
@@ -66,6 +73,10 @@ export const CARD_COLUMNS = `
   ${karmaSql('m.uploader_id')} AS karma,
   (SELECT count(*)::int FROM meme_like l WHERE l.meme_id = m.id) AS "likeCount",
   m.view_count AS "viewCount",
+  m.width,
+  m.height,
+  m.duration_ms AS "durationMs",
+  m.has_audio AS "hasAudio",
   (
     SELECT count(*)::int FROM meme_comment c_c WHERE c_c.meme_id = m.id AND c_c.deleted_at IS NULL
   ) AS "commentCount",
@@ -208,11 +219,13 @@ export async function createMeme(meme: {
   // The post it was imported from, normalized. Null for a file upload.
   sourceUrl?: string | null;
   warnings?: ContentWarning[];
+  // From probeMedia (src/server/mediaProbe.ts).
+  info?: MediaInfo;
 }): Promise<string> {
   const [row] = await db<{ slug: string }>(
     `WITH created AS (
-       INSERT INTO meme (id, uploader_id, s3_key, content_type, source_url)
-       VALUES ($1, $2, $3, $4, $5)
+       INSERT INTO meme (id, uploader_id, s3_key, content_type, source_url, width, height, duration_ms, has_audio)
+       VALUES ($1, $2, $3, $4, $5, $7, $8, $9, $10)
        RETURNING id, slug
      ),
      labelled AS (
@@ -227,6 +240,10 @@ export async function createMeme(meme: {
       meme.contentType,
       meme.sourceUrl ?? null,
       [...new Set(meme.warnings ?? [])],
+      meme.info?.width ?? null,
+      meme.info?.height ?? null,
+      meme.info?.durationMs ?? null,
+      meme.info?.hasAudio ?? null,
     ]
   );
   return row.slug;

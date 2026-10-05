@@ -7,6 +7,7 @@ import { createMeme } from '@/db/queries/memes';
 import { HttpError, route } from '@/server/route';
 import { normalizeImportUrl } from '@/server/mediaImport';
 import { isContentWarning } from '@/constants/contentWarnings';
+import { probeMedia } from '@/server/mediaProbe';
 
 // POST multipart { file, sourceUrl?, warnings* }: stores a new meme. The uploader is the
 // session user. sourceUrl is the post an imported file came from (see /api/import).
@@ -45,12 +46,15 @@ export const POST = route({
     }
 
     const id = crypto.randomUUID();
+    const bytes = Buffer.from(await file.arrayBuffer());
+    // Size, length and whether a video has sound (migration 019). Unknown on failure.
+    const info = await probeMedia(bytes, file.type);
 
     await getS3Client().send(
       new PutObjectCommand({
         Bucket: process.env.MC_AWS_S3_BUCKET,
         Key: id,
-        Body: Buffer.from(await file.arrayBuffer()),
+        Body: bytes,
         ContentType: file.type,
       })
     );
@@ -64,6 +68,7 @@ export const POST = route({
         contentType: file.type,
         sourceUrl,
         warnings,
+        info,
       });
     } catch (error) {
       // The object is already in the bucket at this point. Without this the bucket
