@@ -272,6 +272,16 @@ LiveKit calls, so avoid deploying during a scheduled DJ broadcast.
 Verify with `systemctl is-active memecache-nextjs` and
 `curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3007/`.
 
+### Media tools (added 2026-10-05)
+
+Link import (`/api/import`) runs `yt-dlp`, and uploads probe video with `ffprobe` (migration 019).
+
+- `ffmpeg` and `ffprobe` come from apt (`ffmpeg` 6.1.1).
+- `yt-dlp` is the official standalone Linux binary at `/usr/local/bin/yt-dlp`, which bundles curl_cffi for TikTok and X. Ubuntu 24.04 refuses system-wide pip installs, which is why it is not a pip package.
+- `yt-dlp-update.timer` runs `yt-dlp -U` weekly (`systemctl list-timers yt-dlp-update.timer`). YouTube and TikTok break older versions within weeks; if imports from one site start failing, run `yt-dlp -U` by hand first.
+- All three are on the service's default PATH, so `YT_DLP_PATH`, `FFMPEG_PATH` and `FFPROBE_PATH` are not set.
+- The vhost's `proxy_read_timeout 120s` already covers imports, which can take up to 90 s.
+
 ### Invite codes (migration 009)
 
 Registration takes invite codes from the `invite_code` table, made at `/admin/invites`. Apply it with `npm run db:migrate` before restarting. `ACCESS_CODE` in `.env` is still accepted, but only while that table is empty, so deploying 009 changes nothing for people signing up. Once an admin creates the first code (disabled ones count), `ACCESS_CODE` stops working and can be deleted from `/root/memecache/.env`. To bring back the old shared code, make an invite code with the same value and no limit.
