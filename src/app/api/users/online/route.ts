@@ -8,4 +8,7 @@ export async function GET(request: NextRequest) {
   return response;
 }
 
-export const revalidate = 60;
+// Who is online now, read per request. With `revalidate` and no request data this route was
+// prerendered at build time: it queried the database during `next build` and served the
+// list from the build for up to a minute.
+export const dynamic = 'force-dynamic';
