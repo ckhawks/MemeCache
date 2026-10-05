@@ -5,11 +5,15 @@ import { NextResponse } from 'next/server';
 
 // TODO switch this to use like a short slug for resource id's instead of full uuid because its ugly
 
-// Avatars were served with no caching, so every page refetched every avatar from storage and
-// they popped in late. The URL is per username, not per image, so it cannot be immutable:
-// browsers reuse it for 10 minutes and revalidate in the background for a week after. The
-// edit page busts it with ?timeStamp, so your own change shows at once.
-const AVATAR_CACHE = 'public, max-age=600, stale-while-revalidate=604800';
+// Pages link avatars through avatarUrl, which puts the image's version in ?v=. A new
+// upload means a new URL, so a versioned response never goes stale and is cached for a
+// year. A bare URL (old links, anything not using avatarUrl) is checked every time, so it
+// can never pin an old picture the way the per-username cache used to.
+function avatarCache(request: Request) {
+  return new URL(request.url).searchParams.has('v')
+    ? 'public, max-age=31536000, immutable'
+    : 'no-cache';
+}
 
 export async function GET(
   request: Request,
@@ -45,7 +49,7 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': data.ContentType!,
-        'Cache-Control': AVATAR_CACHE,
+        'Cache-Control': avatarCache(request),
       },
     });
   } else {
@@ -63,7 +67,7 @@ export async function GET(
         status: 200,
         headers: {
           'Content-Type': data.ContentType!,
-          'Cache-Control': AVATAR_CACHE,
+          'Cache-Control': avatarCache(request),
         },
       });
     } catch (error) {
@@ -72,5 +76,3 @@ export async function GET(
     }
   }
 }
-
-export const revalidate = 60;

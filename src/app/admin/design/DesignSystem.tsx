@@ -41,6 +41,9 @@ const TOKENS = [
   '--button-secondary-bg-color-hover',
   '--button-secondary-color',
   '--button-secondary-color-hover',
+  '--button-success-bg-color',
+  '--button-success-bg-color-hover',
+  '--button-success-color',
 ];
 
 function Section(props: { title: string; note?: string; children: React.ReactNode }) {
@@ -112,7 +115,7 @@ export default function DesignSystem(props: { memes: MemeCard[]; userId: string 
         </Themed>
       </Section>
 
-      <Section title="Buttons" note="main.module.scss: button, button-secondary, button-danger, button-small.">
+      <Section title="Buttons" note="main.module.scss: button, button-secondary, button-success, button-danger, button-small. Success is for completing or approving something.">
         <Themed>
           <div className={ds.row}>
             <Labeled label="Primary">
@@ -120,6 +123,9 @@ export default function DesignSystem(props: { memes: MemeCard[]; userId: string 
             </Labeled>
             <Labeled label="Secondary">
               <button type="button" className={`${main['button']} ${main['button-secondary']}`}>Cancel</button>
+            </Labeled>
+            <Labeled label="Success">
+              <button type="button" className={`${main['button']} ${main['button-success']}`}>Save and next</button>
             </Labeled>
             <Labeled label="Danger">
               <button type="button" className={`${main['button']} ${main['button-danger']}`}>Delete</button>

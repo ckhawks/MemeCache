@@ -1,33 +1,41 @@
 import Link from 'next/link';
-import { Compass, Grid, PlusSquare, User } from 'react-feather';
+import { Compass, Grid, Hash, PlusSquare, User } from 'react-feather';
 import styles from './main.module.scss';
 import h from './Home.module.scss';
 import NavigationBar from '@/components/NavigationBar';
 import FooterBar from '@/components/FooterBar';
 import OnlineUsers from '@/components/OnlineUsers';
 import MemeWall from '@/components/MemeWall';
+import Faq from '@/components/Faq';
 import { GalleryMasonry } from '@/components/GalleryMasonry';
 import { getUserFromAccessToken } from '@/auth/lib';
-import { countMemes, listMemes } from '@/db/queries/memes';
+import { countMemes, listTopMemes, TopWindow } from '@/db/queries/memes';
 
-const RECENT_COUNT = 6;
+const TOP_COUNT = 6;
+
+const TOP_TITLES: Record<TopWindow, string> = {
+  day: 'Top memes today',
+  week: 'Top memes this week',
+  month: 'Top memes this month',
+  all: 'Top memes',
+};
 
 export default async function Home() {
   const user = await getUserFromAccessToken();
-  const [recent, total] = await Promise.all([
-    listMemes({ viewerId: user?.id }, null, RECENT_COUNT),
+  const [top, total] = await Promise.all([
+    listTopMemes(user?.id, TOP_COUNT),
     countMemes({}),
   ]);
 
-  const recentSection = (
+  const topSection = (
     <section className={h.section}>
       <div className={h.sectionHeader}>
-        <h2 className={h.sectionTitle}>Latest memes</h2>
-        <Link href="/explore" className={h.seeAll}>
+        <h2 className={h.sectionTitle}>{TOP_TITLES[top.window]}</h2>
+        <Link href="/explore?sort=top" className={h.seeAll}>
           See all {total.toLocaleString()} in Explore
         </Link>
       </div>
-      <GalleryMasonry memes={recent.memes} currentUserId={user?.id ?? ''} view="grid" />
+      <GalleryMasonry memes={top.memes} currentUserId={user?.id ?? ''} view="grid" />
     </section>
   );
 
@@ -41,21 +49,23 @@ export default async function Home() {
               <MemeWall />
               <div className={h.heroText}>
                 <h1 className={h.heroTitle}>MemeCache</h1>
+                <p className={h.heroLead}>Keep the good memes. Find them again.</p>
                 <p className={h.heroTagline}>
-                  Your group&apos;s meme memory. Save the memes you love, find the right one
-                  later, and send it in a tap.
+                  Save memes from anywhere into your own collection, searchable by the words on
+                  every one. No ads, no engagement bait, and a feed that shows its work.
                 </p>
                 <div className={h.heroActions}>
                   <Link href="/login" className={h.heroPrimary}>
                     Log in
                   </Link>
                   <Link href="/register" className={h.heroSecondary}>
-                    Join with an invite code
+                    Sign up
                   </Link>
                 </div>
               </div>
             </section>
-            {recentSection}
+            {topSection}
+            <Faq />
           </div>
         </main>
         <FooterBar />
@@ -66,6 +76,7 @@ export default async function Home() {
   const actions = [
     { href: '/upload', label: 'Upload', note: 'Drop, paste or browse', icon: <PlusSquare size={20} />, primary: true },
     { href: '/explore', label: 'Explore', note: `${total.toLocaleString()} memes`, icon: <Compass size={20} /> },
+    { href: '/tags', label: 'Browse tags', note: 'A row of memes per tag', icon: <Hash size={20} /> },
     { href: '/library', label: 'Library', note: 'Memes you saved', icon: <Grid size={20} /> },
     { href: '/me/' + encodeURIComponent(user.username), label: 'Profile', note: 'Your uploads and stats', icon: <User size={20} /> },
   ];
@@ -94,7 +105,7 @@ export default async function Home() {
             ))}
           </nav>
 
-          {recentSection}
+          {topSection}
         </div>
       </main>
       <FooterBar />

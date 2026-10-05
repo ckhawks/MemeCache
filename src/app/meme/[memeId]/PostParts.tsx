@@ -10,16 +10,21 @@ import SendMemeButton from '@/components/SendMemeButton';
 import DeleteMemeButton from '@/components/DeleteMemeButton';
 import type { MemeCard } from '@/db/queries/memes';
 import type { UserPayload } from '@/auth/lib';
+import { avatarUrl } from '@/util/avatarUrl';
 import { getRelativeTimeString, getServerSideRelativeTime } from '@/util/datetimeFormat';
 
 // Pieces of the meme page: the author line, the action bar, and the posted date.
 
-export function PostAuthor(props: { username: string; karma: number }) {
+export function PostAuthor(props: {
+  username: string;
+  avatarKey: string | null;
+  karma: number;
+}) {
   return (
     <Link href={'/me/' + encodeURIComponent(props.username)} className={d.postAuthor}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={'/api/resource/avatar/' + encodeURIComponent(props.username)}
+        src={avatarUrl(props.username, props.avatarKey)}
         alt=""
         width={36}
         height={36}

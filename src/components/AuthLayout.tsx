@@ -17,7 +17,7 @@ export default function AuthLayout(props: {
           <Link href="/" className={styles.wordmark}>
             MemeCache
           </Link>
-          <p className={styles.tagline}>Your group&apos;s meme memory. Find the right one, send it fast.</p>
+          <p className={styles.tagline}>Keep the good memes. Find them again.</p>
         </div>
       </div>
       <main className={styles.formSide}>

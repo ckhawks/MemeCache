@@ -11,11 +11,12 @@ const initialState = {
   message: '',
 };
 
-export default function LoginComponent() {
+export default function LoginComponent(props: { next: string }) {
   const [state, loginAction, pending] = useActionState(login, initialState);
 
   return (
     <form action={loginAction} className={f.form}>
+      <input type="hidden" name="next" value={props.next} />
       {state?.message && (
         <div className={f.error} aria-live="polite">
           {state.message}

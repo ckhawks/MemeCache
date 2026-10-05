@@ -38,6 +38,14 @@
     border-color: var(--text-color);
     box-shadow: 0 0 0 3px var(--hover-background-color);
   }
+
+  // Shown for reference, not editable: filled in, no focus ring.
+  &[readonly] {
+    color: var(--mostly-text-color);
+    background-color: var(--hover-background-color);
+    border-color: var(--border-color);
+    box-shadow: none;
+  }
 }
 
 .error {

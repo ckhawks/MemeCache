@@ -1,4 +1,4 @@
-import { ArrowUp, ArrowDown } from 'react-feather';
+import { ArrowUp, ArrowDown, X } from 'react-feather';
 import styles from './TagChip.module.scss';
 import Link from 'next/link';
 
@@ -16,12 +16,14 @@ interface TagChipProps {
   disableVote?: boolean;
   // Why voting is off (your own tag, signed out), shown on hover instead of the vote control.
   voteHint?: string;
+  // Given when the viewer may take the tag off: their own, or any as a moderator.
+  onRemove?: (tagId: string) => void;
 }
 
 // Every chip looks the same: the tag and its score. Voting lives in a small popover above
 // the chip on hover, so chips never change size and rows never jump. Touch screens have no
 // hover, so there the arrows sit inline.
-export function TagChip({ tag, onVote, disableVote, voteHint }: TagChipProps) {
+export function TagChip({ tag, onVote, disableVote, voteHint, onRemove }: TagChipProps) {
   const vote = (event: React.MouseEvent, value: number) => {
     event.preventDefault();
     event.stopPropagation();
@@ -40,28 +42,47 @@ export function TagChip({ tag, onVote, disableVote, voteHint }: TagChipProps) {
         {tag.name}
         <span className={styles['score']}>{tag.score}</span>
       </Link>
-      {disableVote ? (
+      {disableVote && !onRemove ? (
         voteHint && <span className={`${styles['popover']} ${styles['hint']}`}>{voteHint}</span>
       ) : (
-        <span className={styles['popover']} role="group" aria-label={`Vote on ${tag.name}`}>
-          <button
-            type="button"
-            className={`${styles['tag-action']} ${tag.myVote === 1 ? styles['voted'] : ''}`}
-            aria-label={`Upvote ${tag.name}`}
-            aria-pressed={tag.myVote === 1}
-            onClick={(e) => vote(e, 1)}
-          >
-            <ArrowUp size={14} />
-          </button>
-          <button
-            type="button"
-            className={`${styles['tag-action']} ${tag.myVote === -1 ? styles['voted'] : ''}`}
-            aria-label={`Downvote ${tag.name}`}
-            aria-pressed={tag.myVote === -1}
-            onClick={(e) => vote(e, -1)}
-          >
-            <ArrowDown size={14} />
-          </button>
+        <span className={styles['popover']} role="group" aria-label={`Actions for ${tag.name}`}>
+          {!disableVote && (
+            <>
+              <button
+                type="button"
+                className={`${styles['tag-action']} ${tag.myVote === 1 ? styles['voted'] : ''}`}
+                aria-label={`Upvote ${tag.name}`}
+                aria-pressed={tag.myVote === 1}
+                onClick={(e) => vote(e, 1)}
+              >
+                <ArrowUp size={14} />
+              </button>
+              <button
+                type="button"
+                className={`${styles['tag-action']} ${tag.myVote === -1 ? styles['voted'] : ''}`}
+                aria-label={`Downvote ${tag.name}`}
+                aria-pressed={tag.myVote === -1}
+                onClick={(e) => vote(e, -1)}
+              >
+                <ArrowDown size={14} />
+              </button>
+            </>
+          )}
+          {onRemove && (
+            <button
+              type="button"
+              className={`${styles['tag-action']} ${styles['remove']}`}
+              aria-label={`Remove ${tag.name}`}
+              title="Remove tag"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onRemove(tag.id);
+              }}
+            >
+              <X size={14} />
+            </button>
+          )}
         </span>
       )}
     </span>

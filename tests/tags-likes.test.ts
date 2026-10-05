@@ -4,7 +4,10 @@ import {
   addTagToMeme,
   findOrCreateTag,
   getTagAdder,
+  listTagRows,
   listTagsForMeme,
+  removeTagFromMeme,
+  searchTags,
   voteOnTag,
 } from '@/db/queries/tags';
 import { addTranscription, getCurrentTranscription } from '@/db/queries/transcriptions';
@@ -65,6 +68,60 @@ describe('tags', () => {
 
     const [row] = await listTagsForMeme(meme);
     expect(row.score).toBe(0);
+  });
+
+  it('lets the adder remove a tag until someone else upvotes it', async () => {
+    const alice = await makeUser('alice');
+    const bob = await makeUser('bob');
+    const meme = await makeMeme(alice);
+    const tag = await findOrCreateTag('cta', alice);
+    await addTagToMeme(meme, tag, alice);
+
+    const [mine] = await listTagsForMeme(meme, alice);
+    expect(mine.removable).toBe(true);
+    const [theirs] = await listTagsForMeme(meme, bob);
+    expect(theirs.removable).toBe(false);
+
+    await voteOnTag(meme, tag, bob, 1);
+    const [upvoted] = await listTagsForMeme(meme, alice);
+    expect(upvoted.removable).toBe(false);
+  });
+
+  it('removes a tag with its votes, and drops a tag left on no meme', async () => {
+    const alice = await makeUser('alice');
+    const bob = await makeUser('bob');
+    const meme = await makeMeme(alice);
+    const other = await makeMeme(alice);
+    const typo = await findOrCreateTag('cta', alice);
+    const shared = await findOrCreateTag('cat', alice);
+    await addTagToMeme(meme, typo, alice);
+    await addTagToMeme(meme, shared, alice);
+    await addTagToMeme(other, shared, alice);
+    await voteOnTag(meme, typo, bob, -1);
+
+    await removeTagFromMeme(meme, typo);
+    await removeTagFromMeme(meme, shared);
+    expect(await listTagsForMeme(meme)).toHaveLength(0);
+    expect((await searchTags('')).map((t) => t.name)).toEqual(['cat']);
+  });
+
+  it('browses tags on at least two standing memes, most-liked memes first', async () => {
+    const alice = await makeUser('alice');
+    const bob = await makeUser('bob');
+    const cats = await findOrCreateTag('cats', alice);
+    const lonely = await findOrCreateTag('lonely', alice);
+    const plain = await makeMeme(alice);
+    const liked = await makeMeme(alice);
+    await addTagToMeme(plain, cats, alice);
+    await addTagToMeme(liked, cats, alice);
+    await addTagToMeme(plain, lonely, alice);
+    await setLike(liked, bob, true);
+
+    const { rows, nextPage } = await listTagRows({ seed: 'x' });
+    expect(rows.map((r) => r.name)).toEqual(['cats']);
+    expect(rows[0].uses).toBe(2);
+    expect(rows[0].memes.map((m) => m.id)).toEqual([liked, plain]);
+    expect(nextPage).toBeNull();
   });
 
   it('knows who added a tag, and null for a tag the meme does not carry', async () => {

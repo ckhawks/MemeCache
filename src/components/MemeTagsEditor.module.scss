@@ -41,7 +41,45 @@
 }
 
 .add-form {
+  position: relative;
   display: inline-flex;
+}
+
+// Existing tags matching the field, under it.
+.suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 10;
+  min-width: 180px;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  font-size: 13px;
+  background-color: var(--full-background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: rgba(100, 100, 111, 0.12) 0px 7px 20px 0px;
+}
+
+.suggestion {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  color: var(--text-color);
+  cursor: pointer;
+
+  &[aria-selected='true'] {
+    background-color: var(--hover-background-color);
+  }
+}
+
+.suggestion-uses {
+  color: var(--sub-text-color);
 }
 
 .tag-input {

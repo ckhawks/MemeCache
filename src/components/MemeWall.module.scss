@@ -37,12 +37,14 @@
   user-select: none;
 }
 
-// Darkens the wall so text on top of it stays readable, heaviest at the bottom.
+// Darkens the wall so text on top of it stays readable: heaviest at the bottom and on the
+// left, where the text sits, lighter toward the top right so the memes still show.
 .shade {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.55) 60%, rgba(0, 0, 0, 0.85) 100%);
+    linear-gradient(90deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.3) 50%, rgba(0, 0, 0, 0) 80%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.7) 55%, rgba(0, 0, 0, 0.9) 100%);
 }
 
 // Each column holds its memes twice; moving it up by half lands on an identical frame.

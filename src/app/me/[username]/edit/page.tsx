@@ -1,6 +1,7 @@
 // library/page.tsx
 
 import { getProfile } from '@/db/queries/users';
+import { avatarUrl } from '@/util/avatarUrl';
 import styles from '../../../main.module.scss';
 import { notFound } from 'next/navigation';
 import NavigationBar from '@/components/NavigationBar';
@@ -9,6 +10,7 @@ import { getUserFromAccessToken } from '@/auth/lib';
 import { Col, Row } from 'react-bootstrap';
 import FooterBar from '@/components/FooterBar';
 import EditAvatarComponent from './EditAvatarComponent';
+import f from '@/components/AuthForm.module.scss';
 import BackButton from '@/components/BackButton';
 
 export default async function Profile(props: { params: Promise<{ username: string }> }) {
@@ -36,8 +38,6 @@ export default async function Profile(props: { params: Promise<{ username: strin
     notFound();
   }
 
-  const timeStamp = new Date().getTime();
-
   return (
     <>
       <NavigationBar />
@@ -47,6 +47,25 @@ export default async function Profile(props: { params: Promise<{ username: strin
             {/* <h1>MemeCache</h1> */}
             <BackButton to={'/me/' + user?.username} text="Back" />
             <h1>Edit profile</h1>
+            {/* What you log in with, for reference. Neither can be changed from here yet. */}
+            <div className={'card'} style={{ marginBottom: '16px' }}>
+              <h5>Account</h5>
+              <div className={f.form} style={{ maxWidth: '420px' }}>
+                <div className={f.field}>
+                  <label htmlFor="account-username" className={f.label}>
+                    Username
+                  </label>
+                  <input id="account-username" className={f.input} value={userFromDb.username} readOnly />
+                </div>
+                <div className={f.field}>
+                  <label htmlFor="account-email" className={f.label}>
+                    Email
+                  </label>
+                  <input id="account-email" className={f.input} value={user?.email ?? ''} readOnly />
+                  <span className={f.hint}>Only you can see your email. Neither can be changed yet.</span>
+                </div>
+              </div>
+            </div>
             <div className={'card'}>
               {/* Wraps on phones, so the preview drops below instead of squeezing the form. */}
               <Row
@@ -71,7 +90,7 @@ export default async function Profile(props: { params: Promise<{ username: strin
                       told about. Optimizing a per-user dynamic avatar gains nothing. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={'/api/resource/avatar/' + userFromDb.username + '?timeStamp=' + timeStamp}
+                    src={avatarUrl(userFromDb.username, userFromDb.avatarS3Key)}
                     width={128}
                     height={128}
                     style={{ borderRadius: '100%' }}

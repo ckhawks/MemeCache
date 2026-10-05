@@ -1,3 +1,5 @@
+import Link from 'next/link';
+import { Hash } from 'react-feather';
 import styles from '../main.module.scss';
 import NavigationBar from '@/components/NavigationBar';
 import { getUserFromAccessToken } from '@/auth/lib';
@@ -40,6 +42,12 @@ export default async function Explore(props: {
             <div className={styles['feed-header']}>
               <p>{total} items</p>
               <div className={styles['feed-controls']}>
+                <Link
+                  href="/tags"
+                  className={`${styles.button} ${styles['button-secondary']} ${styles['button-small']}`}
+                >
+                  <Hash size={14} /> Browse tags
+                </Link>
                 <FeedSort basePath="/explore" sort={sort} freshSeed={freshSeed} />
                 <FeedViewToggle view={view} />
               </div>

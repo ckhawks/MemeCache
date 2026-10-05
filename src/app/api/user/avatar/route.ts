@@ -52,7 +52,6 @@ export const POST = route({
       );
     }
 
-    revalidatePath('/api/resource/avatar/' + user.username);
     revalidatePath('/me/' + user.username + '/edit');
 
     return { ok: true };

@@ -62,9 +62,15 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
               <PostActions meme={meme} user={user} canDelete={canDelete} />
             </div>
             <aside className={d.side}>
-              <PostAuthor username={meme.username} karma={karma} />
+              <PostAuthor username={meme.username} avatarKey={meme.avatarKey} karma={karma} />
               <MemeTranscriptionEditor plain memeId={meme.id} userId={user?.id || ''} initial={initialTranscription} />
-              <MemeTagsEditor plain memeId={meme.id} userId={user?.id || ''} initial={tags} />
+              <MemeTagsEditor
+                plain
+                memeId={meme.id}
+                userId={user?.id || ''}
+                initial={tags}
+                canModerate={!!user && isModerator(user)}
+              />
               <MemePosted createdAt={meme.createdAt} />
             </aside>
           </div>

@@ -6,14 +6,6 @@
   font-size: 14px;
 }
 
-.dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 100%;
-  background-color: #3bb273;
-  box-shadow: 0 0 0 3px rgba(59, 178, 115, 0.2);
-}
-
 .label {
   color: var(--sub-text-color);
 }
@@ -32,6 +24,11 @@
   img {
     border-radius: 100%;
     object-fit: cover;
+  }
+
+  .karma {
+    color: var(--sub-text-color);
+    font-weight: 400;
   }
 
   &:hover {

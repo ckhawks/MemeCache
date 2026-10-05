@@ -15,6 +15,7 @@ import SaveMemeButton from './SaveMemeButton';
 import Tooltip from './Tooltip';
 import likeStyles from './LikeButton.module.scss';
 import type { MemeCard } from '@/db/queries/memes';
+import { avatarUrl } from '@/util/avatarUrl';
 import type { FeedView } from '@/server/feedView';
 
 // Memes arrive newest first from the query. `view` is the viewer's layout choice
@@ -48,12 +49,26 @@ export function GalleryMasonry(props: {
               className={styles['meme-username']}
               onClick={(e) => e.stopPropagation()}
             >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={avatarUrl(meme.username, meme.avatarKey)}
+                alt=""
+                width={20}
+                height={20}
+                loading="lazy"
+                className={styles['meme-avatar']}
+              />
               {meme.username}
+              <span className={styles['meme-karma']} title="Karma">
+                {meme.karma.toLocaleString()}
+              </span>
             </Link>
             <span className={styles['meme-meta-separator']}>·</span>
-            {typeof window === 'undefined'
-              ? getServerSideRelativeTime(new Date(meme.createdAt))
-              : getRelativeTimeString(new Date(meme.createdAt))}
+            <span className={styles['meme-body-time']}>
+              {typeof window === 'undefined'
+                ? getServerSideRelativeTime(new Date(meme.createdAt))
+                : getRelativeTimeString(new Date(meme.createdAt))}
+            </span>
           </div>
           <div
             style={{
@@ -102,10 +117,10 @@ export function GalleryMasonry(props: {
     <>
       <div className={styles.gallery}>
         <Masonry
-          // Keys are max widths in px, matching the card max-width rule in main.module.scss.
+          // Keys are max viewport widths in px. Cards fill their column at every width.
           breakpointCols={{
             default: 3,
-            1000: 2,
+            1100: 2,
             600: 1,
           }}
           className="my-masonry-grid"

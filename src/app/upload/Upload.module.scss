@@ -204,3 +204,49 @@
   gap: 8px;
   margin-left: auto;
 }
+
+// Import from a post link, under the drop zone.
+.importRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background-color: var(--background-color);
+
+  &:focus-within {
+    border-color: var(--sub-text-color);
+  }
+}
+
+.importIcon {
+  flex-shrink: 0;
+  color: var(--sub-text-color);
+}
+
+.importInput {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 0;
+  font-size: 14px;
+  border: none;
+  background: none;
+  color: var(--text-color);
+
+  &:focus {
+    outline: none;
+  }
+}
+
+// A button that reads as a link inside a sentence.
+.textButton {
+  padding: 0;
+  font: inherit;
+  color: var(--text-color);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}

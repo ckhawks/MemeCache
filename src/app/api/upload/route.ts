@@ -5,8 +5,10 @@ import { DeleteS3ObjectByKey } from '@/util/s3/DeleteS3ObjectByKey';
 import { maxBytesForType, supportedTypes } from '@/constants/mimeTypes';
 import { createMeme } from '@/db/queries/memes';
 import { HttpError, route } from '@/server/route';
+import { normalizeImportUrl } from '@/server/mediaImport';
 
-// POST multipart { file }: stores a new meme. The uploader is the session user.
+// POST multipart { file, sourceUrl? }: stores a new meme. The uploader is the session user.
+// sourceUrl is the post an imported file came from (see /api/import).
 export const POST = route({
   auth: 'required',
   handler: async ({ user, request }) => {
@@ -29,6 +31,12 @@ export const POST = route({
       );
     }
 
+    // Normalized again rather than trusted, so only a real post link on a supported site
+    // is ever stored.
+    const rawSourceUrl = formData.get('sourceUrl');
+    const sourceUrl =
+      typeof rawSourceUrl === 'string' && rawSourceUrl ? normalizeImportUrl(rawSourceUrl).url : null;
+
     const id = crypto.randomUUID();
 
     await getS3Client().send(
@@ -47,6 +55,7 @@ export const POST = route({
         uploaderId: user.id,
         s3Key: id,
         contentType: file.type,
+        sourceUrl,
       });
     } catch (error) {
       // The object is already in the bucket at this point. Without this the bucket

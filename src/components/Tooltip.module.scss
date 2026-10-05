@@ -30,6 +30,13 @@
     transform: translateY(2px);
   }
 
+  // Under the element, for things at the top of the page (the nav) where above is off-screen.
+  &.below::after {
+    bottom: auto;
+    top: calc(100% + 6px);
+    transform: translate(-50%, -2px);
+  }
+
   // Touch screens fire :hover on tap and leave it stuck, so only hover-capable devices
   // get the hover label. Keyboard focus works everywhere.
   @media (hover: hover) {

@@ -1,6 +1,11 @@
 import { z } from 'zod';
-import { addTranscription, getCurrentTranscription } from '@/db/queries/transcriptions';
-import { route } from '@/server/route';
+import {
+  addTranscription,
+  getCurrentTranscription,
+  getTranscriptionAuthor,
+  reviewTranscription,
+} from '@/db/queries/transcriptions';
+import { HttpError, route } from '@/server/route';
 import { requireMeme } from '@/server/require';
 
 const MAX_TRANSCRIPTION_LENGTH = 5000;
@@ -14,21 +19,34 @@ export const GET = route({
   },
 });
 
-// POST { text }: saves a new version. The editor is the session user.
+// POST { text, fixes? }: saves a new version. The editor is the session user. `fixes` names
+// the version this corrects (the queue's Fix), which records a reject against it: a fix
+// means it was wrong or incomplete. `pending` in the reply means it waits for a confirm.
 export const POST = route({
   auth: 'required',
   body: z.object({
     text: z
+      // Empty is allowed: it records that the meme has no text on it.
       .string('A transcription needs text.')
       .trim()
-      .min(1, 'A transcription needs text.')
       .max(
         MAX_TRANSCRIPTION_LENGTH,
         `Transcriptions are limited to ${MAX_TRANSCRIPTION_LENGTH} characters.`
       ),
+    fixes: z.string().optional(),
   }),
   handler: async ({ user, body, params }) => {
     const meme = await requireMeme(params.memeId);
-    return { transcription: await addTranscription(meme.id, body.text, user.id) };
+    if (body.fixes) {
+      const fixed = await getTranscriptionAuthor(body.fixes);
+      if (!fixed || fixed.memeId !== meme.id) {
+        throw new HttpError(400, 'That transcription is not on this meme.');
+      }
+      if (fixed.editedBy !== user.id) {
+        await reviewTranscription(body.fixes, user.id, -1);
+      }
+    }
+    const transcription = await addTranscription(meme.id, body.text, user.id);
+    return { transcription, pending: transcription.pending };
   },
 });

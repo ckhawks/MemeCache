@@ -39,8 +39,21 @@
   }
 }
 
+.heroLead {
+  margin: 16px 0 0;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.7);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #fff;
+
+  @media (max-width: 700px) {
+    font-size: 19px;
+  }
+}
+
 .heroTagline {
-  margin: 14px 0 0;
+  margin: 8px 0 0;
   text-shadow: 0 1px 12px rgba(0, 0, 0, 0.7);
   font-size: 18px;
   line-height: 1.45;

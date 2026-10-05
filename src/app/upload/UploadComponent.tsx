@@ -3,7 +3,7 @@
 import { supportedImageTypes, supportedTypes, supportedVideoTypes } from '@/constants/mimeTypes';
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { CheckCircle, UploadCloud } from 'react-feather';
+import { CheckCircle, Link2, UploadCloud } from 'react-feather';
 import imageCompression from 'browser-image-compression';
 import styles from '../main.module.scss';
 import u from './Upload.module.scss';
@@ -26,7 +26,7 @@ function formatType(type: string) {
   return (type.split('/')[1] ?? type).toUpperCase().replace('JPEG', 'JPG');
 }
 
-// Pick (drop, paste or browse) -> preview and crop -> upload -> done.
+// Pick (drop, paste, browse, or import from a post link) -> preview and crop -> upload -> done.
 export default function UploadComponent() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -38,6 +38,13 @@ export default function UploadComponent() {
   // The meme just uploaded: switches the page to the done state.
   const [uploadedId, setUploadedId] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  // The post link field, and the post the selected file was imported from (sent with the
+  // upload so the meme remembers it).
+  const [link, setLink] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [sourceUrl, setSourceUrl] = useState<string | null>(null);
+  // Set when that post was already imported: the existing meme's slug.
+  const [duplicate, setDuplicate] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const isImage = !!file && supportedImageTypes.includes(file.type);
@@ -48,6 +55,8 @@ export default function UploadComponent() {
     setError('');
     setNote('');
     setUploadedId(null);
+    setSourceUrl(null);
+    setDuplicate(null);
     if (!supportedTypes.includes(next.type)) {
       setError(
         `${next.type ? formatType(next.type) : 'That file'} isn't supported. Use PNG, JPG, GIF, WebP, MP4 or WebM.`
@@ -67,18 +76,69 @@ export default function UploadComponent() {
     setCrop(null);
     setError('');
     setNote('');
+    setSourceUrl(null);
+    setDuplicate(null);
     if (inputRef.current) {
       inputRef.current.value = '';
     }
   };
 
-  // Paste anywhere on the page: the fastest path from a screenshot to the cache.
+  // Fetches a post's media on the server and selects it as if it had been picked. The
+  // server answers with JSON instead of a file when the post was imported before.
+  const importLink = async (url: string, force = false) => {
+    if (!url.trim() || importing) {
+      return;
+    }
+    setError('');
+    setDuplicate(null);
+    setImporting(true);
+    try {
+      const response = await fetch('/api/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url, force }),
+      });
+      if (response.headers.get('Content-Type')?.includes('application/json')) {
+        const data = (await response.json()) as { error?: string; duplicate?: string };
+        if (data.duplicate) {
+          setDuplicate(data.duplicate);
+        } else {
+          setError(data.error ?? `The import failed (${response.status}).`);
+        }
+        return;
+      }
+      const blob = await response.blob();
+      const name = response.headers.get('X-File-Name') ?? 'import';
+      const source = response.headers.get('X-Source-Url');
+      selectFile(new File([blob], name, { type: blob.type }));
+      setSourceUrl(source);
+      setLink('');
+      setNote(`Imported from ${source ? new URL(source).hostname.replace(/^www\./, '') : 'a link'}. Check it over, then upload.`);
+    } catch {
+      setError('The import failed. Try again.');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  // Paste anywhere on the page: the fastest path from a screenshot to the cache. A pasted
+  // post link (outside a text field) starts an import.
   useEffect(() => {
     const onPaste = (event: ClipboardEvent) => {
       const pasted = [...(event.clipboardData?.files ?? [])][0];
       if (pasted) {
         event.preventDefault();
         selectFile(pasted);
+        return;
+      }
+      const text = event.clipboardData?.getData('text').trim() ?? '';
+      const inField = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
+      if (!file && !inField && /^https?:\/\/\S+$/.test(text)) {
+        event.preventDefault();
+        setLink(text);
+        importLink(text);
       }
     };
     window.addEventListener('paste', onPaste);
@@ -145,6 +205,9 @@ export default function UploadComponent() {
       const formData = new FormData();
       // No user id here on purpose: the server takes the uploader from the session.
       formData.append('file', fileToUpload);
+      if (sourceUrl) {
+        formData.append('sourceUrl', sourceUrl);
+      }
       const result = await api<{ id: string; slug: string }>('/api/upload', { body: formData });
       reset();
       setUploadedId(result.slug);
@@ -299,6 +362,52 @@ export default function UploadComponent() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {!file && !uploadedId && (
+        <form
+          className={u.importRow}
+          onSubmit={(e) => {
+            e.preventDefault();
+            importLink(link);
+          }}
+        >
+          <Link2 size={16} className={u.importIcon} aria-hidden="true" />
+          <input
+            type="url"
+            inputMode="url"
+            placeholder="Or paste a link from X, Instagram, TikTok, YouTube or Reddit"
+            aria-label="Post link to import"
+            value={link}
+            onChange={(e) => {
+              setLink(e.target.value);
+              setDuplicate(null);
+            }}
+            className={u.importInput}
+            disabled={importing}
+          />
+          <button
+            type="submit"
+            className={`${styles['button']} ${styles['button-small']}`}
+            disabled={importing || !link.trim()}
+          >
+            {importing ? 'Importing…' : 'Import'}
+          </button>
+        </form>
+      )}
+
+      {duplicate && !file && (
+        <div className={u.note}>
+          That post is already here.{' '}
+          <Link href={`/meme/${duplicate}`} className={u.linkish}>
+            View it
+          </Link>{' '}
+          or{' '}
+          <button type="button" className={u.textButton} onClick={() => importLink(link, true)}>
+            import it again
+          </button>
+          .
         </div>
       )}
 

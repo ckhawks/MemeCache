@@ -81,12 +81,17 @@ export async function listUsers(): Promise<PublicUser[]> {
   return db<PublicUser>(`SELECT id, username FROM app_user ORDER BY lower(username)`);
 }
 
-export async function listOnlineUsers(): Promise<PublicUser[]> {
-  return db<PublicUser>(
-    `SELECT id, username
-       FROM app_user
-      WHERE last_active >= now() - interval '15 minutes'
-      ORDER BY lower(username)`
+export interface OnlineUser extends PublicUser {
+  avatarKey: string | null;
+  karma: number;
+}
+
+export async function listOnlineUsers(): Promise<OnlineUser[]> {
+  return db<OnlineUser>(
+    `SELECT u.id, u.username, u.avatar_s3_key AS "avatarKey", ${karmaSql('u.id')} AS karma
+       FROM app_user u
+      WHERE u.last_active >= now() - interval '15 minutes'
+      ORDER BY lower(u.username)`
   );
 }
 
@@ -151,26 +156,84 @@ export async function getProfileStats(userId: string): Promise<ProfileStats> {
   return row;
 }
 
-// Karma: what other people have given a user's contributions. Likes on their memes plus the
-// net of votes on tags they added, never counting their own. Can go negative.
-// docs/xp-levels.md has the full design; this is the part computable today.
+// Karma: what other people have given a user's contributions, never counting their own,
+// and never held users' votes (the counted_* views). Can go negative. Two parts:
+//   post karma      likes on their memes
+//   curation karma  net votes on tags they added, plus confirms minus rejects of their
+//                   transcriptions
+// docs/xp-levels.md has the full design. `userId` is a SQL expression (a column or
+// parameter), so feeds can select it per row. Inner aliases are prefixed so they never
+// shadow the caller's (a feed's `m.uploader_id`).
+export function postKarmaSql(userId: string) {
+  return `(
+    SELECT count(*)::int
+      FROM meme_like k_l
+      JOIN meme k_m ON k_m.id = k_l.meme_id
+     WHERE k_m.uploader_id = ${userId} AND k_m.deleted_at IS NULL AND k_l.user_id <> ${userId}
+  )`;
+}
+
+export function curationKarmaSql(userId: string) {
+  return `(
+    (SELECT COALESCE(sum(k_v.vote), 0)::int
+       FROM counted_tag_vote k_v
+       JOIN meme_tag k_mt ON k_mt.meme_id = k_v.meme_id AND k_mt.tag_id = k_v.tag_id
+       JOIN meme k_m ON k_m.id = k_mt.meme_id
+      WHERE k_mt.added_by = ${userId} AND k_m.deleted_at IS NULL AND k_v.voter_id <> ${userId})
+  + (SELECT COALESCE(sum(k_r.verdict), 0)::int
+       FROM counted_transcription_review k_r
+       JOIN meme_transcription k_t ON k_t.id = k_r.transcription_id
+       JOIN meme k_m ON k_m.id = k_t.meme_id
+      WHERE k_t.edited_by = ${userId} AND k_m.deleted_at IS NULL AND k_r.reviewer_id <> ${userId})
+  )`;
+}
+
+export function karmaSql(userId: string) {
+  return `(${postKarmaSql(userId)} + ${curationKarmaSql(userId)})`;
+}
+
 export async function getKarma(userId: string): Promise<number> {
   if (!isUuid(userId)) {
     return 0;
   }
-  const [row] = await db<{ karma: number }>(
-    `SELECT
-       (SELECT count(*)
-          FROM meme_like l
-          JOIN meme m ON m.id = l.meme_id
-         WHERE m.uploader_id = $1 AND m.deleted_at IS NULL AND l.user_id <> $1)
-     + (SELECT COALESCE(sum(v.vote), 0)
-          FROM meme_tag_vote v
-          JOIN meme_tag mt ON mt.meme_id = v.meme_id AND mt.tag_id = v.tag_id
-          JOIN meme m ON m.id = mt.meme_id
-         WHERE mt.added_by = $1 AND m.deleted_at IS NULL AND v.voter_id <> $1)
-       AS karma`,
+  const [row] = await db<{ karma: number }>(`SELECT ${karmaSql('$1::uuid')} AS karma`, [userId]);
+  return Number(row.karma);
+}
+
+export interface KarmaBreakdown {
+  post: number;
+  curation: number;
+}
+
+export async function getKarmaBreakdown(userId: string): Promise<KarmaBreakdown> {
+  if (!isUuid(userId)) {
+    return { post: 0, curation: 0 };
+  }
+  const [row] = await db<KarmaBreakdown>(
+    `SELECT ${postKarmaSql('$1::uuid')} AS post, ${curationKarmaSql('$1::uuid')} AS curation`,
     [userId]
   );
-  return Number(row.karma);
+  return row;
+}
+
+export interface Trust {
+  approved: number;
+  rejected: number;
+  override: 'trusted' | 'held' | null;
+  held: boolean;
+}
+
+// See migration 005: held users' votes do not count and their work waits for a vouch.
+export async function getTrust(userId: string): Promise<Trust> {
+  const [row] = await db<Trust>(
+    `SELECT approved, rejected, trust_override AS override, held
+       FROM user_trust
+      WHERE user_id = $1`,
+    [userId]
+  );
+  return row ?? { approved: 0, rejected: 0, override: null, held: false };
+}
+
+export async function setTrustOverride(userId: string, override: 'trusted' | 'held' | null) {
+  await db(`UPDATE app_user SET trust_override = $2 WHERE id = $1`, [userId, override]);
 }

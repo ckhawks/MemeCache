@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Plus } from 'react-feather';
 import styles from './MemeTagsEditor.module.scss';
 import { TagChip } from './TagChip';
+import TagInput from './TagInput';
 import { api } from '@/util/api';
 
 interface Tag {
@@ -14,6 +15,8 @@ interface Tag {
   own?: boolean;
   // The viewer's vote: 1, -1, or 0.
   myVote?: number;
+  // The viewer added it and nobody else has upvoted it yet.
+  removable?: boolean;
 }
 
 // The meme's tags as chips, ending in a "+ Add tag" chip that opens an inline field.
@@ -24,11 +27,11 @@ export default function MemeTagsEditor(props: {
   initial: Tag[];
   // No section heading.
   plain?: boolean;
+  // Moderators can remove any tag.
+  canModerate?: boolean;
 }) {
   const [tags, setTags] = useState<Tag[]>(props.initial);
   const [adding, setAdding] = useState(false);
-  const [newTag, setNewTag] = useState('');
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const signedIn = props.userId !== '';
 
@@ -37,24 +40,17 @@ export default function MemeTagsEditor(props: {
     setTags(data.tags);
   };
 
-  const handleAddTag = async () => {
-    const name = newTag.trim();
-    if (!name) {
-      setAdding(false);
-      return;
-    }
-    setBusy(true);
+  // Returns whether it worked, so the field knows to clear itself for the next tag.
+  const handleAddTag = async (name: string) => {
     setError('');
     try {
       // The server finds the tag by name, or creates it.
       await api(`/api/meme/${props.memeId}/tags`, { body: { name } });
-      setNewTag('');
-      setAdding(false);
       await reload();
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add the tag.');
-    } finally {
-      setBusy(false);
+      return false;
     }
   };
 
@@ -65,6 +61,16 @@ export default function MemeTagsEditor(props: {
       await reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to record the vote.');
+    }
+  };
+
+  const handleRemove = async (tagId: string) => {
+    setError('');
+    try {
+      await api(`/api/meme/${props.memeId}/tags/${tagId}`, { method: 'DELETE' });
+      await reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove the tag.');
     }
   };
 
@@ -80,37 +86,16 @@ export default function MemeTagsEditor(props: {
             // No voting on your own tags, and none while logged out.
             disableVote={tag.own || !signedIn}
             voteHint={!signedIn ? 'Log in to vote' : tag.own ? 'You added this tag' : undefined}
+            onRemove={tag.removable || props.canModerate ? handleRemove : undefined}
           />
         ))}
         {signedIn &&
           (adding ? (
-            // A form, so Enter adds the tag; Escape or leaving it empty closes it.
-            <form
-              className={styles['add-form']}
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleAddTag();
-              }}
-            >
-              <input
-                type="text"
-                placeholder="New tag"
-                aria-label="New tag"
-                value={newTag}
-                onChange={(e) => setNewTag(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') {
-                    setAdding(false);
-                    setNewTag('');
-                  }
-                }}
-                onBlur={() => !newTag.trim() && setAdding(false)}
-                className={styles['tag-input']}
-                maxLength={50}
-                autoFocus
-                disabled={busy}
-              />
-            </form>
+            <TagInput
+              exclude={tags.map((tag) => tag.name)}
+              onAdd={handleAddTag}
+              onClose={() => setAdding(false)}
+            />
           ) : (
             <button type="button" className={styles['add-chip']} onClick={() => setAdding(true)}>
               <Plus size={12} /> Add tag

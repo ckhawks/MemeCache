@@ -1,0 +1,110 @@
+// The sentence wraps on phones, unlike the feed header's one-line count.
+.intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 1.5rem;
+
+  p {
+    margin: 0;
+  }
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rowHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.tagName {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-color);
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.uses {
+  font-size: 13px;
+  color: var(--sub-text-color);
+}
+
+.seeAll {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--sub-text-color);
+
+  &:hover {
+    color: var(--text-color);
+  }
+}
+
+// Six square thumbnails across on desktop. On narrow screens the strip scrolls sideways
+// instead of wrapping, so each tag stays one row.
+.strip {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+
+  @media (max-width: 700px) {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: 38%;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    // The cut-off last thumbnail already says it scrolls.
+    scrollbar-width: none;
+  }
+}
+
+.thumb {
+  display: block;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--hover-background-color);
+  scroll-snap-align: start;
+  transition: border-color 0.2s ease-in-out;
+
+  &:hover {
+    border-color: var(--border-color-hover);
+  }
+
+  img,
+  video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.empty {
+  color: var(--sub-text-color);
+}
+
+.more {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
+}

@@ -1,5 +1,6 @@
 import { db } from '@/db/db';
 import { isSlug, isUuid } from './ids';
+import { karmaSql } from './users';
 
 export interface MemeCard {
   id: string;
@@ -9,6 +10,10 @@ export interface MemeCard {
   createdAt: Date;
   uploaderId: string;
   username: string;
+  // For avatarUrl. Null until they upload one.
+  avatarKey: string | null;
+  // The uploader's karma, shown beside their name.
+  karma: number;
   likeCount: number;
   hasLiked: boolean;
   // Whether the viewer saved it to their Library. Saves are private, so no count.
@@ -42,6 +47,8 @@ const CARD_COLUMNS = `
   m.created_at AS "createdAt",
   m.uploader_id AS "uploaderId",
   u.username,
+  u.avatar_s3_key AS "avatarKey",
+  ${karmaSql('m.uploader_id')} AS karma,
   (SELECT count(*)::int FROM meme_like l WHERE l.meme_id = m.id) AS "likeCount",
   EXISTS (
     SELECT 1 FROM meme_like l WHERE l.meme_id = m.id AND l.user_id = $1::uuid
@@ -73,7 +80,7 @@ function filterSql(uploaderParam: string, tagParam: string, savedByParam: string
            AND lower(t.name) = lower(${tagParam}::text)
            AND (
              SELECT COALESCE(sum(v.vote), 0)
-               FROM meme_tag_vote v
+               FROM counted_tag_vote v
               WHERE v.meme_id = mt.meme_id AND v.tag_id = mt.tag_id
            ) >= 1
       )
@@ -170,14 +177,29 @@ export async function createMeme(meme: {
   uploaderId: string;
   s3Key: string;
   contentType: string;
+  // The post it was imported from, normalized. Null for a file upload.
+  sourceUrl?: string | null;
 }): Promise<string> {
   const [row] = await db<{ slug: string }>(
-    `INSERT INTO meme (id, uploader_id, s3_key, content_type)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO meme (id, uploader_id, s3_key, content_type, source_url)
+     VALUES ($1, $2, $3, $4, $5)
      RETURNING slug`,
-    [meme.id, meme.uploaderId, meme.s3Key, meme.contentType]
+    [meme.id, meme.uploaderId, meme.s3Key, meme.contentType, meme.sourceUrl ?? null]
   );
   return row.slug;
+}
+
+// The newest live meme imported from this (normalized) link, for the duplicate warning.
+export async function findMemeBySourceUrl(sourceUrl: string): Promise<{ slug: string } | null> {
+  const [row] = await db<{ slug: string }>(
+    `SELECT slug
+       FROM meme
+      WHERE source_url = $1 AND deleted_at IS NULL
+      ORDER BY created_at DESC
+      LIMIT 1`,
+    [sourceUrl]
+  );
+  return row ?? null;
 }
 
 // Soft delete. The row and the stored file stay, so a takedown can hold content and a
@@ -212,7 +234,7 @@ export async function listRelatedMemes(
        SELECT mt.meme_id, mt.tag_id
          FROM meme_tag mt
         WHERE (SELECT COALESCE(sum(v.vote), 0)
-                 FROM meme_tag_vote v
+                 FROM counted_tag_vote v
                 WHERE v.meme_id = mt.meme_id AND v.tag_id = mt.tag_id) >= 1
      ),
      this_meme AS (
@@ -269,4 +291,42 @@ export async function listMemesOrdered(
 
   const hasMore = rows.length > limit;
   return { memes: rows.slice(0, limit), nextPage: hasMore ? page + 1 : null };
+}
+
+export type TopWindow = 'day' | 'week' | 'month' | 'all';
+
+const WINDOW_INTERVALS: Record<Exclude<TopWindow, 'all'>, string> = {
+  day: '1 day',
+  week: '7 days',
+  month: '30 days',
+};
+
+// The home page's "top memes": the shortest window with at least `limit` memes posted in
+// it, most liked first. A quiet day falls back to the week, then the month, then all time,
+// so the section is never short.
+export async function listTopMemes(
+  viewerId: string | undefined,
+  limit: number
+): Promise<{ window: TopWindow; memes: MemeCard[] }> {
+  const [counts] = await db<Record<Exclude<TopWindow, 'all'>, number>>(
+    `SELECT count(*) FILTER (WHERE created_at > now() - interval '1 day')::int AS day,
+            count(*) FILTER (WHERE created_at > now() - interval '7 days')::int AS week,
+            count(*) FILTER (WHERE created_at > now() - interval '30 days')::int AS month
+       FROM meme
+      WHERE deleted_at IS NULL`
+  );
+  const window = (['day', 'week', 'month'] as const).find((w) => counts[w] >= limit) ?? 'all';
+  const since = window === 'all' ? null : WINDOW_INTERVALS[window];
+
+  const memes = await db<MemeCard>(
+    `SELECT ${CARD_COLUMNS}
+       FROM meme m
+       JOIN app_user u ON u.id = m.uploader_id
+      WHERE m.deleted_at IS NULL
+        AND ($2::interval IS NULL OR m.created_at > now() - $2::interval)
+      ORDER BY "likeCount" DESC, m.created_at DESC, m.id DESC
+      LIMIT $3`,
+    [viewerParam(viewerId), since, limit]
+  );
+  return { window, memes };
 }

@@ -15,8 +15,10 @@
   color: var(--text-color);
 }
 
+// A fixed width, not min-width: as a flex item of the centered .main column it would
+// otherwise size to its content (the masonry's images) and spill off both sides.
 .content {
-  min-width: 100%;
+  width: 100%;
   padding: 0 4rem;
 
   @media (max-width: 700px) {
@@ -84,6 +86,17 @@
     box-shadow: none;
     color: var(--button-secondary-color-hover);
     border: 1px solid var(--border-color);
+  }
+}
+
+// Completing or approving something: saving a transcription, confirming one.
+.button-success {
+  background-color: var(--button-success-bg-color);
+  color: var(--button-success-color);
+
+  // As specific as .button's own hover rule, and later, so it wins over it.
+  &.button:hover:not(:disabled) {
+    background-color: var(--button-success-bg-color-hover);
   }
 }
 
@@ -201,16 +214,10 @@
   border: 1px solid var(--border-color);
   background-color: var(--background-color);
   font-size: 14px;
-  max-width: calc((1200px - 20px * 2) / 3);
   height: fit-content;
   min-height: fit-content;
   margin-bottom: 20px;
   transition: border 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-
-  // One column on phones: the card takes the full width.
-  @media (max-width: 600px) {
-    max-width: 100%;
-  }
 
   &:hover:not(.large) {
     // transform: scale(1.02);
@@ -275,6 +282,8 @@
 }
 
 .meme-body-date {
+  display: flex;
+  align-items: center;
   color: var(--sub-text-color);
   font-weight: 400;
   // Shares a row with the action icons on gallery cards, so it gives way first.
@@ -284,7 +293,17 @@
   text-overflow: ellipsis;
 }
 
+.meme-body-time {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .meme-username {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
   font-weight: 500;
   color: var(--mostly-text-color);
   text-decoration: none;
@@ -323,6 +342,19 @@
     max-width: 640px;
     margin-bottom: 0;
   }
+}
+
+.meme-avatar {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 100%;
+  object-fit: cover;
+}
+
+.meme-karma {
+  color: var(--sub-text-color);
+  font-weight: 400;
 }
 
 .meme-meta-separator {

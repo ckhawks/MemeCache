@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '@/db/db';
-import { countMemes, getMeme, listMemes, softDeleteMeme } from '@/db/queries/memes';
+import { countMemes, getMeme, listMemes, listTopMemes, softDeleteMeme } from '@/db/queries/memes';
 import { setLike } from '@/db/queries/likes';
 import { addTagToMeme, findOrCreateTag, voteOnTag } from '@/db/queries/tags';
 import { makeMeme, makeUser, resetDatabase } from './fixtures';
@@ -210,5 +210,26 @@ describe('listMemesOrdered', () => {
 
     const other = await listMemesOrdered({}, 'random', { seed: 'xyz', limit: 7 });
     expect(other.memes.map((m) => m.id)).not.toEqual(seen);
+  });
+});
+
+describe('listTopMemes', () => {
+  it('uses the shortest window with enough memes, most liked first', async () => {
+    const alice = await makeUser('alice');
+    const bob = await makeUser('bob');
+    const old = await makeMeme(alice, '2020-01-01');
+    const recent = await makeMeme(alice);
+    const liked = await makeMeme(alice);
+    await setLike(liked, bob, true);
+
+    // Two memes today: enough for a window of 2.
+    const today = await listTopMemes(bob, 2);
+    expect(today.window).toBe('day');
+    expect(today.memes.map((m) => m.id)).toEqual([liked, recent]);
+
+    // Three needed: only all time has three.
+    const all = await listTopMemes(bob, 3);
+    expect(all.window).toBe('all');
+    expect(all.memes.map((m) => m.id)).toContain(old);
   });
 });

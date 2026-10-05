@@ -8,8 +8,10 @@ import FeedViewToggle from '@/components/FeedViewToggle';
 import FeedPager from '@/components/FeedPager';
 import { GalleryMasonry } from '@/components/GalleryMasonry';
 import { getUserFromAccessToken } from '@/auth/lib';
-import { isAdmin } from '@/auth/role';
-import { getKarma, getProfile, getProfileStats } from '@/db/queries/users';
+import { avatarUrl } from '@/util/avatarUrl';
+import { getKarmaBreakdown, getProfile, getProfileStats, getTrust } from '@/db/queries/users';
+import { isAdmin, isModerator } from '@/auth/role';
+import TrustOverride from './TrustOverride';
 import { countMemes, listMemes } from '@/db/queries/memes';
 import { getFeedView } from '@/server/feedView';
 
@@ -36,20 +38,25 @@ export default async function Profile(props: {
   }
 
   const filter = { viewerId: user?.id, uploaderId: profile.id };
-  const [page, total, stats, karma] = await Promise.all([
+  const [page, total, stats, karma, trust] = await Promise.all([
     listMemes(filter, searchParams.cursor),
     countMemes(filter),
     getProfileStats(profile.id),
-    getKarma(profile.id),
+    getKarmaBreakdown(profile.id),
+    getTrust(profile.id),
   ]);
 
   const isCurrentUser = user?.id === profile.id;
+  // A hold is shown to the person it applies to and to moderators, never to everyone.
+  const showTrust = trust.held && (isCurrentUser || (!!user && isModerator(user)));
   const badge = ROLE_BADGES[stats.role];
 
   const statItems = [
-    { value: karma, label: 'Karma' },
+    { value: karma.post + karma.curation, label: 'Karma' },
+    // Post karma is exactly the likes others gave their uploads.
+    { value: karma.post, label: 'Post karma' },
+    { value: karma.curation, label: 'Curation karma' },
     { value: stats.uploads, label: 'Uploads' },
-    { value: stats.likesReceived, label: 'Likes received' },
     { value: stats.tagsAdded, label: 'Tags added' },
     { value: stats.transcriptions, label: 'Transcriptions' },
   ];
@@ -62,7 +69,7 @@ export default async function Profile(props: {
           <section className={p.header}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={'/api/resource/avatar/' + encodeURIComponent(profile.username)}
+              src={avatarUrl(profile.username, profile.avatarS3Key)}
               alt={`${profile.username}'s avatar`}
               width={96}
               height={96}
@@ -99,14 +106,6 @@ export default async function Profile(props: {
                 >
                   Edit profile
                 </Link>
-                {user && isAdmin(user) && (
-                  <Link
-                    href="/admin"
-                    className={`${styles['button']} ${styles['button-secondary']} ${styles['button-small']}`}
-                  >
-                    Admin
-                  </Link>
-                )}
                 {/* Phones have no logout in the top bar, so it lives here too. */}
                 <Link
                   prefetch={false}
@@ -118,6 +117,20 @@ export default async function Profile(props: {
               </div>
             )}
           </section>
+
+          {showTrust && (
+            <p className={p.trustNote}>
+              {isCurrentUser ? 'Your' : 'Their'} new tags and transcriptions wait for someone to
+              confirm them before they show, and {isCurrentUser ? 'your' : 'their'} votes and
+              reviews do not count for now.{' '}
+              {trust.override === 'held'
+                ? 'An admin set this.'
+                : `${trust.approved} of ${trust.approved + trust.rejected} judged contributions were approved; this lifts once more than half are.`}
+            </p>
+          )}
+          {user && isAdmin(user) && !isCurrentUser && (
+            <TrustOverride userId={profile.id} override={trust.override} />
+          )}
 
           <div className={styles['feed-header']}>
             <h2 className={p.sectionTitle}>

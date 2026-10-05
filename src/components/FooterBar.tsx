@@ -31,6 +31,9 @@ export default function FooterBar() {
         </div>
         {/* A Content Policy link goes in this row once the page exists (TODO.md Phase 7). */}
         <div className={footerStyles['footer-right']}>
+          <Link href="/faq" className={footerStyles['footer-link']}>
+            FAQ
+          </Link>
           <ThemeToggle />
         </div>
       </div>

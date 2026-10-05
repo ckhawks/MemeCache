@@ -4,18 +4,25 @@ import Link from 'next/link';
 import styles from '../app/main.module.scss';
 import navStyles from './NavigationBar.module.scss';
 import { usePathname } from 'next/navigation';
-import { Compass, Grid, Home, LogIn, LogOut, PlusSquare, User } from 'react-feather';
+import Tooltip from './Tooltip';
+import UserMenu from './UserMenu';
+import { CheckSquare, Compass, Grid, Home, LogIn, PlusSquare, User } from 'react-feather';
 
 interface NavItem {
   href: string;
   label: string;
   icon: React.ReactNode;
-  // Only shown when logged in.
+  // Needs an account. Logged out, it still shows, dimmed, and leads to the login page.
   private?: boolean;
 }
 
 // Rendered by NavigationBar (the server component), which reads the session.
-export default function NavigationBarClient(props: { username: string; isAdmin: boolean }) {
+export default function NavigationBarClient(props: {
+  username: string;
+  avatarKey: string | null;
+  karma: number;
+  isAdmin: boolean;
+}) {
   const pathname = usePathname();
   const profileHref = '/me/' + props.username;
 
@@ -38,22 +45,38 @@ export default function NavigationBarClient(props: { username: string; isAdmin: 
       private: true,
     },
     {
+      href: '/queue',
+      label: 'Queue',
+      icon: <CheckSquare size={20} />,
+      private: true,
+    },
+    {
       href: profileHref,
       label: 'Profile',
       icon: <User size={20} />,
       private: true,
     },
   ];
-  const visible = items.filter((item) => !item.private || props.username);
+  const signedIn = props.username !== '';
+  const locked = (item: NavItem) => !!item.private && !signedIn;
+  // A locked item goes to the login page, and from there back to where it pointed. Profile
+  // has no username to point at yet, so login's own default (home) does.
+  const hrefFor = (item: NavItem) => {
+    if (!locked(item)) {
+      return item.href;
+    }
+    return item.href === profileHref ? '/login' : '/login?next=' + encodeURIComponent(item.href);
+  };
 
-  // The phone tab bar also needs Home, and a way to log in when signed out.
+  // The phone tab bar also needs Home, and a way to log in when signed out. Logged out, Log in
+  // takes Profile's place, which would only lead to the same login page.
   const tabs: NavItem[] = [
     {
       href: '/',
       label: 'Home',
       icon: <Home size={20} />,
     },
-    ...visible,
+    ...items.filter((item) => signedIn || item.href !== profileHref),
     ...(props.username
       ? []
       : [
@@ -83,17 +106,28 @@ export default function NavigationBarClient(props: { username: string; isAdmin: 
             >
               Home
             </Link>
-            {visible.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`${navStyles['navbar-link']} ${
-                  pathname === item.href ? navStyles['active'] : ''
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {items.map((item) =>
+              locked(item) ? (
+                <Tooltip key={item.href} label={`Log in to use ${item.label}`} below>
+                  <Link
+                    href={hrefFor(item)}
+                    className={`${navStyles['navbar-link']} ${navStyles['locked']}`}
+                  >
+                    {item.label}
+                  </Link>
+                </Tooltip>
+              ) : (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`${navStyles['navbar-link']} ${
+                    pathname === item.href ? navStyles['active'] : ''
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              )
+            )}
             {/* Desktop only: the phone tab bar is full, so phones reach it from the profile. */}
             {props.isAdmin && (
               <Link
@@ -109,29 +143,12 @@ export default function NavigationBarClient(props: { username: string; isAdmin: 
 
           <div className={navStyles['navbar-right']}>
             {props.username && (
-              <>
-                <Link
-                  prefetch={false}
-                  href={'/api/logout'}
-                  className={`${navStyles['navbar-link']} ${navStyles['desktop-only']}`}
-                >
-                  Log out <LogOut size={14} />
-                </Link>
-                <Link
-                  href={profileHref}
-                  style={{ textDecoration: 'none', color: 'unset' }}
-                  className={navStyles['navbar-right-user']}
-                >
-                  <img
-                    src={'/api/resource/avatar/' + props.username}
-                    width={21}
-                    height={21}
-                    alt=""
-                    className={navStyles['profile-picture']}
-                  />
-                  {props.username}
-                </Link>
-              </>
+              <UserMenu
+                username={props.username}
+                avatarKey={props.avatarKey}
+                karma={props.karma}
+                isAdmin={props.isAdmin}
+              />
             )}
             {!props.username && (
               <Link href={'/login'} className={`${styles['button']} ${styles['button-small']}`}>
@@ -147,8 +164,10 @@ export default function NavigationBarClient(props: { username: string; isAdmin: 
         {tabs.map((item) => (
           <Link
             key={item.href}
-            href={item.href}
-            className={`${navStyles['tab']} ${pathname === item.href ? navStyles['active'] : ''}`}
+            href={hrefFor(item)}
+            className={`${navStyles['tab']} ${pathname === item.href ? navStyles['active'] : ''} ${
+              locked(item) ? navStyles['locked'] : ''
+            }`}
           >
             {item.icon}
             <span>{item.label}</span>

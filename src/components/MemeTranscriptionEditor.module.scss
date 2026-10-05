@@ -62,9 +62,16 @@
   gap: 8px;
 }
 
+// The textarea with the emoji button in its corner and the picker under it.
+.field-wrap {
+  position: relative;
+}
+
 .transcription-area {
+  display: block;
   width: 100%;
-  padding: 12px;
+  // Room on the right so text never runs under the emoji button.
+  padding: 12px 40px 12px 12px;
   border-radius: 8px;
   border: 1px solid var(--border-color-hover);
   background-color: var(--background-color);
@@ -107,5 +114,54 @@
 
   &:hover {
     color: var(--text-color);
+  }
+}
+
+.emoji-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--sub-text-color);
+  cursor: pointer;
+
+  &:hover,
+  &[aria-expanded='true'] {
+    color: var(--text-color);
+    background-color: var(--hover-background-color);
+  }
+}
+
+.emoji-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+}
+
+.guidelines {
+  font-size: 13px;
+  color: var(--sub-text-color);
+
+  summary {
+    width: fit-content;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--text-color);
+    }
+  }
+
+  ul {
+    margin: 6px 0 0;
+    padding-left: 18px;
+    line-height: 1.5;
   }
 }

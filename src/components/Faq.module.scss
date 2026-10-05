@@ -1,0 +1,64 @@
+.faq {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.spaced {
+  margin-top: 56px;
+}
+
+.title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.list {
+  border-top: 1px solid var(--border-color);
+}
+
+.item {
+  border-bottom: 1px solid var(--border-color);
+}
+
+// The whole row opens the answer. The marker is drawn here, not by the browser, so it
+// looks the same everywhere.
+.question {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 0;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+
+  &::after {
+    content: '+';
+    flex-shrink: 0;
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--sub-text-color);
+  }
+
+  .item[open] > &::after {
+    content: '\2212';
+  }
+}
+
+.answer {
+  margin: 0;
+  padding: 0 0 16px;
+  line-height: 1.55;
+  color: var(--mostly-text-color);
+
+  a {
+    text-decoration: underline;
+  }
+}

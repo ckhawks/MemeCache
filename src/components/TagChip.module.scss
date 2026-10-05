@@ -100,6 +100,10 @@
     color: var(--text-color);
     background-color: var(--hover-background-color);
   }
+
+  &.remove:hover {
+    color: var(--danger-color);
+  }
 }
 
 // Touch screens: no hover, so the arrows sit inline after the chip and hints are dropped.

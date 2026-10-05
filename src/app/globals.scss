@@ -19,6 +19,9 @@
   --button-secondary-bg-color: #ffffff;
   --button-secondary-bg-color-hover: #f2f2f2;
   --button-secondary-color: #171717;
+  --button-success-bg-color: #1f7a3d;
+  --button-success-bg-color-hover: #196632;
+  --button-success-color: #ffffff;
 }
 
 [data-theme='dark'] {
@@ -42,6 +45,9 @@
   --button-secondary-bg-color: #000000;
   --button-secondary-bg-color-hover: #1d1d1d;
   --button-secondary-color: #ffffff;
+  --button-success-bg-color: #2e9e57;
+  --button-success-bg-color-hover: #34b062;
+  --button-success-color: #ffffff;
 }
 
 * {

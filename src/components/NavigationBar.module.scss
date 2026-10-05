@@ -38,7 +38,9 @@
 }
 
 .navbar-right-user {
+  font: inherit;
   font-size: 14px;
+  color: var(--text-color);
   font-weight: 600;
   padding: 0.25rem 0.75rem;
   padding-left: 6px;
@@ -55,6 +57,65 @@
     background-color: var(--hover-background-color);
     cursor: pointer;
   }
+}
+
+// The menu under the profile pill. Same look as the tag field's suggestion list.
+.user-menu {
+  position: relative;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 200;
+  min-width: 180px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  background-color: var(--full-background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: rgba(100, 100, 111, 0.12) 0px 7px 20px 0px;
+}
+
+.menu-item {
+  display: flex;
+  width: 100%;
+  border: none;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 5px;
+  color: var(--text-color);
+  text-decoration: none;
+
+  svg {
+    color: var(--sub-text-color);
+  }
+
+  &:hover,
+  &:focus-visible {
+    background-color: var(--hover-background-color);
+    outline: none;
+  }
+}
+
+.menu-divider {
+  height: 1px;
+  margin: 4px 0;
+  background-color: var(--border-color);
+}
+
+.navbar-right-karma {
+  margin-left: 2px;
+  color: var(--sub-text-color);
+  font-weight: 400;
 }
 
 .navbar-links {
@@ -85,6 +146,11 @@
       font-weight: 600;
     }
   }
+}
+
+// Logged out: a page that needs an account. Still a link, to the login page.
+.locked {
+  opacity: 0.45;
 }
 
 .logo {

@@ -159,18 +159,24 @@ size.
 A third number, like Reddit karma: the net score other people give your contributions.
 Unlike XP it can go down, and it can go negative.
 
-| Source | Karma |
-|---|---|
-| Someone likes your upload | +1 |
-| Someone upvotes a tag you added | +1 |
-| Someone downvotes a tag you added | -1 |
+| Source | Kind | Karma |
+|---|---|---|
+| Someone likes your upload | post | +1 |
+| Someone upvotes a tag you added | curation | +1 |
+| Someone downvotes a tag you added | curation | -1 |
+| Someone confirms your transcription | curation | +1 |
+| Someone rejects your transcription (or saves a fix of it) | curation | -1 |
+
+Profiles show the total plus the post / curation split (`getKarmaBreakdown`). Votes and
+reviews from held users don't count (migration 005, `counted_*` views; the queue and the
+hold rule are described there).
 
 Self-likes and the automatic upvote on your own tag don't count. Likes on deleted memes
 drop out, and an unlike takes the point back, both for free because it is derived like XP.
 Same view, one more column.
 
 Shown as a plain number next to the username everywhere a username appears ("ckhawks ·
-1,204 karma"), and split into "upload karma" and "tag karma" on the profile, the way
+1,204 karma"), and split into "post karma" and "curation karma" on the profile, the way
 Reddit splits post and comment karma. The leaderboard gets a karma tab.
 
 Karma does not feed level or rank, so you can't climb the ladder by trading likes with a

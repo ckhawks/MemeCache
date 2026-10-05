@@ -7,6 +7,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { safeNext } from '@/util/safeNext';
 import { cookies } from 'next/headers';
 import {
   ACCESS_TOKEN_TTL_SECONDS,
@@ -105,7 +106,7 @@ export async function login(prevState: any, formData: FormData) {
 
   await setSessionCookie(await createAccessToken(user));
 
-  redirect('/');
+  redirect(safeNext(formData.get('next')));
 }
 
 export async function logout() {

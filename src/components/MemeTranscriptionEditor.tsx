@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import globals from '../app/main.module.scss';
 import styles from './MemeTranscriptionEditor.module.scss';
 import { api } from '@/util/api';
+import TranscriptionField from './TranscriptionField';
+import TranscriptionGuidelines from './TranscriptionGuidelines';
 
 interface TranscriptionData {
   text: string;
@@ -25,6 +27,7 @@ export default function MemeTranscriptionEditor(props: {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const signedIn = props.userId !== '';
 
   const startEditing = () => {
@@ -38,10 +41,17 @@ export default function MemeTranscriptionEditor(props: {
     setError('');
     try {
       // No editor here on purpose: the server takes the editor from the session.
-      const data = await api<{ transcription: TranscriptionData }>(`/api/meme/${props.memeId}/transcription`, {
-        body: { text: draft },
-      });
-      setCurrent(data.transcription);
+      const data = await api<{ transcription: TranscriptionData; pending: boolean }>(
+        `/api/meme/${props.memeId}/transcription`,
+        { body: { text: draft } }
+      );
+      // A held user's edit waits for a confirm, so the shown text stays as it was.
+      if (data.pending) {
+        setNotice('Saved. It will show once someone confirms it.');
+      } else {
+        setCurrent(data.transcription);
+        setNotice('');
+      }
       setIsEditing(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save the transcription.');
@@ -65,15 +75,8 @@ export default function MemeTranscriptionEditor(props: {
 
       {isEditing ? (
         <div className={styles.editor}>
-          <textarea
-            className={styles['transcription-area']}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            rows={4}
-            autoFocus
-            aria-label="Transcription"
-            placeholder="Type the text on the meme, top to bottom."
-          />
+          <TranscriptionField value={draft} onChange={setDraft} onSubmit={handleSave} autoFocus />
+          <TranscriptionGuidelines />
           {error && <div className={styles.error}>{error}</div>}
           <div className={styles['action-buttons']}>
             <button
@@ -91,7 +94,11 @@ export default function MemeTranscriptionEditor(props: {
         </div>
       ) : current ? (
         <>
-          <p className={`${styles.text} ${props.plain ? styles.caption : ''}`}>{current.text}</p>
+          {current.text ? (
+            <p className={`${styles.text} ${props.plain ? styles.caption : ''}`}>{current.text}</p>
+          ) : (
+            <p className={styles['transcription-author']}>No text on this meme.</p>
+          )}
           {(current.editedByUsername || (props.plain && signedIn)) && (
             <div className={styles['transcription-author']}>
               {current.editedByUsername && <>Transcribed by {current.editedByUsername}</>}
@@ -120,6 +127,7 @@ export default function MemeTranscriptionEditor(props: {
           )}
         </div>
       )}
+      {notice && !isEditing && <div className={styles['transcription-author']}>{notice}</div>}
     </section>
   );
 }
