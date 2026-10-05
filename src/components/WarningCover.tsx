@@ -27,6 +27,8 @@ export default function WarningCover(props: {
   compact?: boolean;
   className?: string;
   style?: React.CSSProperties;
+  // Called when the viewer uncovers it (click, or hover in 'hover' mode), e.g. to count a view.
+  onReveal?: () => void;
 }) {
   const display = useWarningDisplay();
   const [revealed, setRevealed] = useState(false);
@@ -60,7 +62,11 @@ export default function WarningCover(props: {
   ].join(' ');
 
   return (
-    <div className={classes} style={props.style}>
+    <div
+      className={classes}
+      style={props.style}
+      onMouseEnter={display === 'hover' ? props.onReveal : undefined}
+    >
       {/* Out of the tab order and away from screen readers while covered, so a video's
           controls cannot be reached through the blur. Hover mode leaves it live: the
           pointer is the reveal. */}
@@ -83,6 +89,7 @@ export default function WarningCover(props: {
               e.preventDefault();
               e.stopPropagation();
               setRevealed(true);
+              props.onReveal?.();
             }}
           >
             <EyeOff size={20} aria-hidden="true" />

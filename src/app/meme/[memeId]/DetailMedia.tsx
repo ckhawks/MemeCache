@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { supportedImageTypes, supportedVideoTypes } from '@/constants/mimeTypes';
-import type { ContentWarning } from '@/constants/contentWarnings';
 import WarningCover from '@/components/WarningCover';
+import { blursMeme, type ContentWarning } from '@/constants/contentWarnings';
 import { useWarningDisplay } from '@/contexts/WarningDisplayContext';
 import d from './MemeDetail.module.scss';
 import { useViewBeacon } from './useViewBeacon';
@@ -23,7 +23,10 @@ export default function DetailMedia(props: {
 }) {
   const [ratio, setRatio] = useState<number | null>(null);
   const display = useWarningDisplay();
-  const countView = useViewBeacon(props.meme.id);
+  // A blurred meme has not been seen yet, so its view waits for the reveal.
+  const blurred = (props.meme.warnings ?? []).some(blursMeme) && display !== 'show';
+  const [revealed, setRevealed] = useState(false);
+  const countView = useViewBeacon(props.meme.id, !blurred || revealed);
   const src = '/api/resource/' + props.meme.id;
   const width = ratio ? { width: `min(100%, calc(75vh * ${ratio}))` } : undefined;
   const covered = (props.meme.warnings?.length ?? 0) > 0 && display !== 'show';
@@ -76,7 +79,12 @@ export default function DetailMedia(props: {
     return media;
   }
   return (
-    <WarningCover warnings={props.meme.warnings} className={d.covered} style={width}>
+    <WarningCover
+      warnings={props.meme.warnings}
+      className={d.covered}
+      style={width}
+      onReveal={() => setRevealed(true)}
+    >
       {media}
     </WarningCover>
   );

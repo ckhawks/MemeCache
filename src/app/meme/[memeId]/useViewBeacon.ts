@@ -10,10 +10,11 @@ const VIEW_DELAY_MS = 1000;
 // video starting). Running in the browser is the point. Link previews, prefetches and most
 // bots fetch the page without running it, so they never get here.
 //
-// A tab opened in the background waits until it is shown. The server decides whether the
+// A tab opened in the background waits until it is shown, and a meme still blurred behind a
+// content warning waits until it is revealed (`ready`). The server decides whether the
 // view counts (once per viewer per day, never the uploader), so a stray second call is
 // harmless.
-export function useViewBeacon(memeId: string): () => void {
+export function useViewBeacon(memeId: string, ready = true): () => void {
   const sent = useRef<string | null>(null);
 
   const send = useCallback(() => {
@@ -26,6 +27,9 @@ export function useViewBeacon(memeId: string): () => void {
   }, [memeId]);
 
   useEffect(() => {
+    if (!ready) {
+      return;
+    }
     let timer: ReturnType<typeof setTimeout> | undefined;
     const update = () => {
       clearTimeout(timer);
@@ -39,7 +43,7 @@ export function useViewBeacon(memeId: string): () => void {
       clearTimeout(timer);
       document.removeEventListener('visibilitychange', update);
     };
-  }, [send]);
+  }, [send, ready]);
 
   return send;
 }
