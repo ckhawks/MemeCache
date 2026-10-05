@@ -22,6 +22,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import FeedViewToggle from '@/components/FeedViewToggle';
 import CountBadge from '@/components/CountBadge';
 import { GalleryMasonry } from '@/components/GalleryMasonry';
+import CooldownTimer from '@/components/CooldownTimer';
 import type { MemeCard } from '@/db/queries/memes';
 import { WarningChip } from '@/components/WarningChip';
 import { WarningToggles } from '@/components/WarningToggles';
@@ -86,6 +87,23 @@ function Labeled(props: { label: string; children: React.ReactNode }) {
     <div className={ds.labeled}>
       {props.children}
       <span className={ds.caption}>{props.label}</span>
+    </div>
+  );
+}
+
+// Example cooldowns relative to when the page opened: one far off, one a few seconds from
+// done so the finish state can be seen.
+function CooldownExamples() {
+  const [opened] = useState(() => Date.now());
+  const day = 24 * 60 * 60 * 1000;
+  return (
+    <div className={ds.row} style={{ alignItems: 'stretch' }}>
+      <Labeled label="Running (day 18 of 30)">
+        <CooldownTimer since={new Date(opened - 18 * day)} until={new Date(opened + 12 * day)} />
+      </Labeled>
+      <Labeled label="Finishing (done after 10 seconds)">
+        <CooldownTimer since={new Date(opened - 30 * day + 10_000)} until={new Date(opened + 10_000)} />
+      </Labeled>
     </div>
   );
 }
@@ -292,6 +310,15 @@ export default function DesignSystem(props: { memes: MemeCard[]; userId: string 
           <div className={upload.note}>A note: something worth knowing, not an error.</div>
           <div className={upload.error}>An error: what went wrong and what to do.</div>
           <p style={{ margin: 0, color: 'var(--sub-text-color)' }}>An empty state: nothing here yet, and how to fill it.</p>
+        </Themed>
+      </Section>
+
+      <Section
+        title="Cooldown timer"
+        note="components/CooldownTimer. Ticks every second, digits drop in as they change, the bar fills toward the unlock. Motion stops under prefers-reduced-motion. Used for the username cooldown."
+      >
+        <Themed>
+          <CooldownExamples />
         </Themed>
       </Section>
 

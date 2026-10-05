@@ -55,6 +55,17 @@ export async function createAccessToken(user: UserPayload) {
     .sign(accessTokenKey);
 }
 
+// The session cookie lives exactly as long as the token inside it. @/auth/actions has its
+// own copy for login and registration; this one is for route handlers (renaming).
+export async function setSessionCookie(accessToken: string) {
+  (await cookies()).set('accessToken', accessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: ACCESS_TOKEN_TTL_SECONDS,
+  });
+}
+
 // How stale "lastActive" is allowed to get before it is worth a write.
 const ACTIVITY_WRITE_INTERVAL_MS = 5 * 60 * 1000;
 
@@ -80,7 +91,9 @@ export async function validateAccessToken(token: string) {
       await touchLastActive(payload.id as string);
     }
 
-    return payload as unknown as UserPayload;
+    // The name in the token is the one they had when it was issued. Renaming re-issues the
+    // cookie, but an admin rename or another device would still carry the old one.
+    return { ...(payload as unknown as UserPayload), username: user.username };
   } catch (error) {
     return null;
   }

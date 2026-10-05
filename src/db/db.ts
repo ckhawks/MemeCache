@@ -59,3 +59,25 @@ export async function db<T = Record<string, unknown>>(
   const result = await pool.query(query, params);
   return result.rows as T[];
 }
+
+export type Query = <T = Record<string, unknown>>(query: string, params?: unknown[]) => Promise<T[]>;
+
+// Runs `fn` inside one transaction on one connection, committing if it returns and rolling
+// back if it throws. `fn` gets a db()-shaped function bound to that connection; plain db()
+// calls inside it would run on other connections, outside the transaction.
+export async function transaction<T>(fn: (query: Query) => Promise<T>): Promise<T> {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const query: Query = async <R,>(text: string, params: unknown[] = []) =>
+      (await client.query(text, params)).rows as R[];
+    const result = await fn(query);
+    await client.query('COMMIT');
+    return result;
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
