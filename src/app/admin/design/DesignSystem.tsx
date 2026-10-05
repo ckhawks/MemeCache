@@ -18,6 +18,8 @@ import BackButton from '@/components/BackButton';
 import ThemeToggle from '@/components/ThemeToggle';
 import FeedViewToggle from '@/components/FeedViewToggle';
 import { GalleryMasonry } from '@/components/GalleryMasonry';
+import MemeThumbStrip from '@/components/MemeThumbStrip';
+import DuplicateWarning from '../../upload/DuplicateWarning';
 import type { MemeCard } from '@/db/queries/memes';
 
 // A meme id that does not exist: interactive examples hit the real API and get a 404, so
@@ -247,6 +249,17 @@ export default function DesignSystem(props: { memes: MemeCard[]; userId: string 
               or <span className={upload.linkish}>browse</span>, or paste with Ctrl+V
             </div>
           </div>
+        </Themed>
+      </Section>
+
+      <Section
+        title="Meme thumbnail strip"
+        note="MemeThumbStrip: square links to memes. Medium is a page section (Same template on a meme page); small sits inside a notice, like the upload page's duplicate warning below it."
+      >
+        <Themed>
+          <MemeThumbStrip memes={props.memes} />
+          <MemeThumbStrip memes={props.memes} size="small" />
+          <DuplicateWarning memes={props.memes.slice(0, 1)} />
         </Themed>
       </Section>
 

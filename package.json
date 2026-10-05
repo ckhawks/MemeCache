@@ -14,6 +14,7 @@
     "db:migrate:dry": "node scripts/migrate.mjs --dry-run",
     "db:pull-sample": "node scripts/pull-sample.mjs",
     "db:seed": "node scripts/seed.mjs",
+    "db:backfill-media-hashes": "node scripts/backfill-media-hashes.mjs",
     "dev:up": "docker compose up -d --wait",
     "dev:down": "docker compose down"
   },
@@ -33,6 +34,7 @@
     "react-image-crop": "^11.1.2",
     "react-masonry-css": "^1.0.16",
     "sass": "^1.105.1",
+    "sharp": "^0.35.5",
     "swr": "^2.5.1",
     "zod": "^4.6.5"
   },

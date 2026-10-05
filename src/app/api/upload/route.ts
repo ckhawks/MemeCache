@@ -6,6 +6,8 @@ import { maxBytesForType, supportedTypes } from '@/constants/mimeTypes';
 import { createMeme } from '@/db/queries/memes';
 import { HttpError, route } from '@/server/route';
 import { normalizeImportUrl } from '@/server/mediaImport';
+import { after } from 'next/server';
+import { fingerprintAndMatch } from '@/server/mediaMatch';
 
 // POST multipart { file, sourceUrl? }: stores a new meme. The uploader is the session user.
 // sourceUrl is the post an imported file came from (see /api/import).
@@ -38,12 +40,13 @@ export const POST = route({
       typeof rawSourceUrl === 'string' && rawSourceUrl ? normalizeImportUrl(rawSourceUrl).url : null;
 
     const id = crypto.randomUUID();
+    const body = Buffer.from(await file.arrayBuffer());
 
     await getS3Client().send(
       new PutObjectCommand({
         Bucket: process.env.MC_AWS_S3_BUCKET,
         Key: id,
-        Body: Buffer.from(await file.arrayBuffer()),
+        Body: body,
         ContentType: file.type,
       })
     );
@@ -63,6 +66,10 @@ export const POST = route({
       await DeleteS3ObjectByKey(id);
       throw error;
     }
+
+    // Fingerprinted after the response: the uploader is not kept waiting on it, and a
+    // failure there never fails the upload.
+    after(() => fingerprintAndMatch(id, body, file.type));
 
     return { id, slug };
   },

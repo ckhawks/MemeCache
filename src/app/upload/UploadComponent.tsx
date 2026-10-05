@@ -11,6 +11,9 @@ import { api } from '@/util/api';
 import { cropFile } from '@/util/cropImage';
 import type { Box } from '@/util/imageEdges';
 import CropEditor from './CropEditor';
+import DuplicateWarning from './DuplicateWarning';
+import { findLookalikes } from './duplicateCheck';
+import type { ThumbMeme } from '@/components/MemeThumbStrip';
 
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 const MAX_VIDEO_BYTES = 30 * 1024 * 1024;
@@ -46,6 +49,10 @@ export default function UploadComponent() {
   // Set when that post was already imported: the existing meme's slug.
   const [duplicate, setDuplicate] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Memes the picked file looks like (the duplicate check). Kept with the file it was for,
+  // so a slow answer about a file since replaced is never shown.
+  const [lookalikes, setLookalikes] = useState<{ file: File; memes: ThumbMeme[] } | null>(null);
+  const hasLookalikes = !!file && lookalikes?.file === file && lookalikes.memes.length > 0;
 
   const isImage = !!file && supportedImageTypes.includes(file.type);
   const isVideo = !!file && supportedVideoTypes.includes(file.type);
@@ -165,6 +172,22 @@ export default function UploadComponent() {
     })().catch((err) => console.error('Could not read the shared file:', err));
     // selectFile only sets state, so running this once on mount is enough.
   }, []);
+
+  // Checks each picked file for look-alikes while it is being looked over.
+  useEffect(() => {
+    if (!file) {
+      return;
+    }
+    let current = true;
+    findLookalikes(file).then((memes) => {
+      if (current) {
+        setLookalikes({ file, memes });
+      }
+    });
+    return () => {
+      current = false;
+    };
+  }, [file]);
 
   const handleUpload = async () => {
     if (!file) {
@@ -322,6 +345,8 @@ export default function UploadComponent() {
 
           {note && <div className={u.note}>{note}</div>}
 
+          {hasLookalikes && <DuplicateWarning memes={lookalikes.memes} />}
+
           <div className={u.previewArea}>
             {isImage && !isGif && (
               // key: a new file starts with a fresh crop box and a fresh edge analysis.
@@ -358,7 +383,7 @@ export default function UploadComponent() {
                 onClick={handleUpload}
                 disabled={uploading}
               >
-                {uploading ? 'Uploading…' : 'Upload'}
+                {uploading ? 'Uploading…' : hasLookalikes ? 'Upload anyway' : 'Upload'}
               </button>
             </div>
           </div>
