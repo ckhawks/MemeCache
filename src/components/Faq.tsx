@@ -27,7 +27,7 @@ const QUESTIONS: { q: string; a: React.ReactNode }[] = [
     q: 'What can I post?',
     a: (
       <>
-        Anything legal that is meant to be funny. NSFW is fine as long as it is labelled: pick NSFW (or gore, flashing lights, spoiler) under the preview when you upload, or add a content warning from the meme&apos;s page afterwards. Anyone can add one to any meme. Labelled memes are blurred until someone chooses to see them. No influencer or brand content, no engagement bait, and nothing that exposes a private person. If you see something that breaks these, use Report on the meme&apos;s page and a moderator will look at it.
+        Anything legal that is meant to be funny. NSFW is fine as long as it is labelled: pick NSFW (or gore, flashing lights, spoiler) under the preview when you upload, or add a content warning from the meme&apos;s page afterwards. Anyone can add one to any meme. Labelled memes are blurred until someone chooses to see them. AI-made memes are fine too, marked AI-made the same way; that label is shown but does not blur. No influencer or brand content, no engagement bait, and nothing that exposes a private person. If you see something that breaks these, use Report on the meme&apos;s page and a moderator will look at it.
       </>
     ),
   },

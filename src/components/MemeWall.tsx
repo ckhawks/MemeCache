@@ -1,6 +1,7 @@
 import { listMemes } from '@/db/queries/memes';
 import { supportedImageTypes } from '@/constants/mimeTypes';
 import styles from './MemeWall.module.scss';
+import { blursMeme } from '@/constants/contentWarnings';
 
 const COLUMNS = 4;
 
@@ -12,7 +13,7 @@ const COLUMNS = 4;
 export default async function MemeWall(props: { className?: string }) {
   const { memes } = await listMemes({}, null, 40);
   const images = memes
-    .filter((m) => supportedImageTypes.includes(m.contentType) && m.warnings.length === 0)
+    .filter((m) => supportedImageTypes.includes(m.contentType) && !m.warnings.some(blursMeme))
     .slice(0, 16);
   if (images.length === 0) {
     return <div className={`${styles.wall} ${props.className ?? ''}`} aria-hidden="true" />;

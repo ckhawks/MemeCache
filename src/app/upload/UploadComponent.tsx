@@ -350,7 +350,7 @@ export default function UploadComponent() {
 
           <div className={u.warnings}>
             <div className={u.muted}>
-              Content warnings, if any. A labelled meme is blurred until someone chooses to see it.
+              Labels, if any. NSFW, gore, flashing and spoiler memes are blurred until someone chooses to see them; AI-made is only labelled.
             </div>
             <WarningToggles
               selected={warnings}
