@@ -17,8 +17,9 @@ const QUESTIONS: { q: string; a: React.ReactNode }[] = [
     q: 'How do I get in?',
     a: (
       <>
-        It is invite-only for now. Members hand out the invite code, so ask someone who is
-        already on it. An application, where you send in a meme or two to be judged, is planned.
+        It is invite-only for now. You need an invite code, usually as a sign-up link. Ask a
+        member who has one, or an admin. An application, where you send in a meme or two to be
+        judged, is planned.
       </>
     ),
   },

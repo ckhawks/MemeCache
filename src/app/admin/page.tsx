@@ -10,6 +10,11 @@ const TOOLS = [
     title: 'Design system',
     description: 'Every component, color and text style in one place, in light and dark.',
   },
+  {
+    href: '/admin/invites',
+    title: 'Invite codes',
+    description: 'Make and turn off the codes people sign up with, and see who used each.',
+  },
 ];
 
 export default async function Admin() {

@@ -11,7 +11,7 @@ const initialState = {
   message: '',
 };
 
-export default function RegisterComponent() {
+export default function RegisterComponent(props: { code: string }) {
   const [state, registerAction, pending] = useActionState(register, initialState);
 
   return (
@@ -65,9 +65,10 @@ export default function RegisterComponent() {
           type="text"
           name="access_code"
           autoComplete="off"
+          defaultValue={props.code}
           required
         />
-        <span className={f.hint}>MemeCache is invite-only. Ask a member for the code.</span>
+        <span className={f.hint}>MemeCache is invite-only. Ask a member or an admin for a code.</span>
       </div>
       <button type="submit" className={`${styles['button']} ${f.submit}`} disabled={pending}>
         {pending ? 'Creating your account…' : 'Create account'} {!pending && <ArrowRight size={16} />}
