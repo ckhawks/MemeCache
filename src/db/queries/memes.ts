@@ -201,13 +201,18 @@ export async function countMemes(filter: MemeFilter): Promise<number> {
 }
 
 // By uuid or by slug. Null when the meme does not exist or has been deleted.
-export async function getMeme(idOrSlug: string, viewerId?: string): Promise<MemeCard | null> {
+export async function getMeme(
+  idOrSlug: string,
+  viewerId?: string
+): Promise<(MemeCard & { sourceUrl: string | null }) | null> {
   const column = isUuid(idOrSlug) ? 'm.id = $2::uuid' : isSlug(idOrSlug) ? 'm.slug = $2' : null;
   if (!column) {
     return null;
   }
-  const [meme] = await db<MemeCard>(
-    `SELECT ${CARD_COLUMNS}
+  // The meme page also links back to the post an imported meme came from (migration 006).
+  const [meme] = await db<MemeCard & { sourceUrl: string | null }>(
+    `SELECT ${CARD_COLUMNS},
+            m.source_url AS "sourceUrl"
        FROM meme m
        JOIN app_user u ON u.id = m.uploader_id
       WHERE ${column}

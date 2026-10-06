@@ -14,9 +14,10 @@ import { displayUsername } from '@/auth/username';
 import type { MemeCard } from '@/db/queries/memes';
 import type { UserPayload } from '@/auth/lib';
 import { avatarUrl } from '@/util/avatarUrl';
-import { getRelativeTimeString, getServerSideRelativeTime } from '@/util/datetimeFormat';
+import { timeAgo } from '@/util/datetimeFormat';
 import { formatCount } from '@/util/formatCount';
 import { track } from '@/util/track';
+import { memeFilename } from '@/constants/mimeTypes';
 
 // Pieces of the meme page: the author line, the action bar, and the posted date.
 
@@ -66,7 +67,7 @@ export function PostActions(props: {
       <SendMemeButton labeled memeId={meme.id} slug={meme.slug} contentType={meme.contentType} />
       <a
         href={`/api/resource/${meme.id}`}
-        download
+        download={memeFilename(meme.slug, meme.contentType)}
         className={likeStyles['pill']}
         onClick={() => track('meme_download', { memeId: meme.id })}
       >
@@ -87,7 +88,7 @@ export function PostActions(props: {
 }
 
 // When it was posted, as a date and as a relative time, and how many times it was viewed.
-export function MemePosted(props: { createdAt: Date; viewCount: number }) {
+export function MemePosted(props: { createdAt: Date; viewCount: number; sourceUrl: string | null }) {
   const date = new Date(props.createdAt);
   // UTC on both server and browser, so the rendered date cannot differ between them.
   const exact = date.toLocaleDateString('en-US', {
@@ -96,16 +97,34 @@ export function MemePosted(props: { createdAt: Date; viewCount: number }) {
     year: 'numeric',
     timeZone: 'UTC',
   });
-  const relative =
-    typeof window === 'undefined' ? getServerSideRelativeTime(date) : getRelativeTimeString(date);
   const views = props.viewCount;
 
   return (
     <div className={d.posted}>
-      Posted {exact} · {relative} ·{' '}
+      Posted {exact} ·{' '}
+      {/* The server's clock renders it first; the browser's may read a minute on. */}
+      <span suppressHydrationWarning>{timeAgo(date)}</span> ·{' '}
       <span title={views >= 1000 ? `${views.toLocaleString()} views` : undefined}>
         {formatCount(views)} {views === 1 ? 'view' : 'views'}
       </span>
+      {props.sourceUrl && (
+        <>
+          {' '}
+          · Source:{' '}
+          <a href={props.sourceUrl} target="_blank" rel="noopener noreferrer nofollow" className={d.source}>
+            {sourceHost(props.sourceUrl)}
+          </a>
+        </>
+      )}
     </div>
   );
+}
+
+// "x.com" for https://www.x.com/someone/status/1. The stored link is already normalized.
+function sourceHost(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
 }

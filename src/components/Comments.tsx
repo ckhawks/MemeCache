@@ -26,6 +26,10 @@ type Comment = Omit<MemeComment, 'createdAt' | 'editedAt'> & {
 // The counter shows once the text is this close to the cap.
 const COUNTER_FROM = COMMENT_MAX - 200;
 
+// Replying with a meme (picking one, or pasting a meme link) is switched off for now.
+// Comments that already carry a meme still show it.
+const MEME_REPLIES = false;
+
 // Text and an optional meme, for a new comment or an edit. Pasting a link to a meme page
 // into the text attaches that meme and takes the link back out. Ctrl/Cmd+Enter sends.
 export function CommentComposer(props: {
@@ -68,7 +72,7 @@ export function CommentComposer(props: {
   // Lets the link paste as usual, then swaps it for the meme once it is found.
   const onPaste = async (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const pasted = event.clipboardData.getData('text');
-    if (!parseMemeLink(pasted)) {
+    if (!MEME_REPLIES || !parseMemeLink(pasted)) {
       return;
     }
     try {
@@ -102,7 +106,7 @@ export function CommentComposer(props: {
         maxLength={COMMENT_MAX}
         autoFocus={props.autoFocus}
         label={props.label ?? 'Comment'}
-        placeholder="Add a comment, or paste a link to a meme"
+        placeholder={MEME_REPLIES ? 'Add a comment, or paste a link to a meme' : 'Add a comment'}
       />
       {ref && <MemeRefCard meme={ref} onRemove={() => setRef(null)} />}
       {picking && (
@@ -118,15 +122,17 @@ export function CommentComposer(props: {
       )}
       {error && <div className={styles['error']}>{error}</div>}
       <div className={styles['composer-bar']}>
-        <button
-          type="button"
-          className={styles['attach']}
-          aria-expanded={picking}
-          onClick={() => setPicking((open) => !open)}
-        >
-          <ImageIcon size={15} />
-          {ref ? 'Pick a different meme' : 'Reply with a meme'}
-        </button>
+        {MEME_REPLIES && (
+          <button
+            type="button"
+            className={styles['attach']}
+            aria-expanded={picking}
+            onClick={() => setPicking((open) => !open)}
+          >
+            <ImageIcon size={15} />
+            {ref ? 'Pick a different meme' : 'Reply with a meme'}
+          </button>
+        )}
         {body.length >= COUNTER_FROM && (
           <span className={styles['counter']}>
             {body.length}/{COMMENT_MAX}

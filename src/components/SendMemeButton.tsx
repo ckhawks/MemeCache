@@ -5,16 +5,7 @@ import { Check, Send } from 'react-feather';
 import localStyles from './LikeButton.module.scss';
 import Tooltip from './Tooltip';
 import { track } from '@/util/track';
-
-const EXTENSIONS: Record<string, string> = {
-  'image/png': 'png',
-  'image/jpeg': 'jpg',
-  'image/jpg': 'jpg',
-  'image/gif': 'gif',
-  'image/webp': 'webp',
-  'video/mp4': 'mp4',
-  'video/webm': 'webm',
-};
+import { memeFilename } from '@/constants/mimeTypes';
 
 // Hands the meme itself to the phone's share sheet (iMessage, Discord, ...). Where the
 // browser cannot share files, which is most desktops, it copies the meme's link instead.
@@ -48,8 +39,7 @@ export default function SendMemeButton(props: {
         // this comes from the browser cache. Fetching it lazily keeps the feed light.
         const response = await fetch(`/api/resource/${props.memeId}`);
         const blob = await response.blob();
-        const extension = EXTENSIONS[props.contentType] ?? 'bin';
-        const file = new File([blob], `meme.${extension}`, {
+        const file = new File([blob], memeFilename(props.slug, props.contentType), {
           type: props.contentType,
         });
 

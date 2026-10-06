@@ -301,18 +301,25 @@
   text-overflow: ellipsis;
 }
 
+// The uploader as a pill, like the one in the nav bar, so the karma inside it reads as
+// theirs rather than as part of the time beside it.
 .meme-username {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   min-width: 0;
+  padding: 2px 8px 2px 2px;
+  border: 1px solid var(--border-color);
+  border-radius: 100px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--mostly-text-color);
   text-decoration: none;
-  transition: color 0.2s ease-in-out;
+  transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out;
   &:hover {
     cursor: pointer;
     color: var(--text-color);
+    background-color: var(--hover-background-color);
   }
 }
 
@@ -357,6 +364,7 @@
 .meme-karma {
   color: var(--sub-text-color);
   font-weight: 400;
+  font-variant-numeric: tabular-nums;
 }
 
 .meme-meta-separator {
@@ -374,7 +382,7 @@
 
 // The search field between Explore's title and its count.
 .explore-search {
-  margin-bottom: 12px;
+  margin: 12px 0 16px;
 }
 
 .feed-header > p {

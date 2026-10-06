@@ -47,7 +47,6 @@ export default async function SearchPage(props: {
     query.text && query.tags.length === 0 ? searchTags(query.text, 6) : Promise.resolve([]),
   ]);
   const suggestions = tags.filter((t) => t.uses > 0);
-  const snippets = Object.fromEntries(results.memes.map((m) => [m.id, m.snippet]));
   const page = Number(searchParams.page) || 0;
 
   // A search event, for what people look for and what finds nothing. Only the first page,
@@ -145,7 +144,6 @@ export default async function SearchPage(props: {
               view={view}
               memes={results.memes}
               currentUserId={user?.id || ''}
-              snippets={snippets}
               search={{ query: raw, offset: page * FEED_PAGE_SIZE }}
             />
           </div>

@@ -81,3 +81,31 @@ export function timeAgo(value: Date | string, now: number = Date.now()): string 
   const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
   return rtf.format(Math.trunc(seconds / size), unit);
 }
+
+// The compact form for feed cards: "now", "5m", "3h", "2d", "3w", then the date itself
+// ("Sep 4", or "Sep 4, 2025" for an earlier year), which says more than "5 months ago".
+export function shortTimeAgo(value: Date | string, now: number = Date.now()): string {
+  const date = new Date(value);
+  const seconds = Math.max(0, Math.round((now - date.getTime()) / 1000));
+  if (seconds < 60) {
+    return 'now';
+  }
+  if (seconds < 3600) {
+    return `${Math.floor(seconds / 60)}m`;
+  }
+  if (seconds < 86400) {
+    return `${Math.floor(seconds / 3600)}h`;
+  }
+  if (seconds < 86400 * 7) {
+    return `${Math.floor(seconds / 86400)}d`;
+  }
+  if (seconds < 86400 * 30) {
+    return `${Math.floor(seconds / (86400 * 7))}w`;
+  }
+  const sameYear = date.getFullYear() === new Date(now).getFullYear();
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    ...(sameYear ? {} : { year: 'numeric' }),
+  });
+}

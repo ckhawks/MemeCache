@@ -58,7 +58,7 @@ export default function SearchBox(props: {
         // on screen.
         key={props.defaultValue}
         defaultValue={props.defaultValue}
-        placeholder={props.compact ? 'Search' : 'Search by the words on a meme or its tags'}
+        placeholder={props.compact ? 'Search' : 'Search memes'}
         aria-label="Search memes"
         autoFocus={props.autoFocus}
         enterKeyHint="search"

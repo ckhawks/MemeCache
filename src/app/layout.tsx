@@ -47,8 +47,10 @@ export default async function RootLayout({
   const initialTheme = settings.theme ?? (await getInitialLightTheme());
 
   return (
-    <html lang="en" data-theme={initialTheme} data-bs-theme={initialTheme}>
-      <body className={inter.className}>
+    // Bootstrap turns on smooth scrolling; data-scroll-behavior tells Next to switch it off
+    // during route changes. Browser extensions add classes to <body> before React loads.
+    <html lang="en" data-theme={initialTheme} data-bs-theme={initialTheme} data-scroll-behavior="smooth">
+      <body className={inter.className} suppressHydrationWarning>
         <LightThemeProvider initialTheme={initialTheme} accountTheme={settings.theme} loggedIn={!!user}>
           <WarningDisplayProvider display={warningDisplay}>
             {children}

@@ -10,6 +10,22 @@ export const supportedVideoTypes = ['video/webm', 'video/mp4'];
 
 export const supportedTypes = [...supportedImageTypes, ...supportedVideoTypes];
 
+const EXTENSIONS: Record<string, string> = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/jpg': 'jpg',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+  'video/mp4': 'mp4',
+  'video/webm': 'webm',
+};
+
+// What a downloaded or shared meme is called: its short slug, so "egy2B3A.jpg" rather
+// than the storage uuid.
+export function memeFilename(slug: string, contentType: string): string {
+  return `${slug}.${EXTENSIONS[contentType] ?? 'bin'}`;
+}
+
 // Server-side caps. UploadComponent enforces the same numbers client-side for a nicer
 // error, but the client is only a convenience -- these are the ones that count.
 export const MAX_IMAGE_BYTES = 4 * 1024 * 1024;

@@ -2,9 +2,10 @@
 
 import Masonry from 'react-masonry-css';
 import styles from '../app/main.module.scss';
-import { getRelativeTimeString, getServerSideRelativeTime } from '@/util/datetimeFormat';
+import { shortTimeAgo } from '@/util/datetimeFormat';
+import { useMinute } from '@/util/useMinute';
 import { Download, MessageCircle } from 'react-feather';
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { DOUBLE_TAP_MS, requestLike } from '@/util/likeSignal';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -13,26 +14,24 @@ import MemeMediaRenderer from './MemeMediaRenderer';
 import DeleteMemeButton from './DeleteMemeButton';
 import SendMemeButton from './SendMemeButton';
 import SaveMemeButton from './SaveMemeButton';
-import SearchSnippet from './SearchSnippet';
 import FeedReason from './FeedReason';
 import Tooltip from './Tooltip';
 import likeStyles from './LikeButton.module.scss';
 import type { MemeCard } from '@/db/queries/memes';
 import { avatarUrl } from '@/util/avatarUrl';
 import { track } from '@/util/track';
+import { memeFilename } from '@/constants/mimeTypes';
 import { displayUsername } from '@/auth/username';
 import type { FeedView } from '@/server/feedView';
 
 // Memes arrive newest first from the query. `view` is the viewer's layout choice
-// (FeedViewToggle): a multi-column grid, or a single centered column. Search results pass
-// `snippets`, the matching text by meme id, shown under each card's title row. For you passes
-// `reasons`, the followed tags behind each meme by id, shown in the same place. Search also
-// passes `search`, so opening a result records which one it was (a search_click event).
+// (FeedViewToggle): a multi-column grid, or a single centered column. For you passes
+// `reasons`, the followed tags behind each meme by id, shown under each card's title row.
+// Search passes `search`, so opening a result records which one it was (a search_click event).
 export function GalleryMasonry(props: {
   memes: MemeCard[];
   currentUserId: string;
   view?: FeedView;
-  snippets?: Record<string, string | null>;
   reasons?: Record<string, string[]>;
   search?: {
     query: string;
@@ -40,13 +39,9 @@ export function GalleryMasonry(props: {
     offset: number;
   };
 }) {
-  const [, forceUpdate] = useState({});
+  // Ticks the card times over each minute. See useMinute for the server's first render.
+  useMinute();
   const router = useRouter();
-
-  useEffect(() => {
-    const timer = setInterval(() => forceUpdate({}), 60000); // Update every minute
-    return () => clearInterval(timer);
-  }, []);
 
   const open = (meme: MemeCard, index: number) => {
     if (props.search) {
@@ -116,12 +111,14 @@ export function GalleryMasonry(props: {
                 {meme.karma.toLocaleString()}
               </span>
             </Link>
-            <span className={styles['meme-meta-separator']}>·</span>
-            <span className={styles['meme-body-time']}>
-              {typeof window === 'undefined'
-                ? getServerSideRelativeTime(new Date(meme.createdAt))
-                : getRelativeTimeString(new Date(meme.createdAt))}
-            </span>
+            <time
+              dateTime={new Date(meme.createdAt).toISOString()}
+              title={new Date(meme.createdAt).toLocaleString()}
+              className={styles['meme-body-time']}
+              suppressHydrationWarning
+            >
+              {shortTimeAgo(meme.createdAt)}
+            </time>
           </div>
           <div
             style={{
@@ -138,7 +135,7 @@ export function GalleryMasonry(props: {
             <Tooltip label="Download">
               <a
                 href={`/api/resource/${meme.id}`}
-                download
+                download={memeFilename(meme.slug, meme.contentType)}
                 aria-label="Download"
                 className={likeStyles['wrapper']}
                 onClick={(e) => {
@@ -172,7 +169,6 @@ export function GalleryMasonry(props: {
             />
           </div>
         </div>
-        {props.snippets?.[meme.id] && <SearchSnippet text={props.snippets[meme.id]!} />}
         {props.reasons?.[meme.id] && <FeedReason followedTags={props.reasons[meme.id]} />}
       </div>
     </div>
