@@ -386,6 +386,20 @@
   margin: 12px 0 16px;
 }
 
+.library-expand {
+  margin: -4px 0 16px;
+  font-size: 14px;
+  color: var(--sub-text-color);
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-color);
+    font-weight: 500;
+  }
+}
+
 .feed-header > p {
   white-space: nowrap;
 }

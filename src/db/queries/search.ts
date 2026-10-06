@@ -86,7 +86,9 @@ const UNAPOSTROPHE = (column: string) => `regexp_replace(${column}, '[''’]', '
 
 export async function searchMemes(
   query: SearchQuery,
-  options: { viewerId?: string; page?: number; limit?: number } = {}
+  // savedBy narrows it to one member's Library, where mutes do not apply (the Library lists
+  // everything they saved).
+  options: { viewerId?: string; savedBy?: string; page?: number; limit?: number } = {}
 ): Promise<SearchPage> {
   if (query.words.length === 0 && query.tags.length === 0) {
     return { memes: [], total: 0, nextPage: null };
@@ -180,7 +182,11 @@ export async function searchMemes(
          LEFT JOIN meme_transcription t ON t.id = ct.id
          LEFT JOIN standing_tags st ON st.meme_id = m.id
         WHERE m.deleted_at IS NULL
-          AND NOT ${mutedSql('m.id', '$1')}
+          AND ($7::uuid IS NOT NULL OR NOT ${mutedSql('m.id', '$1')})
+          AND ($7::uuid IS NULL OR EXISTS (
+                SELECT 1 FROM meme_save s
+                 WHERE s.meme_id = m.id AND s.user_id = $7::uuid AND s.removed_at IS NULL
+              ))
           AND COALESCE(st.names, '{}') @> $4::text[]
      ),
      doc AS (
@@ -258,6 +264,7 @@ export async function searchMemes(
       query.tags.map((t) => t.toLowerCase()),
       limit + 1,
       page * limit,
+      isUuid(options.savedBy) ? options.savedBy : null,
     ]
   );
 

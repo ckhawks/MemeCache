@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '@/db/db';
 import { setLike } from '@/db/queries/likes';
+import { setSave } from '@/db/queries/saves';
 import { softDeleteMeme } from '@/db/queries/memes';
 import { formatSearch, parseSearch, searchMemes } from '@/db/queries/search';
 import { addTagToMeme, findOrCreateTag, voteOnTag } from '@/db/queries/tags';
@@ -52,6 +53,22 @@ describe('parseSearch', () => {
 });
 
 describe('searchMemes', () => {
+  it('searches only one Library with savedBy', async () => {
+    const alice = await makeUser('alice');
+    const bob = await makeUser('bob');
+    const saved = await makeMeme(alice);
+    const unsaved = await makeMeme(alice);
+    await addTranscription(saved, 'this is fine', alice);
+    await addTranscription(unsaved, 'this is fine too', alice);
+    await setSave(saved, bob, true);
+
+    const everywhere = await searchMemes(parseSearch('fine'), { viewerId: bob });
+    expect(everywhere.memes.map((m) => m.id).sort()).toEqual([saved, unsaved].sort());
+    const library = await searchMemes(parseSearch('fine'), { viewerId: bob, savedBy: bob });
+    expect(library.memes.map((m) => m.id)).toEqual([saved]);
+    expect(library.total).toBe(1);
+  });
+
   it('finds a meme from part of its text, half-typed words, other word forms and typos', async () => {
     const alice = await makeUser('alice');
     const meme = await makeMeme(alice);

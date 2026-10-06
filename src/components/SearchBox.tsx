@@ -16,6 +16,10 @@ export default function SearchBox(props: {
   quietShortcut?: boolean;
   autoFocus?: boolean;
   className?: string;
+  // Where it submits, and what it says while empty. The site-wide search by default; the
+  // Library searches itself.
+  action?: string;
+  placeholder?: string;
 }) {
   const input = useRef<HTMLInputElement>(null);
 
@@ -45,7 +49,7 @@ export default function SearchBox(props: {
 
   return (
     <Form
-      action="/search"
+      action={props.action ?? '/search'}
       role="search"
       className={`${styles['box']} ${props.compact ? styles['compact'] : ''} ${props.className ?? ''}`}
     >
@@ -58,7 +62,7 @@ export default function SearchBox(props: {
         // on screen.
         key={props.defaultValue}
         defaultValue={props.defaultValue}
-        placeholder={props.compact ? 'Search' : 'Search memes'}
+        placeholder={props.placeholder ?? (props.compact ? 'Search' : 'Search memes')}
         aria-label="Search memes"
         autoFocus={props.autoFocus}
         enterKeyHint="search"
