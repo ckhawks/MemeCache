@@ -92,7 +92,7 @@ export default function TagFollowButtons(props: {
         <p className={styles.note}>Muted. Memes with this tag are hidden from your feeds, search and the queue.</p>
       )}
       {props.note && preference === 'follow' && (
-        <p className={styles.note}>Following. Memes with this tag come first in For you on Explore.</p>
+        <p className={styles.note}>Following. Memes with this tag come first in For you on Explore, alongside the other tags and people you follow.</p>
       )}
       {error && <p className={styles.error}>{error}</p>}
     </div>

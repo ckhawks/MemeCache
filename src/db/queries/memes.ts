@@ -5,6 +5,7 @@ import { karmaSql } from './users';
 import { warningsSql } from './warnings';
 import { mutedSql } from './tagPreferences';
 import type { ContentWarning } from '@/constants/contentWarnings';
+import { displayUsername } from '@/auth/username';
 
 export interface MemeCard {
   id: string;
@@ -426,15 +427,19 @@ export async function listTopMemes(
 }
 
 export interface ForYouCard extends MemeCard {
-  // The followed tags standing on this meme: why it is in the first part of the feed. Empty
-  // for everything after.
+  // Why it is in the first part of the feed: the followed tags standing on this meme, and its
+  // uploader's name (displayUsername) when the viewer follows them. Both empty for everything
+  // after.
   followedTags: string[];
+  followedUsers: string[];
 }
 
 // Explore's "For you": memes carrying a tag the viewer follows (standing on it, net score of
-// at least 1), then everything else. Each part goes newest day first, most liked first within
-// a day, so a liked meme from this morning is not buried under one posted a minute ago.
-// Muted tags are left out as everywhere else. Paged by offset, like Top.
+// at least 1) or uploaded by someone they follow (migration 020), then everything else. The
+// viewer's own uploads are never in the first part. Each part goes newest day first, most
+// liked first within a day, so a liked meme from this morning is not buried under one posted
+// a minute ago. Muted tags are left out as everywhere else, followed uploader or not. Paged
+// by offset, like Top.
 export async function listForYou(
   viewerId: string,
   options: { page?: number; limit?: number } = {}
@@ -456,13 +461,17 @@ export async function listForYou(
         GROUP BY mt.meme_id
      )
      SELECT ${CARD_COLUMNS},
-            COALESCE(f.names, '{}') AS "followedTags"
+            CASE WHEN m.uploader_id = $1::uuid THEN '{}' ELSE COALESCE(f.names, '{}') END
+              AS "followedTags",
+            CASE WHEN uf.followee_id IS NULL THEN '{}' ELSE ARRAY[u.username] END
+              AS "followedUsers"
        FROM meme m
        JOIN app_user u ON u.id = m.uploader_id
        LEFT JOIN followed f ON f.meme_id = m.id
+       LEFT JOIN user_follow uf ON uf.follower_id = $1::uuid AND uf.followee_id = m.uploader_id
       WHERE m.deleted_at IS NULL
         AND NOT ${mutedSql('m.id', '$1')}
-      ORDER BY f.meme_id IS NULL,
+      ORDER BY uf.followee_id IS NULL AND (f.meme_id IS NULL OR m.uploader_id = $1::uuid),
                date_trunc('day', m.created_at) DESC,
                "likeCount" DESC,
                m.created_at DESC,
@@ -472,5 +481,9 @@ export async function listForYou(
   );
 
   const hasMore = rows.length > limit;
-  return { memes: rows.slice(0, limit), nextPage: hasMore ? page + 1 : null };
+  const memes = rows.slice(0, limit).map((m) => ({
+    ...m,
+    followedUsers: m.followedUsers.map(displayUsername),
+  }));
+  return { memes, nextPage: hasMore ? page + 1 : null };
 }

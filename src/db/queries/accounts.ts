@@ -94,6 +94,16 @@ export async function anonymiseUser(options: {
     await query(`DELETE FROM user_setting WHERE user_id = $1`, [options.userId]);
     await query(`DELETE FROM meme_save WHERE user_id = $1`, [options.userId]);
     await query(`DELETE FROM tag_preference WHERE user_id = $1`, [options.userId]);
+
+    // Follows (migration 020), both ways: who they followed and who followed them. With the
+    // follows gone, so are the "followed you" notifications they caused, which would only
+    // lead to a tombstone.
+    await query(`DELETE FROM user_follow WHERE follower_id = $1 OR followee_id = $1`, [
+      options.userId,
+    ]);
+    await query(`DELETE FROM notification WHERE actor_id = $1 AND kind = 'follow'`, [
+      options.userId,
+    ]);
     await query(`DELETE FROM queue_skip WHERE user_id = $1`, [options.userId]);
     await query(`DELETE FROM notification WHERE user_id = $1`, [options.userId]);
 

@@ -60,7 +60,7 @@ export default function YourTags(props: { tags: PreferredTag[] }) {
         'follow',
         'Following',
         <>
-          None yet. Follow tags on <Link href="/tags">Browse tags</Link> or on a tag&apos;s page, and their memes come first in For you on Explore.
+          None yet. Follow tags on <Link href="/tags">Browse tags</Link> or on a tag&apos;s page, and their memes come first in For you on Explore, alongside uploads from people you follow.
         </>,
         'Unfollow'
       )}

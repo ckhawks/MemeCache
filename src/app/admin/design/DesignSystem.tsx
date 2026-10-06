@@ -388,12 +388,13 @@ export default function DesignSystem(props: { memes: MemeCard[]; userId: string 
 
       <Section
         title="Feed reasons"
-        note="components/FeedReason, under each card in For you: the followed tags that put it there, or a plain line for the memes after them."
+        note="components/FeedReason, under each card in For you: the followed people and tags that put it there, or a plain line for the memes after them."
       >
         <Themed>
-          <FeedReason followedTags={['cats']} />
-          <FeedReason followedTags={['cats', 'dogs', 'loaf']} />
-          <FeedReason followedTags={[]} />
+          <FeedReason followedUsers={[]} followedTags={['cats']} />
+          <FeedReason followedUsers={['alice']} followedTags={['cats']} />
+          <FeedReason followedUsers={[]} followedTags={['cats', 'dogs', 'loaf']} />
+          <FeedReason followedUsers={[]} followedTags={[]} />
         </Themed>
       </Section>
 
@@ -570,7 +571,15 @@ export default function DesignSystem(props: { memes: MemeCard[]; userId: string 
           memes={props.memes}
           currentUserId={props.userId}
           view="grid"
-          reasons={Object.fromEntries(props.memes.map((meme, i) => [meme.id, i === 0 ? ['cats'] : []]))}
+          reasons={Object.fromEntries(
+            props.memes.map((meme, i) => [
+              meme.id,
+              {
+                followedUsers: i === 1 ? [meme.username] : [],
+                followedTags: i === 0 ? ['cats'] : [],
+              },
+            ])
+          )}
         />
       </Section>
     </div>
