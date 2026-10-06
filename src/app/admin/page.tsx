@@ -22,6 +22,11 @@ const TOOLS = [
     description: 'Memes members reported, to dismiss or delete. Moderators can use this one too.',
   },
   {
+    href: '/admin/users',
+    title: 'Users',
+    description: 'Every account with its karma, followers, trust and invite code, sortable, with moderation on each row.',
+  },
+  {
     href: '/admin/invites',
     title: 'Invite codes',
     description: 'Make and turn off the codes people sign up with, and see who used each.',

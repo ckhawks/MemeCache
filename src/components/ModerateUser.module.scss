@@ -1,0 +1,73 @@
+// The Moderate dialog (ModerateUserButton). Bootstrap draws the modal; this sets its width,
+// turns it into a bottom sheet on phones, and lays out the groups inside.
+
+.dialog {
+  max-width: 520px;
+
+  // Phones: full width along the bottom, rounded only at the top, scrolling inside when the
+  // keyboard leaves it short. The doubled class outranks Bootstrap's centered dialog.
+  @media (max-width: 575.98px) {
+    &.dialog {
+      display: flex;
+      align-items: flex-end;
+      max-width: none;
+      min-height: 100%;
+      margin: 0;
+    }
+
+    :global(.modal-content) {
+      max-height: 92dvh;
+      overflow-y: auto;
+      border-radius: 16px 16px 0 0;
+    }
+  }
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.groupTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.groupHint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--sub-text-color);
+}
+
+// Delete sits below a rule, in the danger color, so it is not mistaken for the rest.
+.danger {
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+
+  .groupTitle {
+    color: var(--danger-color);
+  }
+}
+
+// A field and its button on one line.
+.inline {
+  display: flex;
+  gap: 8px;
+
+  input {
+    flex: 1;
+    min-width: 0;
+  }
+
+  button {
+    flex: none;
+  }
+}

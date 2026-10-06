@@ -1,15 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import p from './Profile.module.scss';
+import f from './AuthForm.module.scss';
 import { api } from '@/util/api';
 
 type Override = 'trusted' | 'held' | null;
 
-// Admins only: pin a user's hold either way, or leave it to their record.
+// Admins only: pin a user's hold either way, or leave it to their record. Saves on change.
 export default function TrustOverride(props: { userId: string; override: Override }) {
   const router = useRouter();
+  const id = useId();
   const [value, setValue] = useState<Override>(props.override);
   const [error, setError] = useState('');
 
@@ -25,10 +26,13 @@ export default function TrustOverride(props: { userId: string; override: Overrid
   };
 
   return (
-    <div className={p.trustOverride}>
-      <label htmlFor="trust-override">Contributions:</label>
+    <div className={f.field}>
+      <label htmlFor={id} className={f.label}>
+        Contributions
+      </label>
       <select
-        id="trust-override"
+        id={id}
+        className={f.select}
         value={value ?? 'auto'}
         onChange={(e) => change(e.target.value === 'auto' ? null : (e.target.value as Override))}
       >
@@ -36,7 +40,7 @@ export default function TrustOverride(props: { userId: string; override: Overrid
         <option value="trusted">Always count</option>
         <option value="held">Hold for review</option>
       </select>
-      {error && <span>{error}</span>}
+      {error && <span className={f.error}>{error}</span>}
     </div>
   );
 }
