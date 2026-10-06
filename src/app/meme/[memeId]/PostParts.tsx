@@ -62,6 +62,7 @@ export function PostActions(props: {
         userId={props.user?.id || ''}
         liked={meme.hasLiked}
         likes={meme.likeCount}
+        own={props.user?.id === meme.uploaderId}
       />
       {props.user && <SaveMemeButton labeled memeId={meme.id} saved={meme.hasSaved} />}
       <SendMemeButton labeled memeId={meme.id} slug={meme.slug} contentType={meme.contentType} />

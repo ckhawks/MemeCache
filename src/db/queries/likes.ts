@@ -5,7 +5,8 @@ import { db } from '@/db/db';
 //
 // An unlike keeps the row and stamps removed_at (migration 017); liking again adds a new
 // row, so each like keeps its own dates. The unique index over live rows allows one live
-// like per person per meme, and every count reads live rows only.
+// like per person per meme, and every count reads live rows only. The like route stops
+// uploaders liking their own memes; the count leaves out any from before that rule.
 export async function setLike(memeId: string, userId: string, liked: boolean): Promise<number> {
   if (liked) {
     await db(
@@ -24,7 +25,10 @@ export async function setLike(memeId: string, userId: string, liked: boolean): P
   }
 
   const [row] = await db<{ count: number }>(
-    `SELECT count(*)::int AS count FROM meme_like WHERE meme_id = $1 AND removed_at IS NULL`,
+    `SELECT count(*)::int AS count
+       FROM meme_like l
+       JOIN meme m ON m.id = l.meme_id
+      WHERE l.meme_id = $1 AND l.removed_at IS NULL AND l.user_id <> m.uploader_id`,
     [memeId]
   );
   return row.count;

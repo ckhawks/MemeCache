@@ -104,3 +104,22 @@
     animation: none;
   }
 }
+
+// The count on the viewer's own meme, which they cannot like: no hover, no pointer.
+.wrapper.static,
+.pill.static {
+  cursor: default;
+
+  &:hover {
+    background-color: var(--background-color);
+    border-color: var(--border-color);
+  }
+
+  &:hover > * {
+    color: var(--sub-text-color);
+  }
+}
+
+.wrapper.static:hover {
+  background: none;
+}

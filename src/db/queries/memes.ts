@@ -71,8 +71,11 @@ export const CARD_COLUMNS = `
   u.username,
   u.avatar_s3_key AS "avatarKey",
   ${karmaSql('m.uploader_id')} AS karma,
+  -- Likes from others. Uploaders cannot like their own memes, and ones from before that
+  -- rule are left out here, as karma always left them out.
   (
-    SELECT count(*)::int FROM meme_like l WHERE l.meme_id = m.id AND l.removed_at IS NULL
+    SELECT count(*)::int FROM meme_like l
+     WHERE l.meme_id = m.id AND l.removed_at IS NULL AND l.user_id <> m.uploader_id
   ) AS "likeCount",
   m.view_count AS "viewCount",
   m.width,

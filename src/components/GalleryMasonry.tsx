@@ -166,6 +166,7 @@ export function GalleryMasonry(props: {
               userId={props.currentUserId}
               liked={meme.hasLiked}
               likes={meme.likeCount}
+              own={props.currentUserId === meme.uploaderId}
             />
           </div>
         </div>

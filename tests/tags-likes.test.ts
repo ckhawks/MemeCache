@@ -140,11 +140,23 @@ describe('likes', () => {
     const bob = await makeUser('bob');
     const meme = await makeMeme(alice);
 
+    const carol = await makeUser('carol');
+
     expect(await setLike(meme, bob, true)).toBe(1);
     expect(await setLike(meme, bob, true)).toBe(1);
-    expect(await setLike(meme, alice, true)).toBe(2);
+    expect(await setLike(meme, carol, true)).toBe(2);
     expect(await setLike(meme, bob, false)).toBe(1);
     expect(await setLike(meme, bob, false)).toBe(1);
+  });
+
+  it("leaves the uploader's own like out of the count", async () => {
+    const alice = await makeUser('alice');
+    const bob = await makeUser('bob');
+    const meme = await makeMeme(alice);
+
+    // From before the like route refused these.
+    expect(await setLike(meme, alice, true)).toBe(0);
+    expect(await setLike(meme, bob, true)).toBe(1);
   });
 });
 

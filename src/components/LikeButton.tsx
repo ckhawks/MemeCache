@@ -14,6 +14,8 @@ export default function LikeButton(props: {
   userId: string;
   // A pill with a word, for the meme page, instead of the bare icon used on cards.
   labeled?: boolean;
+  // The viewer's own meme: the count shows, but it cannot be liked.
+  own?: boolean;
 }) {
   const [liked, setLiked] = useState(props.liked);
   const [likes, setLikes] = useState<number>(props.likes);
@@ -74,14 +76,37 @@ export default function LikeButton(props: {
   useEffect(
     () =>
       onLikeRequest(props.memeId, () => {
+        if (props.own) {
+          return;
+        }
         if (!likedRef.current) {
           void setLike(true);
         }
         setPulse(true);
         setTimeout(() => setPulse(false), 450);
       }),
-    [props.memeId, setLike]
+    [props.memeId, props.own, setLike]
   );
+
+  if (props.own) {
+    const ownLabel = likes === 1 ? '1 like' : `${likes} likes`;
+    if (props.labeled) {
+      return (
+        <span className={`${styles['pill']} ${styles['static']}`} aria-label={ownLabel}>
+          <Heart size={16} />
+          Likes · {likes}
+        </span>
+      );
+    }
+    return (
+      <Tooltip label={ownLabel} align="end">
+        <span className={`${styles['wrapper']} ${styles['static']}`} aria-label={ownLabel}>
+          <Heart size={14} className={styles['icon']} />
+          <span className={styles['likes']}>{likes}</span>
+        </span>
+      </Tooltip>
+    );
+  }
 
   const label = props.userId === '' ? 'Log in to like' : liked ? 'Unlike' : 'Like';
 

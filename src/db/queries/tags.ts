@@ -222,7 +222,8 @@ export async function listTagRows(options: {
   const rows = await db<TagRow>(
     `WITH standing AS (
        SELECT mt.tag_id, m.id, m.slug, m.content_type, m.created_at,
-              (SELECT count(*) FROM meme_like l WHERE l.meme_id = m.id AND l.removed_at IS NULL) AS likes
+              (SELECT count(*) FROM meme_like l
+                WHERE l.meme_id = m.id AND l.removed_at IS NULL AND l.user_id <> m.uploader_id) AS likes
          FROM meme_tag mt
          JOIN meme m ON m.id = mt.meme_id
         WHERE m.deleted_at IS NULL

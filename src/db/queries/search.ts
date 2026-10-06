@@ -230,7 +230,11 @@ export async function searchMemes(
               count(*) OVER () AS total
          FROM matched mt
          LEFT JOIN (
-           SELECT meme_id, count(*) AS likes FROM meme_like WHERE removed_at IS NULL GROUP BY meme_id
+           SELECT l.meme_id, count(*) AS likes
+             FROM meme_like l
+             JOIN meme lm ON lm.id = l.meme_id
+            WHERE l.removed_at IS NULL AND l.user_id <> lm.uploader_id
+            GROUP BY l.meme_id
          ) l ON l.meme_id = mt.id
         ORDER BY mt.score DESC, likes DESC, mt.created_at DESC, mt.id DESC
         LIMIT $5 OFFSET $6
