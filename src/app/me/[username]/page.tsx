@@ -12,9 +12,7 @@ import { avatarUrl } from '@/util/avatarUrl';
 import { displayUsername } from '@/auth/username';
 import { getKarmaBreakdown, getProfile, getProfileStats, getTrust } from '@/db/queries/users';
 import { isAdmin, isModerator } from '@/auth/role';
-import TrustOverride from './TrustOverride';
-import AdminRename from './AdminRename';
-import AdminDeleteUser from './AdminDeleteUser';
+import ModerateUserButton from '@/components/ModerateUserButton';
 import { findRenamedUsername, listUsernameHistory } from '@/db/queries/usernames';
 import { countMemes, listMemes } from '@/db/queries/memes';
 import { getFeedView } from '@/server/feedView';
@@ -198,6 +196,14 @@ export default async function Profile(props: {
             {user && !isCurrentUser && (
               <div className={p.actions}>
                 <FollowButton userId={profile.id} username={profile.username} following={following} />
+                {/* Admins only. Trust, rename and delete live in its dialog. */}
+                {isAdmin(user) && (
+                  <ModerateUserButton
+                    userId={profile.id}
+                    username={profile.username}
+                    trust={{ override: trust.override, held: trust.held }}
+                  />
+                )}
               </div>
             )}
           </section>
@@ -211,13 +217,6 @@ export default async function Profile(props: {
                 ? 'An admin set this.'
                 : `${trust.approved} of ${trust.approved + trust.rejected} judged contributions were approved; this lifts once more than half are.`}
             </p>
-          )}
-          {user && isAdmin(user) && !isCurrentUser && (
-            <>
-              <TrustOverride userId={profile.id} override={trust.override} />
-              <AdminRename userId={profile.id} username={profile.username} />
-              <AdminDeleteUser userId={profile.id} username={profile.username} />
-            </>
           )}
 
           <div className={styles['feed-header']}>

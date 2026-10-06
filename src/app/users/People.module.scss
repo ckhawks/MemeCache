@@ -1,0 +1,31 @@
+// Browse people. The rows, strips and thumbnails come from Browse tags (../tags/Browse.module.scss);
+// this adds the avatar beside each name.
+
+.person {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.avatar {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 100%;
+  object-fit: cover;
+  border: 1px solid var(--border-color);
+}
+
+.none {
+  margin: 0;
+  font-size: 14px;
+  color: var(--sub-text-color);
+}
+
+// Four sorts can outgrow a phone; they wrap rather than push the page sideways.
+.sorts {
+  flex-wrap: wrap;
+  max-width: 100%;
+}

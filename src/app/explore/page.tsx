@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Hash } from 'react-feather';
+import { Hash, Users } from 'react-feather';
 import styles from '../main.module.scss';
 import NavigationBar from '@/components/NavigationBar';
 import { getUserFromAccessToken } from '@/auth/lib';
@@ -94,6 +94,12 @@ export default async function Explore(props: {
                 >
                   <Hash size={14} /> Browse tags
                 </Link>
+                <Link
+                  href="/users"
+                  className={`${styles.button} ${styles['button-secondary']} ${styles['button-small']}`}
+                >
+                  <Users size={14} /> People
+                </Link>
                 <FeedSort basePath="/explore" sort={sort} freshSeed={freshSeed} signedIn={!!user} />
                 <FeedViewToggle view={view} />
               </div>
@@ -102,7 +108,7 @@ export default async function Explore(props: {
           {sort === 'foryou' && !followsAny && (
             <div className={styles['feed-prompt']}>
               <p>
-                You do not follow any tags or people yet. Follow a few tags on <Link href="/tags">Browse tags</Link> or on any tag&apos;s page, or follow people from their profiles, and their memes will come first here. Until then it shows everything.
+                You do not follow any tags or people yet. Follow a few tags on <Link href="/tags">Browse tags</Link> or on any tag&apos;s page, or follow people from their profiles or <Link href="/users">People</Link>, and their memes will come first here. Until then it shows everything.
               </p>
             </div>
           )}

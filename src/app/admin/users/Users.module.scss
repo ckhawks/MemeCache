@@ -1,0 +1,157 @@
+// The admin users table. The search and toggles sit above it and wrap on phones; the table
+// itself scrolls sideways inside its box.
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.search {
+  display: flex;
+  gap: 8px;
+  flex: 1 1 260px;
+  max-width: 420px;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  font-size: 14px;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color-hover);
+  border-radius: 6px;
+
+  &:focus {
+    outline: none;
+    border-color: var(--text-color);
+    box-shadow: 0 0 0 3px var(--hover-background-color);
+  }
+}
+
+.total {
+  font-size: 13px;
+  color: var(--sub-text-color);
+}
+
+.tableWrap {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  white-space: nowrap;
+
+  th,
+  td {
+    padding: 8px 12px;
+    text-align: left;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  th {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--sub-text-color);
+    background-color: var(--hover-background-color);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  tbody tr:hover {
+    background-color: var(--hover-background-color);
+  }
+
+  code {
+    font-size: 13px;
+    color: var(--mostly-text-color);
+  }
+}
+
+.numeric {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+
+  .sortLink {
+    justify-content: flex-end;
+  }
+}
+
+.sortLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--sub-text-color);
+
+  &:hover {
+    color: var(--text-color);
+  }
+}
+
+.sorted {
+  color: var(--text-color);
+}
+
+.user {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  color: var(--text-color);
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 100%;
+  object-fit: cover;
+  border: 1px solid var(--border-color);
+}
+
+.muted {
+  color: var(--sub-text-color);
+}
+
+.held {
+  color: var(--danger-color);
+}
+
+// Shown only when asked for, and greyed so they read as gone.
+.deleted td {
+  color: var(--sub-text-color);
+
+  .user {
+    color: var(--sub-text-color);
+    font-style: italic;
+  }
+}
+
+.empty {
+  padding: 24px 12px !important;
+  text-align: center !important;
+  color: var(--sub-text-color);
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px 0 40px;
+}
