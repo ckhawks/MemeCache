@@ -19,7 +19,7 @@ describe('settings', () => {
   it('reads defaults for a member who changed nothing, and for visitors', async () => {
     const alice = await makeUser('alice');
     expect(await getSettings(alice)).toEqual(defaultSettings());
-    expect(await getSettings(undefined)).toEqual({ warning_display: 'blur', theme: null });
+    expect(await getSettings(undefined)).toEqual({ warning_display: 'blur', theme: null, profile_color: null });
     expect(await getSetting(alice, 'theme')).toBeNull();
     expect(await getSetting('not-a-uuid', 'warning_display')).toBe('blur');
     expect(await getSetting(randomUUID(), 'warning_display')).toBe('blur');
@@ -29,7 +29,7 @@ describe('settings', () => {
     const alice = await makeUser('alice');
     await setSetting(alice, 'theme', 'dark');
     await setWarningDisplay(alice, 'show');
-    expect(await getSettings(alice)).toEqual({ warning_display: 'show', theme: 'dark' });
+    expect(await getSettings(alice)).toEqual({ warning_display: 'show', theme: 'dark', profile_color: null });
     expect(await getWarningDisplay(alice)).toBe('show');
     expect(await rows(alice)).toHaveLength(2);
 

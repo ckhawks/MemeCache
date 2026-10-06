@@ -1,6 +1,7 @@
 import { db } from '@/db/db';
 import { isUuid } from './ids';
 import { WARNING_DISPLAYS, type WarningDisplay } from '@/constants/contentWarnings';
+import { isProfileColor, type ProfileColor } from '@/constants/profileColors';
 
 // Per-user settings (migration 018). One row per user per setting in user_setting, holding
 // a jsonb value. Adding a setting means adding it to SETTINGS below with its default and a
@@ -31,6 +32,12 @@ export const SETTINGS = {
   theme: spec<Theme | null>({
     default: null,
     valid: (value): value is Theme | null => value === null || value === 'light' || value === 'dark',
+  }),
+  // The tint on the member's profile page, from the palette in src/constants/profileColors.
+  // Null: no color, the plain header.
+  profile_color: spec<ProfileColor | null>({
+    default: null,
+    valid: (value): value is ProfileColor | null => value === null || isProfileColor(value),
   }),
 };
 

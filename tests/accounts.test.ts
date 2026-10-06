@@ -68,6 +68,7 @@ async function busyAlice() {
     tag.id,
   ]);
   await setSetting(alice, 'theme', 'dark');
+  await setSetting(alice, 'profile_color', 'teal');
   await db(`INSERT INTO invite_code (code, created_by) VALUES ('ALICE1', $1)`, [alice]);
   await db(
     `INSERT INTO notification (user_id, kind, actor_id, meme_id) VALUES ($1, 'like', $2, $3)`,
@@ -128,7 +129,7 @@ describe('deleting an account', () => {
     expect(await count(`user_setting WHERE user_id = $1`, [alice])).toBe(0);
     expect(await count(`notification WHERE user_id = $1`, [alice])).toBe(0);
     expect(await count(`invite_code WHERE created_by = $1 AND disabled_at IS NULL`, [alice])).toBe(0);
-    expect(await getSettings(alice)).toEqual({ warning_display: 'blur', theme: null });
+    expect(await getSettings(alice)).toEqual({ warning_display: 'blur', theme: null, profile_color: null });
 
     // What they gave everyone stays.
     expect(await getMeme(upload)).toMatchObject({ uploaderId: alice, username });

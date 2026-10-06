@@ -14,6 +14,8 @@ import f from '@/components/AuthForm.module.scss';
 import BackButton from '@/components/BackButton';
 import WarningDisplaySetting from './WarningDisplaySetting';
 import { getWarningDisplay } from '@/db/queries/warnings';
+import ProfileColorSetting from './ProfileColorSetting';
+import { getSetting } from '@/db/queries/settings';
 import EditUsernameForm from './EditUsernameForm';
 import YourTags from '@/components/YourTags';
 import { listTagPreferences } from '@/db/queries/tagPreferences';
@@ -57,6 +59,7 @@ export default async function Profile(props: { params: Promise<{ username: strin
   }
 
   const warningDisplay = await getWarningDisplay(userFromDb.id);
+  const profileColor = await getSetting(userFromDb.id, 'profile_color');
   const cooldown = await getUsernameCooldown(userFromDb.id);
   const tagPreferences = await listTagPreferences(userFromDb.id);
   const sessions = await listSessions(userFromDb.id);
@@ -126,6 +129,13 @@ export default async function Profile(props: { params: Promise<{ username: strin
                   />
                 </div>
               </Row>
+            </div>
+            <div className={'card'} style={{ marginTop: '16px' }}>
+              <h5>Profile color</h5>
+              <p style={{ fontSize: '14px' }}>
+                A color for your profile page, in a shade that suits the light and the dark theme.
+              </p>
+              <ProfileColorSetting color={profileColor} />
             </div>
             <div className={'card'} style={{ marginTop: '16px' }}>
               <h5>Content warnings</h5>

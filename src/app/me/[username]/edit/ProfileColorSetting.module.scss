@@ -1,0 +1,55 @@
+// Profile color swatches. Each button carries its two shades inline and shows the one for
+// the current theme; the chosen one gets a ring a little away from its edge.
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.swatch {
+  --swatch: var(--swatch-light);
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--swatch) 70%, var(--text-color));
+  border-radius: 100%;
+  background-color: var(--swatch);
+  cursor: pointer;
+  transition: transform 0.1s ease;
+
+  &:hover:not(:disabled) {
+    transform: scale(1.1);
+  }
+
+  &[aria-pressed='true'] {
+    outline: 2px solid var(--text-color);
+    outline-offset: 2px;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--text-color);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+}
+
+:global([data-theme='dark']) .swatch {
+  --swatch: var(--swatch-dark);
+}
+
+// No color: an empty circle struck through.
+.none {
+  border-color: var(--border-color-hover);
+  background-color: var(--background-color);
+  background-image: linear-gradient(
+    to top right,
+    transparent calc(50% - 1px),
+    var(--sub-text-color) calc(50% - 1px),
+    var(--sub-text-color) calc(50% + 1px),
+    transparent calc(50% + 1px)
+  );
+}
