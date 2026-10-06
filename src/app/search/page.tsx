@@ -22,7 +22,7 @@ import { existingVisitorKey } from '@/server/visitor';
 export async function generateMetadata(props: { searchParams: Promise<{ q?: string }> }) {
   const q = (await props.searchParams).q?.trim();
   return {
-    title: q ? `${q} · Search · MemeCache` : 'Search · MemeCache',
+    title: q ? `${q} · Search` : 'Search',
   };
 }
 

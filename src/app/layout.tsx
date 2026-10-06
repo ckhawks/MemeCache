@@ -14,7 +14,11 @@ import { getSettings } from '@/db/queries/settings';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'MemeCache',
+  // Pages set their own title, e.g. 'Explore', which reads "Explore · MemeCache".
+  title: {
+    default: 'MemeCache',
+    template: '%s · MemeCache',
+  },
   description: 'Meme sharing and storage',
 };
 

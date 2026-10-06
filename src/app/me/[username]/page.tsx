@@ -9,6 +9,7 @@ import FeedPager from '@/components/FeedPager';
 import { GalleryMasonry } from '@/components/GalleryMasonry';
 import { getUserFromAccessToken } from '@/auth/lib';
 import { avatarUrl } from '@/util/avatarUrl';
+import { displayUsername } from '@/auth/username';
 import { getKarmaBreakdown, getProfile, getProfileStats, getTrust } from '@/db/queries/users';
 import { isAdmin, isModerator } from '@/auth/role';
 import TrustOverride from './TrustOverride';
@@ -239,4 +240,13 @@ export default async function Profile(props: {
       <FooterBar />
     </>
   );
+}
+
+export async function generateMetadata(props: { params: Promise<{ username: string }> }) {
+  const params = await props.params;
+  const profile = await getProfile(params.username);
+  if (!profile) {
+    return { title: 'User not found' };
+  }
+  return { title: profile.deletedAt ? 'Deleted user' : displayUsername(profile.username) };
 }

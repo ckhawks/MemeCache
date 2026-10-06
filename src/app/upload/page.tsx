@@ -7,7 +7,7 @@ import { getUserFromAccessToken } from '@/auth/lib';
 import UploadComponent from './UploadComponent';
 
 export const metadata = {
-  title: 'Upload · MemeCache',
+  title: 'Upload',
 };
 
 export default async function Upload() {

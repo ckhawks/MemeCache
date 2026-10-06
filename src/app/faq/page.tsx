@@ -4,7 +4,7 @@ import FooterBar from '@/components/FooterBar';
 import Faq from '@/components/Faq';
 
 export const metadata = {
-  title: 'FAQ · MemeCache',
+  title: 'FAQ',
 };
 
 // The same questions as the signed-out home page, for members, who never see that page.

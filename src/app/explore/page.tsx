@@ -21,6 +21,10 @@ import FooterBar from '@/components/FooterBar';
 import FeedPager from '@/components/FeedPager';
 import SearchBox from '@/components/SearchBox';
 
+export const metadata = {
+  title: 'Explore',
+};
+
 export default async function Explore(props: {
   searchParams: Promise<{ cursor?: string; sort?: string; seed?: string; page?: string }>;
 }) {

@@ -12,6 +12,10 @@ import TagFollowButtons from '@/components/TagFollowButtons';
 import { getUserFromAccessToken } from '@/auth/lib';
 import { getTagPreferences } from '@/db/queries/tagPreferences';
 
+export const metadata = {
+  title: 'Browse tags',
+};
+
 // Browse by tag: a shuffled set of tags, each with a strip of its most-liked memes. The
 // shuffle's seed rides in the URL, so "More tags" continues the same order without repeats.
 // Members get Follow and Mute on each row. Muted tags, and memes carrying them, are left out.

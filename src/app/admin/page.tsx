@@ -6,6 +6,10 @@ import { requireAdmin } from '@/server/requireAdmin';
 import { countOpenReports } from '@/db/queries/reports';
 import { getActivityNumbers, listFailedSearches } from '@/db/queries/events';
 
+export const metadata = {
+  title: 'Admin',
+};
+
 const TOOLS = [
   {
     href: '/admin/design',

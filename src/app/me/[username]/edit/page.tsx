@@ -29,6 +29,10 @@ import { listSessions } from '@/db/queries/sessions';
 import SessionList from '@/components/SessionList';
 import DeleteAccountForm from './DeleteAccountForm';
 
+export const metadata = {
+  title: 'Edit profile',
+};
+
 export default async function Profile(props: { params: Promise<{ username: string }> }) {
   const params = await props.params;
   const user = await getUserFromAccessToken();

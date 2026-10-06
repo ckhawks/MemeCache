@@ -10,6 +10,10 @@ import { GalleryMasonry } from '../../components/GalleryMasonry';
 import FooterBar from '@/components/FooterBar';
 import FeedPager from '@/components/FeedPager';
 
+export const metadata = {
+  title: 'Library',
+};
+
 export default async function Library(props: { searchParams: Promise<{ cursor?: string }> }) {
   const searchParams = await props.searchParams;
   const user = await getUserFromAccessToken();

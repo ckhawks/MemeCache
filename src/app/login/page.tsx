@@ -5,7 +5,7 @@ import LoginComponent from './LoginComponent';
 import { safeNext } from '@/util/safeNext';
 
 export const metadata = {
-  title: 'Log in · MemeCache',
+  title: 'Log in',
 };
 
 // ?next= is where to land afterwards, set by links to pages that need an account.

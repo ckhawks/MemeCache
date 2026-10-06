@@ -71,3 +71,14 @@ export default async function TagDetails(props: {
     </>
   );
 }
+
+export async function generateMetadata(props: { params: Promise<{ tagName: string }> }) {
+  const params = await props.params;
+  let tagName = params.tagName;
+  try {
+    tagName = decodeURIComponent(params.tagName);
+  } catch {
+    // As on the page: a literal % that is not an escape.
+  }
+  return { title: '#' + tagName };
+}

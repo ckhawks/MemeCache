@@ -7,6 +7,10 @@ import { isModerator } from '@/auth/role';
 import { QUEUE_TASKS, type QueueTask } from '@/constants/queue';
 import QueueClient from './QueueClient';
 
+export const metadata = {
+  title: 'Queue',
+};
+
 // One meme at a time that needs something: its text typed out or checked, or its tags
 // added or voted on. The work happens in QueueClient; this page only checks the session.
 export default async function Queue(props: { searchParams: Promise<{ task?: string }> }) {

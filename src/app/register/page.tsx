@@ -4,7 +4,7 @@ import AuthLayout from '@/components/AuthLayout';
 import RegisterComponent from './RegisterComponent';
 
 export const metadata = {
-  title: 'Register · MemeCache',
+  title: 'Register',
 };
 
 export default async function RegisterPage(props: { searchParams: Promise<{ code?: string | string[] }> }) {
