@@ -69,6 +69,14 @@ const QUESTIONS: { q: string; a: React.ReactNode }[] = [
     ),
   },
   {
+    q: 'Can I put MemeCache on my phone like an app?',
+    a: (
+      <>
+        Yes. On Android, open the menu under your name and tap Install app, or use Chrome&apos;s menu and Install app. On iPhone, open MemeCache in Safari, tap Share, then Add to Home Screen. Installed on Android, MemeCache also shows up in the share sheet, so you can send memes to it from other apps.
+      </>
+    ),
+  },
+  {
     q: 'What is karma?',
     a: (
       <>
