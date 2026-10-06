@@ -55,7 +55,7 @@ const QUESTIONS: { q: string; a: React.ReactNode }[] = [
     q: 'Can I follow people?',
     a: (
       <>
-        Yes. Follow someone from their profile or from <Link href="/users">People</Link>, which lists everyone with a few of their best memes. Their uploads then come first under For you on Explore, alongside memes with the tags you follow, each saying who or which tag put it there. They get a notification the first time you follow them. Profiles show how many followers someone has, but not who they are.
+        Yes. Follow someone from their profile or from <Link href="/users">Browse people</Link>, which lists everyone with a few of their best memes. Their uploads then come first under For you on Explore, alongside memes with the tags you follow, each saying who or which tag put it there. They get a notification the first time you follow them. Profiles show how many followers someone has, but not who they are.
       </>
     ),
   },

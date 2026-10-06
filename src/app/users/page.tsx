@@ -15,7 +15,7 @@ import { avatarUrl } from '@/util/avatarUrl';
 import { isPeopleSort, listPeople, type PeopleSort } from '@/db/queries/userLists';
 
 export const metadata = {
-  title: 'People',
+  title: 'Browse people',
 };
 
 const SORTS: { sort: PeopleSort; label: string }[] = [
@@ -57,7 +57,7 @@ export default async function BrowsePeople(props: {
       <main className={styles.main}>
         <div className={styles.content}>
           <div className={styles.description}>
-            <h1>People</h1>
+            <h1>Browse people</h1>
             <div className={b.intro}>
               <p>Everyone on MemeCache. Follow someone and their uploads come first under For you on Explore.</p>
               <nav className={`${s.sort} ${p.sorts}`} aria-label="Sort">

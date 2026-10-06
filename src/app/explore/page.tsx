@@ -98,7 +98,7 @@ export default async function Explore(props: {
                   href="/users"
                   className={`${styles.button} ${styles['button-secondary']} ${styles['button-small']}`}
                 >
-                  <Users size={14} /> People
+                  <Users size={14} /> Browse people
                 </Link>
                 <FeedSort basePath="/explore" sort={sort} freshSeed={freshSeed} signedIn={!!user} />
                 <FeedViewToggle view={view} />
@@ -108,7 +108,7 @@ export default async function Explore(props: {
           {sort === 'foryou' && !followsAny && (
             <div className={styles['feed-prompt']}>
               <p>
-                You do not follow any tags or people yet. Follow a few tags on <Link href="/tags">Browse tags</Link> or on any tag&apos;s page, or follow people from their profiles or <Link href="/users">People</Link>, and their memes will come first here. Until then it shows everything.
+                You do not follow any tags or people yet. Follow a few tags on <Link href="/tags">Browse tags</Link> or on any tag&apos;s page, or follow people from their profiles or <Link href="/users">Browse people</Link>, and their memes will come first here. Until then it shows everything.
               </p>
             </div>
           )}
