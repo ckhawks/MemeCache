@@ -17,6 +17,9 @@ import AdminDeleteUser from './AdminDeleteUser';
 import { findRenamedUsername, listUsernameHistory } from '@/db/queries/usernames';
 import { countMemes, listMemes } from '@/db/queries/memes';
 import { getFeedView } from '@/server/feedView';
+import { getSetting } from '@/db/queries/settings';
+import { PROFILE_COLOR_SHADES } from '@/constants/profileColors';
+import type { CSSProperties } from 'react';
 
 const ROLE_BADGES: Record<string, string> = {
   admin: 'Admin',
@@ -75,13 +78,14 @@ export default async function Profile(props: {
   }
 
   const filter = { viewerId: user?.id, uploaderId: profile.id };
-  const [page, total, stats, karma, trust, nameHistory] = await Promise.all([
+  const [page, total, stats, karma, trust, nameHistory, profileColor] = await Promise.all([
     listMemes(filter, searchParams.cursor),
     countMemes(filter),
     getProfileStats(profile.id),
     getKarmaBreakdown(profile.id),
     getTrust(profile.id),
     listUsernameHistory(profile.id),
+    getSetting(profile.id, 'profile_color'),
   ]);
 
   const isCurrentUser = user?.id === profile.id;
@@ -89,8 +93,18 @@ export default async function Profile(props: {
   const showTrust = trust.held && (isCurrentUser || (!!user && isModerator(user)));
   const badge = ROLE_BADGES[stats.role];
 
+  // The member's profile color, if they chose one: both shades go on the header, and the
+  // stylesheet picks the one for the current theme.
+  const shades = profileColor ? PROFILE_COLOR_SHADES[profileColor] : null;
+  const headerStyle = shades
+    ? ({
+        '--profile-accent-light': shades.light,
+        '--profile-accent-dark': shades.dark,
+      } as CSSProperties)
+    : undefined;
+
   const statItems = [
-    { value: karma.post + karma.curation, label: 'Karma' },
+    { value: karma.post + karma.curation, label: 'Karma', accent: true },
     // Post karma is exactly the likes others gave their uploads.
     { value: karma.post, label: 'Post karma' },
     { value: karma.curation, label: 'Curation karma' },
@@ -104,7 +118,7 @@ export default async function Profile(props: {
       <NavigationBar />
       <main className={styles.main}>
         <div className={styles.content}>
-          <section className={p.header}>
+          <section className={shades ? `${p.header} ${p.tinted}` : p.header} style={headerStyle}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={avatarUrl(profile.username, profile.avatarS3Key)}
@@ -150,7 +164,9 @@ export default async function Profile(props: {
               {statItems.map((item) => (
                 <div key={item.label} className={p.stat}>
                   <dt className={p.statLabel}>{item.label}</dt>
-                  <dd className={p.statValue}>{item.value.toLocaleString()}</dd>
+                  <dd className={item.accent ? `${p.statValue} ${p.statAccent}` : p.statValue}>
+                    {item.value.toLocaleString()}
+                  </dd>
                 </div>
               ))}
             </dl>

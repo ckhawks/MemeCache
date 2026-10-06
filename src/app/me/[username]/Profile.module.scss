@@ -40,6 +40,42 @@
   }
 }
 
+// A profile color (src/constants/profileColors.ts). The page sets both shades on the header
+// and this picks the one for the theme: a soft band of it fading down from the top, a hint
+// of it in the border, a ring around the avatar and the karma figure in it. Without one the
+// header stays plain.
+.tinted {
+  --profile-accent: var(--profile-accent-light);
+  --profile-band: 14%;
+  border-color: color-mix(in srgb, var(--profile-accent) 22%, var(--border-color));
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--profile-accent) var(--profile-band), transparent) 0,
+    color-mix(in srgb, var(--profile-accent) calc(var(--profile-band) / 3), transparent) 96px,
+    transparent 168px
+  );
+
+  .avatar {
+    border-color: transparent;
+    outline: 2px solid var(--profile-accent);
+    outline-offset: 3px;
+  }
+
+  .badge {
+    border-color: color-mix(in srgb, var(--profile-accent) 50%, var(--border-color-hover));
+  }
+
+  .statAccent {
+    color: var(--profile-accent);
+  }
+}
+
+// The dark shades are paler, so a lighter mix gives the band the same weight.
+:global([data-theme='dark']) .tinted {
+  --profile-accent: var(--profile-accent-dark);
+  --profile-band: 12%;
+}
+
 .identity {
   grid-area: identity;
   align-self: center;
