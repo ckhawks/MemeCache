@@ -75,6 +75,9 @@ export interface Relation {
   kind: RelationKind;
   // 0 to 1, higher is closer. For ordering matches, not for display.
   score: number;
+  // A duplicate that is the very same picture, only re-encoded or resized (isExactCopy).
+  // The upload refuses those instead of warning. Never set on a template.
+  exact?: boolean;
 }
 
 interface Gray {
@@ -742,6 +745,62 @@ export function detailWorstRow(a: Fingerprint, b: Fingerprint, place: Placement)
     .worstRow;
 }
 
+// Exact copy: the whole images line up with no crop, and on the wide thumbnail next to no
+// block disagrees anywhere, not even one row's worth. What survives that is the same file
+// re-encoded, resized or given a plain border; a crop, a watermark or a changed word does
+// not. The upload refuses these, so every limit sits well inside the duplicate ones: a
+// false refusal costs more than a missed one, which still gets the duplicate warning.
+// On the synthetic variants a re-encode, a resize or a WebP copy scored 0 on both detail
+// measures, while one added word in a caption scored about 0.02 overall and 0.09 in its row,
+// and a corner watermark 0.015 and 0.06 to 0.09. One stray block in a row of 32 is allowed.
+const EXACT_CORRELATION = 0.97;
+const EXACT_DISAGREEMENT = 0.02;
+const EXACT_SHIFT = 0.01;
+// Width over height may differ by this share, from rounding when it was resized.
+const EXACT_ASPECT = 0.01;
+const EXACT_DETAIL_DISAGREEMENT = 0.008;
+const EXACT_DETAIL_ROW = 0.04;
+
+export interface Exactness {
+  correlation: number;
+  disagreement: number;
+  shift: number;
+  aspect: number;
+  detailDisagreement: number;
+  detailWorstRow: number;
+}
+
+// What isExactCopy judges, measured on the whole images. `whole` is their comparison when
+// the caller has it already.
+export function measureExactness(
+  a: Fingerprint,
+  b: Fingerprint,
+  whole = compareRegions(a.regions[0], b.regions[0])
+): Exactness {
+  const fine = refine(a.detail, b.detail, whole.place, [0.005, 0.0025, 0.00125], 1);
+  const detail = compareBlocks(a.detail, b.detail, fine.place, DETAIL_BLOCK_CORRELATION, BLOCK, DETAIL_BLOCK_HEIGHT);
+  return {
+    correlation: whole.correlation,
+    disagreement: whole.disagreement,
+    shift: whole.shift,
+    aspect: Math.abs(a.regions[0].aspect / b.regions[0].aspect - 1),
+    detailDisagreement: detail.disagreement,
+    detailWorstRow: detail.worstRow,
+  };
+}
+
+export function isExactCopy(a: Fingerprint, b: Fingerprint, whole?: RegionComparison): boolean {
+  const m = measureExactness(a, b, whole);
+  return (
+    m.correlation >= EXACT_CORRELATION &&
+    m.disagreement <= EXACT_DISAGREEMENT &&
+    m.shift <= EXACT_SHIFT &&
+    m.aspect <= EXACT_ASPECT &&
+    m.detailDisagreement <= EXACT_DETAIL_DISAGREEMENT &&
+    m.detailWorstRow <= EXACT_DETAIL_ROW
+  );
+}
+
 // Whether `other` is this meme with its caption bar cut off: it fits the picture under the
 // caption better than it fits the whole. A thin bar is within the crop a duplicate may
 // have, so the whole comparison alone would call them the same meme.
@@ -769,7 +828,11 @@ export function relate(a: Fingerprint, b: Fingerprint): Relation | null {
       !isCaptionRemoved(a, wholeB, whole.shift) &&
       !isCaptionRemoved(b, wholeA, whole.shift)
     ) {
-      return { kind: 'duplicate', score: whole.correlation * (1 - whole.disagreement) };
+      return {
+        kind: 'duplicate',
+        score: whole.correlation * (1 - whole.disagreement),
+        exact: isExactCopy(a, b, whole),
+      };
     }
   }
 

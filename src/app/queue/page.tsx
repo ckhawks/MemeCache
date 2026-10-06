@@ -12,7 +12,8 @@ export const metadata = {
 };
 
 // One meme at a time that needs something: its text typed out or checked, or its tags
-// added or voted on. The work happens in QueueClient; this page only checks the session.
+// added or voted on. Or two memes that look alike, to say whether they are the same meme.
+// The work happens in QueueClient; this page only checks the session.
 export default async function Queue(props: { searchParams: Promise<{ task?: string }> }) {
   const searchParams = await props.searchParams;
   const user = await getUserFromAccessToken();

@@ -1,7 +1,9 @@
 import { mayRelate, relate, type Fingerprint, type RelationKind } from '@/server/mediaHash';
 import { fingerprintMedia } from '@/server/mediaHashDecode';
+import { STILL_IMAGE_TYPES } from '@/constants/mimeTypes';
 import {
   getFingerprints,
+  getMemeLinks,
   listMemeHashes,
   saveFingerprint,
   saveFingerprintError,
@@ -19,6 +21,8 @@ export interface FoundMatch {
   memeId: string;
   kind: RelationKind;
   score: number;
+  // The very same picture (isExactCopy in src/server/mediaHash.ts).
+  exact?: boolean;
 }
 
 // Duplicates first, then the closest.
@@ -65,24 +69,65 @@ export function matchAll(fingerprints: Map<string, Fingerprint>): MediaMatch[] {
   return matches;
 }
 
-// Fingerprints a newly stored meme and records what it matches. Never throws: a meme that
-// cannot be fingerprinted is still a meme, and the failure is recorded for the backfill.
-export async function fingerprintAndMatch(memeId: string, file: Buffer, contentType: string) {
+// The live meme an upload is an exact copy of: an exact match that is a still picture
+// itself. Null when there is none.
+export async function findExactCopy(matches: FoundMatch[]): Promise<{ id: string; slug: string } | null> {
+  const exact = matches.filter((m) => m.exact);
+  if (exact.length === 0) {
+    return null;
+  }
+  const memes = await getMemeLinks(exact.map((m) => m.memeId));
+  const copyOf = memes.find((m) => STILL_IMAGE_TYPES.includes(m.contentType));
+  return copyOf ? { id: copyOf.id, slug: copyOf.slug } : null;
+}
+
+// A file's fingerprint and what it matches, or why it has none.
+export type Fingerprinted = { fingerprint: Fingerprint; matches: FoundMatch[] } | { error: string };
+
+// Fingerprints a file and finds the memes it matches, before or after it is stored (a
+// stored meme is left out of its own matches by excludeId). Never throws. The upload runs
+// this before storing a still image, to refuse an exact copy; fingerprintAndMatch after.
+export async function fingerprintAndFind(
+  file: Buffer,
+  contentType: string,
+  excludeId?: string
+): Promise<Fingerprinted> {
   let fingerprint: Fingerprint;
   try {
     fingerprint = await fingerprintMedia(file, contentType);
   } catch (error) {
-    console.error(`Could not fingerprint meme ${memeId}:`, error);
-    await saveFingerprintError(memeId, error instanceof Error ? error.message : String(error)).catch(
-      (err) => console.error('Could not record the fingerprint failure:', err)
-    );
-    return;
+    console.error(`Could not fingerprint ${excludeId ? `meme ${excludeId}` : 'an upload'}:`, error);
+    return { error: error instanceof Error ? error.message : String(error) };
   }
   try {
-    await saveFingerprint(memeId, fingerprint);
-    const found = await findMatches(fingerprint, memeId);
-    await saveMatches(found.map((m) => ({ memeId, otherId: m.memeId, kind: m.kind, score: m.score })));
+    return { fingerprint, matches: await findMatches(fingerprint, excludeId) };
+  } catch (error) {
+    // The fingerprint is still worth keeping; the backfill's rebuild finds the matches.
+    console.error('Could not look for matches:', error);
+    return { fingerprint, matches: [] };
+  }
+}
+
+// Records a stored meme's fingerprint and matches, or that it could not be fingerprinted,
+// so the backfill moves on. Never throws: a meme without a fingerprint is still a meme.
+export async function saveFingerprinted(memeId: string, result: Fingerprinted) {
+  try {
+    if ('error' in result) {
+      await saveFingerprintError(memeId, result.error);
+      return;
+    }
+    await saveFingerprint(memeId, result.fingerprint);
+    await saveMatches(
+      result.matches
+        .filter((m) => m.memeId !== memeId)
+        .map((m) => ({ memeId, otherId: m.memeId, kind: m.kind, score: m.score }))
+    );
   } catch (error) {
     console.error(`Could not store the fingerprint or matches of meme ${memeId}:`, error);
   }
+}
+
+// Fingerprints a newly stored meme and records what it matches. Never throws.
+export async function fingerprintAndMatch(memeId: string, file: Buffer, contentType: string) {
+  await saveFingerprinted(memeId, await fingerprintAndFind(file, contentType, memeId));
 }

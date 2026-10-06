@@ -220,6 +220,6 @@ describe('queue', () => {
     // A new tag nobody has judged opens it up again.
     await addTagToMeme(meme, await findOrCreateTag('d', bob), bob);
     expect((await nextQueueItem('tag', dave))?.meme.id).toBe(meme);
-    expect(await countQueue(dave)).toEqual({ transcription: 1, tag: 1 });
+    expect(await countQueue(dave)).toEqual({ transcription: 1, tag: 1, duplicate: 0 });
   });
 });

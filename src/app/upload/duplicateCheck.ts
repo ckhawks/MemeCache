@@ -1,5 +1,5 @@
 import imageCompression from 'browser-image-compression';
-import { supportedVideoTypes } from '@/constants/mimeTypes';
+import { STILL_IMAGE_TYPES, supportedVideoTypes } from '@/constants/mimeTypes';
 import { api } from '@/util/api';
 import type { ThumbMeme } from '@/components/MemeThumbStrip';
 
@@ -56,15 +56,21 @@ async function stillFor(file: File): Promise<Blob> {
   }
 }
 
+// A meme that looks like the picked file. exact: the very same picture, which the upload
+// refuses (only ever set for a still picture).
+export type Lookalike = ThumbMeme & { exact: boolean };
+
 // Memes that look like this file. Empty when there are none or the check could not run:
-// the warning is a courtesy, never a reason to block an upload.
-export async function findLookalikes(file: File): Promise<ThumbMeme[]> {
+// the warning is a courtesy. Only the upload itself refuses anything, and only an exact copy.
+export async function findLookalikes(file: File): Promise<Lookalike[]> {
   try {
     const still = await stillFor(file);
     const formData = new FormData();
     formData.append('file', still, 'still');
-    const result = await api<{ duplicates: ThumbMeme[] }>('/api/upload/check', { body: formData });
-    return result.duplicates;
+    const result = await api<{ duplicates: Lookalike[] }>('/api/upload/check', { body: formData });
+    // What was checked for a GIF or a video is one frame, which the upload never refuses on.
+    const isStill = STILL_IMAGE_TYPES.includes(file.type);
+    return result.duplicates.map((meme) => ({ ...meme, exact: isStill && meme.exact }));
   } catch (error) {
     console.error('The duplicate check failed:', error);
     return [];

@@ -8,13 +8,17 @@ import { HttpError, route } from '@/server/route';
 import { normalizeImportUrl } from '@/server/mediaImport';
 import { isContentWarning } from '@/constants/contentWarnings';
 import { probeMedia } from '@/server/mediaProbe';
-import { after } from 'next/server';
-import { fingerprintAndMatch } from '@/server/mediaMatch';
+import { after, NextResponse } from 'next/server';
+import { findExactCopy, fingerprintAndFind, fingerprintAndMatch, saveFingerprinted } from '@/server/mediaMatch';
+import { isStillImage } from '@/server/mediaHashDecode';
 import { recordEvent } from '@/db/queries/events';
 
 // POST multipart { file, sourceUrl?, warnings* }: stores a new meme. The uploader is the
 // session user. sourceUrl is the post an imported file came from (see /api/import).
 // warnings is repeated once per content warning the uploader ticked.
+//
+// Answers 409 { error, duplicate: slug } instead when the file is an exact copy of a live
+// meme.
 export const POST = route({
   auth: 'required',
   handler: async ({ user, request }) => {
@@ -53,6 +57,35 @@ export const POST = route({
     // Size, length and whether a video has sound (migration 019). Unknown on failure.
     const info = await probeMedia(bytes, file.type);
 
+    // A still picture is fingerprinted before anything is stored, so the very same picture
+    // as a live meme is refused rather than stored twice. That takes tens of milliseconds
+    // (the duplicate check on the upload page does the same work). Anything less certain
+    // (a crop, other text, the same template) only got the page's warning and goes up.
+    // Videos, GIFs and animated WebPs are fingerprinted by one frame, which two different
+    // clips can share, so they are never refused and are fingerprinted after the response.
+    const still = await isStillImage(bytes, file.type);
+    const fingerprinted = still ? await fingerprintAndFind(bytes, file.type) : null;
+    if (fingerprinted && 'matches' in fingerprinted) {
+      const copyOf = await findExactCopy(fingerprinted.matches);
+      if (copyOf) {
+        await recordEvent({
+          kind: 'upload_refused',
+          userId: user.id,
+          memeId: copyOf.id,
+          data: {
+            contentType: file.type,
+            bytes: file.size,
+          },
+        });
+        // The upload page reads duplicate and links to the meme, as it does for an import
+        // of a post already here.
+        return NextResponse.json(
+          { error: 'This meme is already here.', duplicate: copyOf.slug },
+          { status: 409 }
+        );
+      }
+    }
+
     await getS3Client().send(
       new PutObjectCommand({
         Bucket: process.env.MC_AWS_S3_BUCKET,
@@ -80,9 +113,11 @@ export const POST = route({
       throw error;
     }
 
-    // Fingerprinted after the response: the uploader is not kept waiting on it, and a
-    // failure there never fails the upload.
-    after(() => fingerprintAndMatch(id, bytes, file.type));
+    // Stored after the response: the uploader is not kept waiting on it, and a failure
+    // there never fails the upload. Anything not fingerprinted above is fingerprinted then.
+    after(() =>
+      fingerprinted ? saveFingerprinted(id, fingerprinted) : fingerprintAndMatch(id, bytes, file.type)
+    );
 
     await recordEvent({
       kind: 'upload',

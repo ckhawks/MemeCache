@@ -11,6 +11,7 @@ import {
   type ModerationLogRow,
 } from '@/db/queries/moderation';
 import { WARNING_LABELS, type ContentWarning } from '@/constants/contentWarnings';
+import { MATCH_ANSWER_LABELS, type MatchAnswer } from '@/constants/queue';
 
 export const metadata = {
   title: 'Moderation log',
@@ -29,6 +30,8 @@ const ACTION_LABELS: Record<ModerationActionKind, string> = {
   warning_remove: 'removed a content warning from a meme',
   meme_takedown: 'took down a meme',
   user_delete: 'deleted the account of',
+  meme_merge: 'merged a meme into its original',
+  duplicate_answer: 'settled a pair of look-alike memes',
 };
 
 // UTC on purpose, and said so, like the reports page.
@@ -154,6 +157,12 @@ function Details(props: { row: ModerationLogRow }) {
       break;
     case 'meme_takedown':
       text = `Reason: ${data.reason}${data.note ? ` (${data.note})` : ''}`;
+      break;
+    case 'meme_merge':
+      text = `${data.duplicateSlug ?? 'The duplicate'} into ${data.originalSlug ?? 'the original'}`;
+      break;
+    case 'duplicate_answer':
+      text = `Answer: ${MATCH_ANSWER_LABELS[data.answer as MatchAnswer] ?? data.answer}`;
       break;
     case 'report_resolve':
       text = `${data.status === 'actioned' ? 'Deleted the meme' : 'Dismissed'}, closing ${data.reports} ${data.reports === 1 ? 'report' : 'reports'}`;

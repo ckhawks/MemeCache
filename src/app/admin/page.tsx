@@ -5,6 +5,7 @@ import FooterBar from '@/components/FooterBar';
 import { requireAdmin } from '@/server/requireAdmin';
 import { countOpenReports } from '@/db/queries/reports';
 import { getActivityNumbers, listFailedSearches } from '@/db/queries/events';
+import { countAdminPairs } from '@/db/queries/duplicates';
 
 export const metadata = {
   title: 'Admin',
@@ -25,6 +26,11 @@ const TOOLS = [
     href: '/admin/users',
     title: 'Users',
     description: 'Every account with its karma, followers, trust and invite code, sortable, with moderation on each row.',
+  },
+  {
+    href: '/admin/duplicates',
+    title: 'Duplicates',
+    description: 'Memes uploaded twice, to merge into the original, and look-alikes the queue has not settled. Moderators can use this one too.',
   },
   {
     href: '/admin/invites',
@@ -57,8 +63,9 @@ const tileLabel = {
 
 export default async function Admin() {
   const user = await requireAdmin();
-  const [openReports, activity, failedSearches] = await Promise.all([
+  const [openReports, duplicates, activity, failedSearches] = await Promise.all([
     countOpenReports(),
+    countAdminPairs(),
     getActivityNumbers(),
     listFailedSearches(10),
   ]);
@@ -74,6 +81,7 @@ export default async function Admin() {
   // Shown after a tool's title when there is something waiting in it.
   const badges: Record<string, string> = {
     '/admin/reports': openReports.reports > 0 ? `${openReports.reports} open` : '',
+    '/admin/duplicates': duplicates.settled > 0 ? `${duplicates.settled} to merge` : '',
   };
 
   return (

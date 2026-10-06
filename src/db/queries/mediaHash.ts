@@ -10,6 +10,7 @@ import {
   type RelationKind,
 } from '@/server/mediaHash';
 import { isUuid } from './ids';
+import { matchCtes } from './duplicates';
 
 // Media fingerprints and the matches between memes (migration 013). The fingerprint's
 // layout is src/server/mediaHash.ts's; this file only stores and loads it.
@@ -239,22 +240,38 @@ export interface MatchedMeme {
   matchKind: RelationKind;
 }
 
-// Live memes matched to this one, duplicates first, then the closest.
+// Live memes matched to this one, duplicates first, then the closest. A pair people settled
+// (migration 021) takes their answer as its kind, and one settled as different is left out.
 export async function listMatchedMemes(memeId: string, limit = 12): Promise<MatchedMeme[]> {
   if (!isUuid(memeId)) {
     return [];
   }
   return db<MatchedMeme>(
-    `WITH matched AS (
-       SELECT other_id AS id, kind, score FROM meme_media_match WHERE meme_id = $1
+    `WITH ${matchCtes('(a.meme_id = $1 OR a.other_id = $1)')},
+     matched AS (
+       SELECT x.meme_id, x.other_id, x.other_id AS id, x.kind, x.score
+         FROM meme_media_match x WHERE x.meme_id = $1
        UNION ALL
-       SELECT meme_id AS id, kind, score FROM meme_media_match WHERE other_id = $1
+       SELECT x.meme_id, x.other_id, x.meme_id AS id, x.kind, x.score
+         FROM meme_media_match x WHERE x.other_id = $1
+     ),
+     judged AS (
+       SELECT x.id,
+              x.score,
+              CASE v.verdict
+                WHEN 'same_meme' THEN 'duplicate'
+                WHEN 'same_template' THEN 'template'
+                ELSE x.kind
+              END AS kind
+         FROM matched x
+         LEFT JOIN mv_verdict v ON v.meme_id = x.meme_id AND v.other_id = x.other_id
+        WHERE v.verdict IS DISTINCT FROM 'different'
      )
      SELECT m.id,
             m.slug,
             m.content_type AS "contentType",
             x.kind AS "matchKind"
-       FROM matched x
+       FROM judged x
        JOIN meme m ON m.id = x.id
       WHERE m.deleted_at IS NULL
       ORDER BY (x.kind = 'duplicate') DESC, x.score DESC, m.created_at DESC

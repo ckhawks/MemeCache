@@ -60,6 +60,14 @@ const QUESTIONS: { q: string; a: React.ReactNode }[] = [
     ),
   },
   {
+    q: 'What happens when a meme is posted twice?',
+    a: (
+      <>
+        The upload page warns you when what you picked looks like a meme already here, and refuses an exact copy of one, linking to it instead. Look-alikes that get through show up in the Duplicates tab of the <Link href="/queue">Queue</Link>, where members say whether two memes are the same meme, the same template or different. Once two people agree they are the same meme, a moderator merges the copy into the original: its likes, comments, tags and views move over, and its link goes to the original.
+      </>
+    ),
+  },
+  {
     q: 'Can I bring in memes from other sites?',
     a: (
       <>

@@ -7,15 +7,14 @@ import { CheckCircle, Link2, UploadCloud } from 'react-feather';
 import imageCompression from 'browser-image-compression';
 import styles from '../main.module.scss';
 import u from './Upload.module.scss';
-import { api } from '@/util/api';
+import { api, ApiError } from '@/util/api';
 import { cropFile } from '@/util/cropImage';
 import type { Box } from '@/util/imageEdges';
 import CropEditor from './CropEditor';
 import { WarningToggles } from '@/components/WarningToggles';
 import type { ContentWarning } from '@/constants/contentWarnings';
 import DuplicateWarning from './DuplicateWarning';
-import { findLookalikes } from './duplicateCheck';
-import type { ThumbMeme } from '@/components/MemeThumbStrip';
+import { findLookalikes, type Lookalike } from './duplicateCheck';
 
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 const MAX_VIDEO_BYTES = 30 * 1024 * 1024;
@@ -48,15 +47,18 @@ export default function UploadComponent() {
   const [link, setLink] = useState('');
   const [importing, setImporting] = useState(false);
   const [sourceUrl, setSourceUrl] = useState<string | null>(null);
-  // Set when that post was already imported: the existing meme's slug.
-  const [duplicate, setDuplicate] = useState<string | null>(null);
+  // Set when that post was already imported (from 'link'), or the upload was refused as an
+  // exact copy (from 'file'): the existing meme's slug.
+  const [duplicate, setDuplicate] = useState<{ slug: string; from: 'link' | 'file' } | null>(null);
   // Content warnings ticked for this file, sent with the upload.
   const [warnings, setWarnings] = useState<ContentWarning[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   // Memes the picked file looks like (the duplicate check). Kept with the file it was for,
   // so a slow answer about a file since replaced is never shown.
-  const [lookalikes, setLookalikes] = useState<{ file: File; memes: ThumbMeme[] } | null>(null);
+  const [lookalikes, setLookalikes] = useState<{ file: File; memes: Lookalike[] } | null>(null);
   const hasLookalikes = !!file && lookalikes?.file === file && lookalikes.memes.length > 0;
+  // Uncropped, the upload would be refused: the very same picture is already here.
+  const isExactCopy = hasLookalikes && !crop && lookalikes.memes.some((m) => m.exact);
 
   const isImage = !!file && supportedImageTypes.includes(file.type);
   const isVideo = !!file && supportedVideoTypes.includes(file.type);
@@ -116,7 +118,7 @@ export default function UploadComponent() {
       if (response.headers.get('Content-Type')?.includes('application/json')) {
         const data = (await response.json()) as { error?: string; duplicate?: string };
         if (data.duplicate) {
-          setDuplicate(data.duplicate);
+          setDuplicate({ slug: data.duplicate, from: 'link' });
         } else {
           setError(data.error ?? `The import failed (${response.status}).`);
         }
@@ -244,6 +246,14 @@ export default function UploadComponent() {
       reset();
       setUploadedId(result.slug);
     } catch (err) {
+      // An exact copy of a meme already here: say so and link to it, like an import of a post
+      // that is already here.
+      const existing = err instanceof ApiError ? (err.data as { duplicate?: unknown } | null)?.duplicate : null;
+      if (typeof existing === 'string') {
+        reset();
+        setDuplicate({ slug: existing, from: 'file' });
+        return;
+      }
       setError(err instanceof Error ? err.message : 'The upload failed. Try again.');
     } finally {
       setUploading(false);
@@ -354,7 +364,7 @@ export default function UploadComponent() {
 
           {note && <div className={u.note}>{note}</div>}
 
-          {hasLookalikes && <DuplicateWarning memes={lookalikes.memes} />}
+          {hasLookalikes && <DuplicateWarning memes={lookalikes.memes} exact={isExactCopy} />}
 
           <div className={u.previewArea}>
             {isImage && !isGif && (
@@ -448,16 +458,26 @@ export default function UploadComponent() {
         </form>
       )}
 
-      {duplicate && !file && (
+      {duplicate && !file && duplicate.from === 'link' && (
         <div className={u.note}>
           That post is already here.{' '}
-          <Link href={`/meme/${duplicate}`} className={u.linkish}>
+          <Link href={`/meme/${duplicate.slug}`} className={u.linkish}>
             View it
           </Link>{' '}
           or{' '}
           <button type="button" className={u.textButton} onClick={() => importLink(link, true)}>
             import it again
           </button>
+          .
+        </div>
+      )}
+
+      {duplicate && !file && duplicate.from === 'file' && (
+        <div className={u.note} role="status">
+          This meme is already here.{' '}
+          <Link href={`/meme/${duplicate.slug}`} className={u.linkish}>
+            View it
+          </Link>
           .
         </div>
       )}

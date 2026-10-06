@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { dismissQueueItem, QUEUE_TASKS } from '@/db/queries/queue';
+import { dismissQueueItem, MEME_QUEUE_TASKS } from '@/db/queries/queue';
 import { route } from '@/server/route';
 import { requireMeme } from '@/server/require';
 
@@ -8,7 +8,7 @@ import { requireMeme } from '@/server/require';
 export const POST = route({
   auth: 'required',
   body: z.object({
-    task: z.enum(QUEUE_TASKS),
+    task: z.enum(MEME_QUEUE_TASKS),
     memeId: z.string(),
   }),
   handler: async ({ user, body }) => {

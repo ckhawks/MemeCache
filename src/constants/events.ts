@@ -24,7 +24,9 @@ export type ClientEventKind = (typeof CLIENT_EVENT_KINDS)[number];
 //           (the total found).
 //   import  a link import. data: site, outcome ('imported', 'duplicate' or 'failed'), error.
 //   upload  a new meme. data: contentType, bytes, imported, warnings.
+//   upload_refused  an upload turned away as an exact copy of the meme in meme_id.
+//           data: contentType, bytes.
 //   active  the user made a request today. At most one per user per UTC day.
-export type ServerEventKind = 'search' | 'import' | 'upload' | 'active';
+export type ServerEventKind = 'search' | 'import' | 'upload' | 'upload_refused' | 'active';
 
 export type EventKind = ClientEventKind | ServerEventKind;

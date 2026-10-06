@@ -10,6 +10,8 @@ import SendMemeButton from '@/components/SendMemeButton';
 import DeleteMemeButton from '@/components/DeleteMemeButton';
 import ReportMemeButton from '@/components/ReportMemeButton';
 import TakedownButton from '@/components/TakedownButton';
+import MergeMemeButton from '@/components/MergeMemeButton';
+import type { ThumbMeme } from '@/components/MemeThumbStrip';
 import { displayUsername } from '@/auth/username';
 import type { MemeCard } from '@/db/queries/memes';
 import type { UserPayload } from '@/auth/lib';
@@ -50,6 +52,10 @@ export function PostActions(props: {
   canDelete: boolean;
   // Admins: take it down for a copyright claim or similar (migration 018).
   canTakeDown: boolean;
+  // Moderators: merge it into the meme it duplicates (migration 021), picked from these or
+  // pasted as a link.
+  canMerge: boolean;
+  mergeCandidates: ThumbMeme[];
 }) {
   const { meme } = props;
   // Members can report other people's memes, not their own.
@@ -75,12 +81,13 @@ export function PostActions(props: {
         <Download size={16} />
         Download
       </a>
-      {(canReport || props.canDelete || props.canTakeDown) && (
+      {(canReport || props.canDelete || props.canTakeDown || props.canMerge) && (
         <span className={d.postDelete}>
           {canReport && <ReportMemeButton memeId={meme.id} />}
           {props.canDelete && (
             <DeleteMemeButton labeled memeId={meme.id} asModerator={props.user?.id !== meme.uploaderId} />
           )}
+          {props.canMerge && <MergeMemeButton memeId={meme.id} candidates={props.mergeCandidates} />}
           {props.canTakeDown && <TakedownButton memeId={meme.id} />}
         </span>
       )}

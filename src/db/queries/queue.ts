@@ -3,15 +3,18 @@ import { isUuid } from './ids';
 import { STANDS, VERSION_COLUMNS } from './transcriptions';
 import { warningsSql } from './warnings';
 import { mutedSql } from './tagPreferences';
+import { countDuplicatePairsSql } from './duplicates';
 import {
   CONFIRMATIONS_NEEDED,
+  MEME_QUEUE_TASKS,
   QUEUE_TASKS,
   TAGS_NEEDED,
+  type MemeQueueTask,
   type QueueTask,
 } from '@/constants/queue';
 import type { ContentWarning } from '@/constants/contentWarnings';
 
-export { QUEUE_TASKS, type QueueTask };
+export { MEME_QUEUE_TASKS, QUEUE_TASKS, type MemeQueueTask, type QueueTask };
 
 export interface QueueMeme {
   id: string;
@@ -47,7 +50,7 @@ const MEME_COLUMNS = `
 
 // The viewer skipped this meme for this task after `since` (null: ever). A skip only lasts
 // until something new happens on the meme, so new work brings it back.
-function skippedSince(task: QueueTask, since: string) {
+function skippedSince(task: MemeQueueTask, since: string) {
   return `EXISTS (
     SELECT 1 FROM queue_skip s
      WHERE s.user_id = $1 AND s.task = '${task}' AND s.meme_id = m.id
@@ -84,7 +87,7 @@ const TAG_AGREEMENT = `
 
 // Each task's candidates for viewer $1, best first. Used both for "next" (LIMIT 1) and for
 // the count on its tab. Memes carrying a tag the viewer muted are not offered.
-function candidatesSql(task: QueueTask) {
+function candidatesSql(task: MemeQueueTask) {
   if (task === 'transcription') {
     return `
       SELECT ${MEME_COLUMNS}, v.id AS "versionId"
@@ -144,7 +147,7 @@ function candidatesSql(task: QueueTask) {
        m.id`;
 }
 
-export async function nextQueueItem(task: QueueTask, viewerId: string): Promise<QueueItem | null> {
+export async function nextQueueItem(task: MemeQueueTask, viewerId: string): Promise<QueueItem | null> {
   if (!isUuid(viewerId)) {
     return null;
   }
@@ -184,19 +187,24 @@ export async function nextQueueItem(task: QueueTask, viewerId: string): Promise<
 
 export async function countQueue(viewerId: string): Promise<Record<QueueTask, number>> {
   if (!isUuid(viewerId)) {
-    return { transcription: 0, tag: 0 };
+    return { transcription: 0, tag: 0, duplicate: 0 };
   }
-  const [row] = await db<Record<QueueTask, number>>(
-    `SELECT
-       (SELECT count(*)::int FROM (${candidatesSql('transcription')}) q) AS transcription,
-       (SELECT count(*)::int FROM (${candidatesSql('tag')}) q) AS tag`,
-    [viewerId]
-  );
-  return row;
+  // Duplicates are counted in a query of their own. Added to this one, they pushed its
+  // estimated cost past where Postgres spends seconds JIT-compiling it.
+  const [[memeCounts], [pairCount]] = await Promise.all([
+    db<Record<MemeQueueTask, number>>(
+      `SELECT
+         (SELECT count(*)::int FROM (${candidatesSql('transcription')}) q) AS transcription,
+         (SELECT count(*)::int FROM (${candidatesSql('tag')}) q) AS tag`,
+      [viewerId]
+    ),
+    db<{ duplicate: number }>(`SELECT ${countDuplicatePairsSql()} AS duplicate`, [viewerId]),
+  ]);
+  return { ...memeCounts, duplicate: pairCount.duplicate };
 }
 
 // A skip lasts until something new happens on the meme, so a repeat skip moves its time on.
-export async function dismissQueueItem(viewerId: string, task: QueueTask, memeId: string) {
+export async function dismissQueueItem(viewerId: string, task: MemeQueueTask, memeId: string) {
   await db(
     `INSERT INTO queue_skip (user_id, task, meme_id)
      VALUES ($1, $2, $3)
