@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import sharp from 'sharp';
 import { ANALYSIS_SIZE, computeFingerprint, type Fingerprint } from '@/server/mediaHash';
+import { STILL_IMAGE_TYPES } from '@/constants/mimeTypes';
 
 // Turns a stored or uploaded file into a fingerprint (src/server/mediaHash.ts). Images are
 // decoded with sharp; a GIF or animated WebP by its first frame. A video is fingerprinted
@@ -104,6 +105,21 @@ export async function videoFrame(file: Buffer): Promise<Buffer> {
     return first;
   } finally {
     await rm(dir, { recursive: true, force: true });
+  }
+}
+
+// Whether a file is one still picture: a PNG, JPEG or WebP with a single frame. Only these
+// can be judged exact copies. A GIF, an animated WebP or a video is fingerprinted by one
+// frame, and two different clips can share it.
+export async function isStillImage(file: Buffer, contentType: string): Promise<boolean> {
+  if (!STILL_IMAGE_TYPES.includes(contentType)) {
+    return false;
+  }
+  try {
+    const meta = await sharp(file, { limitInputPixels: MAX_INPUT_PIXELS }).metadata();
+    return (meta.pages ?? 1) === 1;
+  } catch {
+    return false;
   }
 }
 

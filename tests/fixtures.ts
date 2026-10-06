@@ -7,7 +7,7 @@ export async function resetDatabase() {
       meme_report, queue_skip, transcription_review, meme_save, meme_like, meme_tag_vote, meme_tag,
       meme_transcription, tag, meme, app_user, invite_code, username_history, meme_view, tag_preference,
       tag_vote_history, transcription_review_history, event, moderation_action, user_session, user_setting,
-      user_follow
+      user_follow, meme_match_answer, meme_match_answer_history, meme_match_skip
   `);
 }
 

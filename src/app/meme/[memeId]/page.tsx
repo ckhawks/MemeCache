@@ -20,6 +20,7 @@ import { listTagsForMeme } from '@/db/queries/tags';
 import { listWarningsForMeme } from '@/db/queries/warnings';
 import { listComments } from '@/db/queries/comments';
 import { listMatchedMemes } from '@/db/queries/mediaHash';
+import { getMergedInto } from '@/db/queries/merge';
 import SameTemplate from './SameTemplate';
 import { getTakedown } from '@/db/queries/takedowns';
 import { TAKEDOWN_NOTICES } from '@/constants/takedowns';
@@ -31,6 +32,11 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
   const meme = await getMeme(params.memeId, user?.id);
 
   if (!meme) {
+    // Merged into its original (migration 021): that is where it lives now, for good.
+    const mergedInto = await getMergedInto(params.memeId);
+    if (mergedInto) {
+      permanentRedirect(`/meme/${mergedInto}`);
+    }
     // Taken down (migration 018): say so and why, rather than pretend it never existed.
     // Its file is gone, and its tags, transcription and comments are not shown.
     const takedown = await getTakedown(params.memeId);
@@ -96,6 +102,8 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
                 user={user}
                 canDelete={canDelete}
                 canTakeDown={!!user && isAdmin(user)}
+                canMerge={!!user && isModerator(user)}
+                mergeCandidates={sameTemplate}
               />
             </div>
             <aside className={d.side}>

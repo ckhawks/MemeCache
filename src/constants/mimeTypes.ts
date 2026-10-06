@@ -8,6 +8,10 @@ export const supportedImageTypes = [
 
 export const supportedVideoTypes = ['video/webm', 'video/mp4'];
 
+// Types that hold one still picture (a WebP only when it has a single frame). An upload that
+// is the very same picture as one of these is refused as an exact copy.
+export const STILL_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+
 export const supportedTypes = [...supportedImageTypes, ...supportedVideoTypes];
 
 const EXTENSIONS: Record<string, string> = {

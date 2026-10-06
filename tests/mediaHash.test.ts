@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { hammingDistance, mayRelate, pHash, relate } from '@/server/mediaHash';
 import { fingerprintImage } from '@/server/mediaHashDecode';
-import { copy, encode, jpeg, picture, png, stacked, withCaption, withText, type Raw } from './images';
+import { copy, encode, jpeg, paintText, picture, png, stacked, withCaption, withText, type Raw } from './images';
 
 const base = picture(1, 480, 360);
 const other = picture(2, 480, 360);
@@ -71,6 +71,52 @@ describe('relate: duplicates', () => {
   it('keeps a captioned meme a duplicate of its own re-encode', async () => {
     const captioned = withCaption(base, 10);
     expect(await kind(captioned, await jpeg(captioned, 50))).toBe('duplicate');
+  });
+});
+
+describe('relate: exact copies', () => {
+  async function exact(a: Raw | Buffer, b: Raw | Buffer) {
+    return relate(await fingerprint(a), await fingerprint(b))?.exact ?? false;
+  }
+
+  it('calls the same picture re-encoded, resized or as WebP an exact copy', async () => {
+    const meme = withText(base, 20);
+    expect(await exact(meme, meme)).toBe(true);
+    expect(await exact(meme, await jpeg(meme, 40))).toBe(true);
+    expect(await exact(meme, await encode(meme).resize(240).jpeg({ quality: 80 }).toBuffer())).toBe(true);
+    const captioned = withCaption(base, 10);
+    expect(await exact(captioned, await encode(captioned).resize(1200).jpeg({ quality: 90 }).toBuffer())).toBe(true);
+    expect(await exact(captioned, await encode(captioned).webp({ quality: 50 }).toBuffer())).toBe(true);
+  });
+
+  it('keeps a crop, a border, a watermark or one more word a duplicate but not an exact copy', async () => {
+    const meme = withText(base, 20);
+    const watermarked = copy(meme);
+    paintText(watermarked, 99, 400, 330, 4, 3, [255, 255, 255]);
+    const captioned = withCaption(base, 10);
+    const oneMoreWord = copy(captioned);
+    paintText(oneMoreWord, 77, 330, 54, 4, 6, [20, 20, 20]);
+    const bordered = await encode(meme)
+      .extend({ top: 24, bottom: 24, left: 24, right: 24, background: '#ffffff' })
+      .png()
+      .toBuffer();
+
+    for (const [a, b] of [
+      [meme, await crop(meme, 0.02, 0, 0, 0)],
+      [meme, await crop(meme, 0.05, 0.05, 0.05, 0.05)],
+      [meme, bordered],
+      [meme, watermarked],
+      [captioned, oneMoreWord],
+    ] as const) {
+      const relation = relate(await fingerprint(a), await fingerprint(b));
+      expect(relation?.kind).toBe('duplicate');
+      expect(relation?.exact).toBe(false);
+    }
+  });
+
+  it('never calls a template an exact copy', async () => {
+    expect(await exact(withText(base, 20), withText(base, 30))).toBe(false);
+    expect(await exact(base, withCaption(base, 10))).toBe(false);
   });
 });
 

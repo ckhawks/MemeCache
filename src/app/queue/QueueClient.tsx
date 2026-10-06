@@ -7,13 +7,15 @@ import globals from '../main.module.scss';
 import d from '../meme/[memeId]/MemeDetail.module.scss';
 import q from './Queue.module.scss';
 import DetailMedia from '../meme/[memeId]/DetailMedia';
+import DuplicateReview from './DuplicateReview';
 import MemeTagsEditor from '@/components/MemeTagsEditor';
 import TranscriptionField from '@/components/TranscriptionField';
 import TranscriptionGuidelines from '@/components/TranscriptionGuidelines';
 import { api } from '@/util/api';
 import { displayUsername } from '@/auth/username';
-import { CONFIRMATIONS_NEEDED, type QueueTask } from '@/constants/queue';
+import { CONFIRMATIONS_NEEDED, type MatchAnswer, type QueueTask } from '@/constants/queue';
 import type { QueueItem } from '@/db/queries/queue';
+import type { MatchPair } from '@/db/queries/duplicates';
 import type { MemeTag } from '@/db/queries/tags';
 
 const TASKS: { task: QueueTask; label: string; empty: string }[] = [
@@ -23,6 +25,11 @@ const TASKS: { task: QueueTask; label: string; empty: string }[] = [
     empty: 'Nothing to type out or check right now.',
   },
   { task: 'tag', label: 'Tags', empty: 'Every meme has its tags settled.' },
+  {
+    task: 'duplicate',
+    label: 'Duplicates',
+    empty: 'No look-alike memes to check right now.',
+  },
 ];
 
 // Keys that act on the review card. Ignored while typing in a field.
@@ -34,14 +41,16 @@ const REVIEW_KEYS: Record<string, 'confirm' | 'reject' | 'fix' | 'skip'> = {
 };
 
 async function fetchNext(task: QueueTask) {
-  const data = await api<{ item: QueueItem | null; counts: Record<QueueTask, number> }>(
-    `/api/queue?task=${task}`
-  );
+  const data = await api<{
+    item: QueueItem | null;
+    pair: MatchPair | null;
+    counts: Record<QueueTask, number>;
+  }>(`/api/queue?task=${task}`);
   const tagData =
     task === 'tag' && data.item
       ? await api<{ tags: MemeTag[] }>(`/api/meme/${data.item.meme.id}/tags`)
       : null;
-  return { item: data.item, counts: data.counts, tags: tagData?.tags ?? null };
+  return { item: data.item, pair: data.pair, counts: data.counts, tags: tagData?.tags ?? null };
 }
 
 export default function QueueClient(props: {
@@ -51,6 +60,8 @@ export default function QueueClient(props: {
 }) {
   const [task, setTask] = useState<QueueTask>(props.initialTask);
   const [item, setItem] = useState<QueueItem | null>(null);
+  // Duplicates task: the pair of memes to compare.
+  const [pair, setPair] = useState<MatchPair | null>(null);
   const [tags, setTags] = useState<MemeTag[] | null>(null);
   const [counts, setCounts] = useState<Record<QueueTask, number> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,6 +78,7 @@ export default function QueueClient(props: {
     try {
       const fetched = await fetchNext(next);
       setItem(fetched.item);
+      setPair(fetched.pair);
       setCounts(fetched.counts);
       setTags(fetched.tags);
       setFixing(false);
@@ -87,6 +99,7 @@ export default function QueueClient(props: {
     setNotice('');
     setLoading(true);
     setItem(null);
+    setPair(null);
     setTask(next);
     load(next);
     // Keeps the tab in the URL so a reload or a shared link lands on it.
@@ -130,6 +143,13 @@ export default function QueueClient(props: {
     act(async () => {
       await api(`/api/transcription/${item!.transcription!.id}/review`, { body: { verdict } });
       return verdict === 1 ? 'Confirmed.' : 'Rejected.';
+    });
+
+  const answerPair = (answer: MatchAnswer | 'skip') =>
+    act(async () => {
+      await api('/api/queue/duplicates', {
+        body: { memeId: pair!.memeId, otherId: pair!.otherId, answer },
+      });
     });
 
   const startFix = () => {
@@ -186,8 +206,20 @@ export default function QueueClient(props: {
       {notice && <div className={q.notice}>{notice}</div>}
       {error && <div className={q.error}>{error}</div>}
 
-      {loading && !item ? (
+      {loading && !item && !pair ? (
         <p className={q.muted}>Loading...</p>
+      ) : task === 'duplicate' ? (
+        pair ? (
+          <DuplicateReview
+            key={`${pair.memeId} ${pair.otherId}`}
+            pair={pair}
+            busy={busy}
+            canModerate={props.canModerate}
+            onAnswer={answerPair}
+          />
+        ) : (
+          <p className={q.muted}>{current.empty}</p>
+        )
       ) : !item ? (
         <p className={q.muted}>{current.empty}</p>
       ) : (

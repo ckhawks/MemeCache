@@ -1,0 +1,41 @@
+// A pair card: the two memes side by side, then what was said and the actions. Builds on
+// the reports page's card.
+.card {
+  flex-direction: column;
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+
+  @media (max-width: 600px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.meme {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.thumb {
+  flex-basis: auto;
+  height: 240px;
+}
+
+.pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.label {
+  align-self: center;
+  font-size: 13px;
+  color: var(--sub-text-color);
+}

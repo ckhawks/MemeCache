@@ -164,7 +164,7 @@ describe('mute', () => {
   it('keeps muted memes out of the queue', async () => {
     const { bob, plain } = await mutedSetup();
     // Both need typing out and tagging; the cat meme is muted.
-    expect(await countQueue(bob)).toEqual({ transcription: 1, tag: 1 });
+    expect(await countQueue(bob)).toEqual({ transcription: 1, tag: 1, duplicate: 0 });
     expect((await nextQueueItem('transcription', bob))?.meme.id).toBe(plain);
     expect((await nextQueueItem('tag', bob))?.meme.id).toBe(plain);
   });
