@@ -81,6 +81,19 @@
   box-shadow: rgba(100, 100, 111, 0.12) 0px 7px 20px 0px;
 }
 
+// Steps under a menu item, such as how to install on iPhone.
+.menu-note {
+  margin: 0;
+  padding: 2px 10px 6px 32px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--sub-text-color);
+
+  svg {
+    vertical-align: -1px;
+  }
+}
+
 .menu-item {
   display: flex;
   width: 100%;

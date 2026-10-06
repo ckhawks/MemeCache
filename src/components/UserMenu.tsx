@@ -7,6 +7,7 @@ import { Edit2, LogOut, Moon, Settings, Sun, User } from 'react-feather';
 import styles from './NavigationBar.module.scss';
 import { avatarUrl } from '@/util/avatarUrl';
 import { useTheme } from '@/contexts/LightThemeContext';
+import InstallAppItem from './InstallAppItem';
 
 // The profile pill in the top right. Clicking it opens a small menu: your profile, editing
 // it, admin for admins, the light/dark switch, and logging out, which used to sit loose
@@ -93,6 +94,7 @@ export default function UserMenu(props: {
             {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
             {theme === 'dark' ? 'Light mode' : 'Dark mode'}
           </button>
+          <InstallAppItem />
           <Link prefetch={false} href="/api/logout" className={styles['menu-item']} role="menuitem">
             <LogOut size={14} /> Log out
           </Link>
