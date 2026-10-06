@@ -74,11 +74,22 @@ function sentence(group: Group) {
       return <>{people(group)} commented on your meme</>;
     case 'meme_quoted':
       return <>{people(group)} replied with your meme in a comment</>;
+    case 'follow':
+      return <>{people(group)} followed you</>;
   }
 }
 
 // These open the meme page at its comments.
 const COMMENT_KINDS: NotificationGroup['kind'][] = ['comment', 'meme_quoted'];
+
+// Where a line goes: the meme, or for a follow (one line per follower) the follower's profile.
+function href(group: Group) {
+  if (group.kind === 'follow') {
+    const actor = group.actors[0];
+    return actor ? `/me/${encodeURIComponent(actor.username)}` : '/notifications';
+  }
+  return `/meme/${group.memeSlug}${COMMENT_KINDS.includes(group.kind) ? '#comments' : ''}`;
+}
 
 // "just now", "5m", "3h", "2d", then the date.
 function ago(value: Date | string) {
@@ -107,7 +118,7 @@ export default function NotificationList(props: { groups: Group[] }) {
         return (
           <li key={group.kind + group.id}>
             <Link
-              href={`/meme/${group.memeSlug}${COMMENT_KINDS.includes(group.kind) ? '#comments' : ''}`}
+              href={href(group)}
               className={`${styles['item']} ${group.unread ? styles['unread'] : ''}`}
             >
               {actor && (
@@ -125,7 +136,7 @@ export default function NotificationList(props: { groups: Group[] }) {
                 <span className={styles['time']}>{ago(group.createdAt)}</span>
               </span>
               {group.unread && <span className={styles['dot']} aria-label="Unread" />}
-              {supportedVideoTypes.includes(group.memeContentType) ? (
+              {!group.memeId ? null : supportedVideoTypes.includes(group.memeContentType ?? '') ? (
                 <video
                   src={`/api/resource/${group.memeId}#t=0.1`}
                   preload="metadata"

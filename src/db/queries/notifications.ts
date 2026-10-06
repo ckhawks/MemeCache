@@ -1,7 +1,7 @@
 import { db } from '@/db/db';
 import { CONFIRMATIONS_NEEDED } from '@/constants/queue';
 
-// Migrations 012 and 014. Rows are written by the API routes after the action they describe has
+// Migrations 012, 014 and 020. Rows are written by the API routes after the action they describe has
 // succeeded, and grouped when read.
 
 export type NotificationKind =
@@ -14,14 +14,16 @@ export type NotificationKind =
   | 'tag_confirmed'
   | 'tag_removed'
   | 'comment'
-  | 'meme_quoted';
+  | 'meme_quoted'
+  | 'follow';
 
 export interface NewNotification {
   // Who it is for. Nothing is written when this is the actor.
   recipientId: string;
   kind: NotificationKind;
   actorId: string;
-  memeId: string;
+  // Every kind but follow, which is about the recipient rather than a meme.
+  memeId?: string;
   transcriptionId?: string;
   tagId?: string;
   // The comment kinds: the comment, so every new comment is news.
@@ -30,6 +32,8 @@ export interface NewNotification {
 
 // Writes one notification unless the recipient already has the same one: same kind, meme,
 // version, tag or comment, and person. tag_confirmed happens once per tag, whoever tipped it.
+// A follow has no meme, so it is news once per follower, ever: unfollowing and following again,
+// however soon or late, does not tell anyone twice.
 //
 // A notification is a side effect. Failing to write one is logged and does not fail the
 // like or vote that caused it.
@@ -47,7 +51,7 @@ export async function notify(n: NewNotification) {
           SELECT 1 FROM notification x
            WHERE x.user_id = $1
              AND x.kind = $2
-             AND x.meme_id = $4
+             AND x.meme_id IS NOT DISTINCT FROM $4
              AND x.transcription_id IS NOT DISTINCT FROM $5
              AND x.tag_id IS NOT DISTINCT FROM $6
              AND x.comment_id IS NOT DISTINCT FROM $7
@@ -58,7 +62,7 @@ export async function notify(n: NewNotification) {
         n.recipientId,
         n.kind,
         n.actorId,
-        n.memeId,
+        n.memeId ?? null,
         n.transcriptionId ?? null,
         n.tagId ?? null,
         n.commentId ?? null,
@@ -104,9 +108,10 @@ export interface NotificationGroup {
   // The newest row's id, as a string (bigint). Stable while nothing new joins the group.
   id: string;
   kind: NotificationKind;
-  memeId: string;
-  memeSlug: string;
-  memeContentType: string;
+  // Null for follow, which links to the follower's profile instead.
+  memeId: string | null;
+  memeSlug: string | null;
+  memeContentType: string | null;
   // When the newest row in the group happened.
   createdAt: Date;
   // Any row in the group is unread.
@@ -120,7 +125,8 @@ export interface NotificationGroup {
 }
 
 // What makes two rows one group, beyond kind and meme (alias n). Reviews group per version,
-// tag news per tag. Likes, tagging, transcribing and comments group per meme.
+// tag news per tag, follows per follower. Likes, tagging, transcribing and comments group per
+// meme.
 // Rows about a comment that was since deleted are left out (alias n).
 const COMMENT_STANDS = `
   NOT EXISTS (
@@ -134,6 +140,8 @@ const GROUP_DETAIL = `
       THEN n.transcription_id::text
     WHEN n.kind IN ('tag_confirmed', 'tag_removed')
       THEN lower(n.tag_name)
+    WHEN n.kind = 'follow'
+      THEN n.actor_id::text
   END
 `;
 
@@ -159,9 +167,10 @@ export async function listNotifications(
               '{}'
             ) AS "tagNames"
        FROM notification n
-       JOIN meme m ON m.id = n.meme_id
+       LEFT JOIN meme m ON m.id = n.meme_id
        JOIN app_user a ON a.id = n.actor_id
       WHERE n.user_id = $1
+        -- A follow has no meme, so m is all nulls and this holds.
         AND m.deleted_at IS NULL
         AND ${COMMENT_STANDS}
       GROUP BY n.kind, n.meme_id, m.slug, m.content_type, ${GROUP_DETAIL}
@@ -192,7 +201,7 @@ export async function countUnreadNotifications(userId: string): Promise<number> 
   const [row] = await db<{ count: number }>(
     `SELECT count(DISTINCT (n.kind, n.meme_id, ${GROUP_DETAIL}))::int AS count
        FROM notification n
-       JOIN meme m ON m.id = n.meme_id
+       LEFT JOIN meme m ON m.id = n.meme_id
       WHERE n.user_id = $1
         AND n.read_at IS NULL
         AND m.deleted_at IS NULL

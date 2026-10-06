@@ -14,7 +14,7 @@ import MemeMediaRenderer from './MemeMediaRenderer';
 import DeleteMemeButton from './DeleteMemeButton';
 import SendMemeButton from './SendMemeButton';
 import SaveMemeButton from './SaveMemeButton';
-import FeedReason from './FeedReason';
+import FeedReason, { type FeedReasons } from './FeedReason';
 import Tooltip from './Tooltip';
 import likeStyles from './LikeButton.module.scss';
 import type { MemeCard } from '@/db/queries/memes';
@@ -26,13 +26,14 @@ import type { FeedView } from '@/server/feedView';
 
 // Memes arrive newest first from the query. `view` is the viewer's layout choice
 // (FeedViewToggle): a multi-column grid, or a single centered column. For you passes
-// `reasons`, the followed tags behind each meme by id, shown under each card's title row.
+// `reasons`, the followed people and tags behind each meme by id, shown under each card's title
+// row.
 // Search passes `search`, so opening a result records which one it was (a search_click event).
 export function GalleryMasonry(props: {
   memes: MemeCard[];
   currentUserId: string;
   view?: FeedView;
-  reasons?: Record<string, string[]>;
+  reasons?: Record<string, FeedReasons>;
   search?: {
     query: string;
     // How many results came before this page, so positions count from the top result.
@@ -170,7 +171,7 @@ export function GalleryMasonry(props: {
             />
           </div>
         </div>
-        {props.reasons?.[meme.id] && <FeedReason followedTags={props.reasons[meme.id]} />}
+        {props.reasons?.[meme.id] && <FeedReason {...props.reasons[meme.id]} />}
       </div>
     </div>
   );

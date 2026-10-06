@@ -151,7 +151,7 @@ export default async function Profile(props: { params: Promise<{ username: strin
             <div className={'card'} style={{ marginTop: '16px' }}>
               <h5>Your tags</h5>
               <p style={{ fontSize: '14px' }}>
-                Tags you follow come first in For you on Explore. Tags you mute are hidden from your feeds. Only you can see these.
+                Tags you follow come first in For you on Explore, along with uploads from people you follow. Tags you mute are hidden from your feeds. Only you can see these.
               </p>
               <YourTags tags={tagPreferences} />
             </div>
@@ -175,7 +175,7 @@ export default async function Profile(props: { params: Promise<{ username: strin
             <div className={'card'} style={{ marginTop: '16px' }}>
               <h5>Delete account</h5>
               <p style={{ fontSize: '14px' }}>
-                This cannot be undone. Your username, email, password, avatar, saved memes, settings and followed tags are removed, and you are logged out everywhere. What you added for everyone (uploads, tags, transcriptions, comments and votes) stays on the site, credited to &quot;deleted user&quot;.
+                This cannot be undone. Your username, email, password, avatar, saved memes, settings, followed tags, follows and followers are removed, and you are logged out everywhere. What you added for everyone (uploads, tags, transcriptions, comments and votes) stays on the site, credited to &quot;deleted user&quot;.
               </p>
               <DeleteAccountForm username={userFromDb.username} />
             </div>

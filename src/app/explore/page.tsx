@@ -9,8 +9,11 @@ import {
   listMemes,
   listMemesOrdered,
   type FeedSort as Sort,
+  type ForYouCard,
 } from '@/db/queries/memes';
 import { listTagPreferences } from '@/db/queries/tagPreferences';
+import { followsAnyone } from '@/db/queries/follows';
+import type { FeedReasons } from '@/components/FeedReason';
 import FeedSort from '@/components/FeedSort';
 import { randomBytes } from 'crypto';
 
@@ -43,7 +46,7 @@ export default async function Explore(props: {
 
   // Every sort leaves out memes carrying a tag the viewer muted, and so does the count.
   const filter = { viewerId: user?.id, hideMuted: true };
-  const [page, total, preferences] = await Promise.all([
+  const [page, total, preferences, followsPeople] = await Promise.all([
     sort === 'new'
       ? listMemes(filter, searchParams.cursor)
       : sort === 'foryou'
@@ -51,14 +54,26 @@ export default async function Explore(props: {
         : listMemesOrdered(filter, sort, { page: pageNumber, seed }),
     countMemes(filter),
     sort === 'foryou' ? listTagPreferences(user!.id) : [],
+    sort === 'foryou' ? followsAnyone(user!.id) : false,
   ]);
-  const followsAny = preferences.some((p) => p.kind === 'follow');
-  // For you shows why each meme is where it is. With nothing followed every line would say
-  // the same thing, so there are none.
-  const reasons: Record<string, string[]> | undefined =
+  const followsAny = followsPeople || preferences.some((p) => p.kind === 'follow');
+  // For you shows why each meme is where it is. With no tag or person followed every line
+  // would say the same thing, so there are none.
+  const reasons: Record<string, FeedReasons> | undefined =
     sort === 'foryou' && followsAny
       ? Object.fromEntries(
-          page.memes.map((m) => [m.id, 'followedTags' in m ? (m.followedTags as string[]) : []])
+          page.memes.map((m) => [
+            m.id,
+            'followedTags' in m
+              ? {
+                  followedTags: (m as ForYouCard).followedTags,
+                  followedUsers: (m as ForYouCard).followedUsers,
+                }
+              : {
+                  followedTags: [],
+                  followedUsers: [],
+                },
+          ])
         )
       : undefined;
 
@@ -87,8 +102,7 @@ export default async function Explore(props: {
           {sort === 'foryou' && !followsAny && (
             <div className={styles['feed-prompt']}>
               <p>
-                You do not follow any tags yet. Follow a few on <Link href="/tags">Browse tags</Link> or on any
-                tag&apos;s page, and their memes will come first here. Until then it shows everything.
+                You do not follow any tags or people yet. Follow a few tags on <Link href="/tags">Browse tags</Link> or on any tag&apos;s page, or follow people from their profiles, and their memes will come first here. Until then it shows everything.
               </p>
             </div>
           )}

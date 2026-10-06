@@ -19,6 +19,8 @@ import { findRenamedUsername, listUsernameHistory } from '@/db/queries/usernames
 import { countMemes, listMemes } from '@/db/queries/memes';
 import { getFeedView } from '@/server/feedView';
 import { getSetting } from '@/db/queries/settings';
+import { getFollowCounts, isFollowing } from '@/db/queries/follows';
+import FollowButton from '@/components/FollowButton';
 import { PROFILE_COLOR_SHADES } from '@/constants/profileColors';
 import type { CSSProperties } from 'react';
 
@@ -79,7 +81,7 @@ export default async function Profile(props: {
   }
 
   const filter = { viewerId: user?.id, uploaderId: profile.id };
-  const [page, total, stats, karma, trust, nameHistory, profileColor] = await Promise.all([
+  const [page, total, stats, karma, trust, nameHistory, profileColor, follows, following] = await Promise.all([
     listMemes(filter, searchParams.cursor),
     countMemes(filter),
     getProfileStats(profile.id),
@@ -87,6 +89,8 @@ export default async function Profile(props: {
     getTrust(profile.id),
     listUsernameHistory(profile.id),
     getSetting(profile.id, 'profile_color'),
+    getFollowCounts(profile.id),
+    isFollowing(user?.id, profile.id),
   ]);
 
   const isCurrentUser = user?.id === profile.id;
@@ -112,6 +116,8 @@ export default async function Profile(props: {
     { value: stats.uploads, label: 'Uploads' },
     { value: stats.tagsAdded, label: 'Tags added' },
     { value: stats.transcriptions, label: 'Transcriptions' },
+    // Only how many. Who follows whom is not shown anywhere.
+    { value: follows.followers, label: follows.followers === 1 ? 'Follower' : 'Followers' },
   ];
 
   return (
@@ -187,6 +193,11 @@ export default async function Profile(props: {
                 >
                   Log out
                 </Link>
+              </div>
+            )}
+            {user && !isCurrentUser && (
+              <div className={p.actions}>
+                <FollowButton userId={profile.id} username={profile.username} following={following} />
               </div>
             )}
           </section>

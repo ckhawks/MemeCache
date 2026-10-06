@@ -4,7 +4,8 @@ import styles from './FeedSort.module.scss';
 import Tooltip from './Tooltip';
 import type { FeedSort as Sort } from '@/db/queries/memes';
 
-// Explore's ordering: newest, most liked, a shuffle, or For you (the tags you follow first).
+// Explore's ordering: newest, most liked, a shuffle, or For you (the tags and people you follow
+// first).
 // Plain links, so a sort is a URL that can be shared. A shuffle carries its seed in the URL
 // so paging keeps the same order; `freshSeed` is a new one for "Random" and "Shuffle again".
 // For you needs an account, so visitors see it greyed out.
@@ -37,7 +38,7 @@ export default function FeedSort(props: {
           </Link>
         ))}
         {!props.signedIn && (
-          <Tooltip label="Log in to get a feed from the tags you follow">
+          <Tooltip label="Log in to get a feed from the tags and people you follow">
             <span className={`${styles.option} ${styles.disabled}`} aria-disabled="true">
               For you
             </span>

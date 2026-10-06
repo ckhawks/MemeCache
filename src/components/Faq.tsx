@@ -52,6 +52,14 @@ const QUESTIONS: { q: string; a: React.ReactNode }[] = [
     ),
   },
   {
+    q: 'Can I follow people?',
+    a: (
+      <>
+        Yes. Follow someone from their profile, and their uploads come first under For you on Explore, alongside memes with the tags you follow, each saying who or which tag put it there. They get a notification the first time you follow them. Profiles show how many followers someone has, but not who they are.
+      </>
+    ),
+  },
+  {
     q: 'Can I bring in memes from other sites?',
     a: (
       <>
