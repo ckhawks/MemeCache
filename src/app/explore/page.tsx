@@ -8,6 +8,7 @@ import {
   listForYou,
   listMemes,
   listMemesOrdered,
+  parseMediaKind,
   type FeedSort as Sort,
   type ForYouCard,
 } from '@/db/queries/memes';
@@ -23,13 +24,14 @@ import { GalleryMasonry } from '../../components/GalleryMasonry';
 import FooterBar from '@/components/FooterBar';
 import FeedPager from '@/components/FeedPager';
 import SearchBox from '@/components/SearchBox';
+import MediaKindFilter from '@/components/MediaKindFilter';
 
 export const metadata = {
   title: 'Explore',
 };
 
 export default async function Explore(props: {
-  searchParams: Promise<{ cursor?: string; sort?: string; seed?: string; page?: string }>;
+  searchParams: Promise<{ cursor?: string; sort?: string; seed?: string; page?: string; type?: string }>;
 }) {
   const searchParams = await props.searchParams;
   const user = await getUserFromAccessToken();
@@ -43,14 +45,19 @@ export default async function Explore(props: {
   const freshSeed = randomBytes(4).toString('hex');
   const view = await getFeedView();
   const pageNumber = Number(searchParams.page) || 0;
+  const mediaKind = parseMediaKind(searchParams.type);
+  // The type filter rides along on sort and paging links; the sort on type links.
+  const kindParams: Record<string, string> = mediaKind ? { type: mediaKind } : {};
+  const sortParams: Record<string, string> =
+    sort === 'new' ? {} : sort === 'random' ? { sort, seed } : { sort };
 
   // Every sort leaves out memes carrying a tag the viewer muted, and so does the count.
-  const filter = { viewerId: user?.id, hideMuted: true };
+  const filter = { viewerId: user?.id, hideMuted: true, mediaKind };
   const [page, total, preferences, followsPeople] = await Promise.all([
     sort === 'new'
       ? listMemes(filter, searchParams.cursor)
       : sort === 'foryou'
-        ? listForYou(user!.id, { page: pageNumber })
+        ? listForYou(user!.id, { page: pageNumber, mediaKind })
         : listMemesOrdered(filter, sort, { page: pageNumber, seed }),
     countMemes(filter),
     sort === 'foryou' ? listTagPreferences(user!.id) : [],
@@ -100,7 +107,8 @@ export default async function Explore(props: {
                 >
                   <Users size={14} /> Browse people
                 </Link>
-                <FeedSort basePath="/explore" sort={sort} freshSeed={freshSeed} signedIn={!!user} />
+                <MediaKindFilter basePath="/explore" kind={mediaKind} params={sortParams} />
+                <FeedSort basePath="/explore" sort={sort} freshSeed={freshSeed} signedIn={!!user} params={kindParams} />
                 <FeedViewToggle view={view} />
               </div>
             </div>
@@ -119,11 +127,21 @@ export default async function Explore(props: {
               reasons={reasons}
             />
           </div>
-          {total === 0 && <p style={{ color: 'var(--sub-text-color)' }}>No memes yet. Be the first to upload one.</p>}
+          {total === 0 && (
+            <p style={{ color: 'var(--sub-text-color)' }}>
+              {mediaKind ? (
+                <>
+                  Nothing of that type yet. <Link href={sort === 'new' ? '/explore' : `/explore?${new URLSearchParams(sortParams)}`}>Show all types</Link>.
+                </>
+              ) : (
+                'No memes yet. Be the first to upload one.'
+              )}
+            </p>
+          )}
           {'nextCursor' in page ? (
-            <FeedPager basePath="/explore" nextCursor={page.nextCursor} />
+            <FeedPager basePath="/explore" nextCursor={page.nextCursor} params={kindParams} />
           ) : (
-            <FeedPager basePath="/explore" nextPage={page.nextPage} sort={sort} seed={sort === 'random' ? seed : undefined} />
+            <FeedPager basePath="/explore" nextPage={page.nextPage} sort={sort} seed={sort === 'random' ? seed : undefined} params={kindParams} />
           )}
         </div>
       </main>

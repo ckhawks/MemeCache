@@ -54,6 +54,43 @@ export interface MemeFilter {
   // Leave out memes carrying a tag the viewer muted. Explore sets it; a profile, a Library or
   // a tag page lists what it says it lists.
   hideMuted?: boolean;
+  // Only this kind of file. Absent for all of them.
+  mediaKind?: MediaKind;
+}
+
+// What Explore can narrow to. A video with no sound plays like a GIF (see MemeCard.hasAudio),
+// so it counts as one; a video whose sound is not known yet stays a video.
+export type MediaKind = 'image' | 'gif' | 'video';
+
+export const MEDIA_KINDS: MediaKind[] = ['image', 'gif', 'video'];
+
+export function parseMediaKind(value: string | undefined): MediaKind | undefined {
+  return MEDIA_KINDS.find((kind) => kind === value);
+}
+
+function mediaKindSql(kindParam: string) {
+  return `
+    (
+      ${kindParam}::text IS NULL
+      OR (
+        ${kindParam}::text = 'image'
+        AND m.content_type LIKE 'image/%'
+        AND m.content_type <> 'image/gif'
+      )
+      OR (
+        ${kindParam}::text = 'gif'
+        AND (
+          m.content_type = 'image/gif'
+          OR (m.content_type LIKE 'video/%' AND m.has_audio = false)
+        )
+      )
+      OR (
+        ${kindParam}::text = 'video'
+        AND m.content_type LIKE 'video/%'
+        AND m.has_audio IS DISTINCT FROM false
+      )
+    )
+  `;
 }
 
 export const FEED_PAGE_SIZE = 60;
@@ -103,11 +140,13 @@ function filterSql(
   uploaderParam: string,
   tagParam: string,
   savedByParam: string,
-  mutedByParam: string
+  mutedByParam: string,
+  kindParam: string
 ) {
   return `
     m.deleted_at IS NULL
     AND NOT ${mutedSql('m.id', mutedByParam)}
+    AND ${mediaKindSql(kindParam)}
     AND (${uploaderParam}::uuid IS NULL OR m.uploader_id = ${uploaderParam}::uuid)
     AND (
       ${savedByParam}::uuid IS NULL
@@ -143,6 +182,7 @@ function filterParams(filter: MemeFilter) {
     filter.tagName ?? null,
     isUuid(filter.savedBy) ? filter.savedBy : null,
     filter.hideMuted && isUuid(filter.viewerId) ? filter.viewerId : null,
+    filter.mediaKind ?? null,
   ];
 }
 
@@ -178,10 +218,10 @@ export async function listMemes(
             m.created_at::text || '~' || m.id AS "sortKey"
        FROM meme m
        JOIN app_user u ON u.id = m.uploader_id
-      WHERE ${filterSql('$2', '$3', '$4', '$5')}
-        AND ($6::timestamptz IS NULL OR (m.created_at, m.id) < ($6::timestamptz, $7::uuid))
+      WHERE ${filterSql('$2', '$3', '$4', '$5', '$6')}
+        AND ($7::timestamptz IS NULL OR (m.created_at, m.id) < ($7::timestamptz, $8::uuid))
       ORDER BY m.created_at DESC, m.id DESC
-      LIMIT $8`,
+      LIMIT $9`,
     [viewerParam(filter.viewerId), ...filterParams(filter), cursorCreatedAt, cursorId, limit + 1]
   );
 
@@ -198,7 +238,7 @@ export async function countMemes(filter: MemeFilter): Promise<number> {
   const [row] = await db<{ count: number }>(
     `SELECT count(*)::int AS count
        FROM meme m
-      WHERE ${filterSql('$1', '$2', '$3', '$4')}`,
+      WHERE ${filterSql('$1', '$2', '$3', '$4', '$5')}`,
     filterParams(filter)
   );
   return row.count;
@@ -361,7 +401,7 @@ export async function listMemesOrdered(
 ): Promise<{ memes: MemeCard[]; nextPage: number | null }> {
   const limit = options.limit ?? FEED_PAGE_SIZE;
   const page = Math.max(0, Math.floor(options.page ?? 0));
-  // Postgres refuses a parameter the SQL never mentions, so the seed is only passed (as $6)
+  // Postgres refuses a parameter the SQL never mentions, so the seed is only passed (as $7)
   // when the shuffle uses it, and LIMIT/OFFSET follow whatever came last.
   const params: unknown[] = [viewerParam(filter.viewerId), ...filterParams(filter)];
   let order: string;
@@ -377,7 +417,7 @@ export async function listMemesOrdered(
     `SELECT ${CARD_COLUMNS}
        FROM meme m
        JOIN app_user u ON u.id = m.uploader_id
-      WHERE ${filterSql('$2', '$3', '$4', '$5')}
+      WHERE ${filterSql('$2', '$3', '$4', '$5', '$6')}
       ORDER BY ${order}
       LIMIT $${params.length - 1} OFFSET $${params.length}`,
     params
@@ -445,7 +485,7 @@ export interface ForYouCard extends MemeCard {
 // by offset, like Top.
 export async function listForYou(
   viewerId: string,
-  options: { page?: number; limit?: number } = {}
+  options: { page?: number; limit?: number; mediaKind?: MediaKind } = {}
 ): Promise<{ memes: ForYouCard[]; nextPage: number | null }> {
   const limit = options.limit ?? FEED_PAGE_SIZE;
   const page = Math.max(0, Math.floor(options.page ?? 0));
@@ -474,13 +514,14 @@ export async function listForYou(
        LEFT JOIN user_follow uf ON uf.follower_id = $1::uuid AND uf.followee_id = m.uploader_id
       WHERE m.deleted_at IS NULL
         AND NOT ${mutedSql('m.id', '$1')}
+        AND ${mediaKindSql('$4')}
       ORDER BY uf.followee_id IS NULL AND (f.meme_id IS NULL OR m.uploader_id = $1::uuid),
                date_trunc('day', m.created_at) DESC,
                "likeCount" DESC,
                m.created_at DESC,
                m.id DESC
       LIMIT $2 OFFSET $3`,
-    [viewerParam(viewerId), limit + 1, page * limit]
+    [viewerParam(viewerId), limit + 1, page * limit, options.mediaKind ?? null]
   );
 
   const hasMore = rows.length > limit;

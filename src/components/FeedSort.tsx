@@ -8,20 +8,26 @@ import type { FeedSort as Sort } from '@/db/queries/memes';
 // first).
 // Plain links, so a sort is a URL that can be shared. A shuffle carries its seed in the URL
 // so paging keeps the same order; `freshSeed` is a new one for "Random" and "Shuffle again".
-// For you needs an account, so visitors see it greyed out.
+// For you needs an account, so visitors see it greyed out. `params` rides along on every link
+// (Explore keeps its type filter).
 export default function FeedSort(props: {
   basePath: string;
   sort: Sort;
   freshSeed: string;
   signedIn: boolean;
+  params?: Record<string, string>;
 }) {
+  const href = (extra: Record<string, string>) => {
+    const query = new URLSearchParams({ ...extra, ...props.params }).toString();
+    return query ? `${props.basePath}?${query}` : props.basePath;
+  };
   const options: { sort: Sort; label: string; href: string }[] = [
-    { sort: 'new', label: 'Newest', href: props.basePath },
-    { sort: 'top', label: 'Top', href: `${props.basePath}?sort=top` },
-    { sort: 'random', label: 'Random', href: `${props.basePath}?sort=random&seed=${props.freshSeed}` },
+    { sort: 'new', label: 'Newest', href: href({}) },
+    { sort: 'top', label: 'Top', href: href({ sort: 'top' }) },
+    { sort: 'random', label: 'Random', href: href({ sort: 'random', seed: props.freshSeed }) },
   ];
   if (props.signedIn) {
-    options.push({ sort: 'foryou', label: 'For you', href: `${props.basePath}?sort=foryou` });
+    options.push({ sort: 'foryou', label: 'For you', href: href({ sort: 'foryou' }) });
   }
 
   return (
@@ -46,7 +52,7 @@ export default function FeedSort(props: {
         )}
       </nav>
       {props.sort === 'random' && (
-        <Link href={`${props.basePath}?sort=random&seed=${props.freshSeed}`} className={styles.shuffle}>
+        <Link href={href({ sort: 'random', seed: props.freshSeed })} className={styles.shuffle}>
           <Shuffle size={14} /> Shuffle again
         </Link>
       )}

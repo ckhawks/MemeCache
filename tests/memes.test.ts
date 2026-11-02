@@ -1,6 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '@/db/db';
-import { countMemes, getMeme, listMemes, listTopMemes, softDeleteMeme } from '@/db/queries/memes';
+import {
+  countMemes,
+  getMeme,
+  listForYou,
+  listMemes,
+  listMemesOrdered,
+  listTopMemes,
+  softDeleteMeme,
+} from '@/db/queries/memes';
 import { setLike } from '@/db/queries/likes';
 import { addTagToMeme, findOrCreateTag, voteOnTag } from '@/db/queries/tags';
 import { makeMeme, makeUser, resetDatabase } from './fixtures';
@@ -231,5 +239,41 @@ describe('listTopMemes', () => {
     const all = await listTopMemes(bob, 3);
     expect(all.window).toBe('all');
     expect(all.memes.map((m) => m.id)).toContain(old);
+  });
+});
+
+describe('media kind filter', () => {
+  async function setKind(id: string, contentType: string, hasAudio: boolean | null) {
+    await db(`UPDATE meme SET content_type = $2, has_audio = $3 WHERE id = $1`, [id, contentType, hasAudio]);
+  }
+
+  it('splits images, GIFs (with silent videos) and videos in every feed and the count', async () => {
+    const alice = await makeUser('alice');
+    const png = await makeMeme(alice);
+    const gif = await makeMeme(alice);
+    const silent = await makeMeme(alice);
+    const loud = await makeMeme(alice);
+    const unknown = await makeMeme(alice);
+    await setKind(gif, 'image/gif', null);
+    await setKind(silent, 'video/mp4', false);
+    await setKind(loud, 'video/webm', true);
+    await setKind(unknown, 'video/mp4', null);
+
+    const expected = {
+      image: [png],
+      gif: [gif, silent],
+      video: [loud, unknown],
+    } as const;
+    for (const [kind, ids] of Object.entries(expected)) {
+      const mediaKind = kind as keyof typeof expected;
+      const sorted = (memes: { id: string }[]) => memes.map((m) => m.id).sort();
+      const want = [...ids].sort();
+      expect(sorted((await listMemes({ mediaKind })).memes)).toEqual(want);
+      expect(sorted((await listMemesOrdered({ mediaKind }, 'top')).memes)).toEqual(want);
+      expect(sorted((await listMemesOrdered({ mediaKind }, 'random', { seed: 'x' })).memes)).toEqual(want);
+      expect(sorted((await listForYou(alice, { mediaKind })).memes)).toEqual(want);
+      expect(await countMemes({ mediaKind })).toBe(ids.length);
+    }
+    expect(await countMemes({})).toBe(5);
   });
 });
