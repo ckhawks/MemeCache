@@ -282,6 +282,10 @@ Link import (`/api/import`) runs `yt-dlp`, and uploads probe video with `ffprobe
 - All three are on the service's default PATH, so `YT_DLP_PATH`, `FFMPEG_PATH` and `FFPROBE_PATH` are not set.
 - The vhost's `proxy_read_timeout 120s` already covers imports, which can take up to 90 s.
 
+### Signup notifications and visits (migration 022, added 2026-11-03)
+
+`PUSHOVER_APP_TOKEN` and `PUSHOVER_USER_KEY` in `/root/memecache/.env` make each signup send a Pushover notification (`src/server/pushover.ts`). Remove either to stop them. Visits and page views feed `/admin/live`; the backup taken before 022 is `db/backups/memecache-pre-022-2026-11-03-10-49.dump` on the box.
+
 ### Invite codes (migration 009)
 
 Registration takes invite codes from the `invite_code` table, made at `/admin/invites`. Apply it with `npm run db:migrate` before restarting. `ACCESS_CODE` in `.env` is still accepted, but only while that table is empty, so deploying 009 changes nothing for people signing up. Once an admin creates the first code (disabled ones count), `ACCESS_CODE` stops working and can be deleted from `/root/memecache/.env`. To bring back the old shared code, make an invite code with the same value and no limit.
