@@ -27,6 +27,17 @@ export type ClientEventKind = (typeof CLIENT_EVENT_KINDS)[number];
 //   upload_refused  an upload turned away as an exact copy of the meme in meme_id.
 //           data: contentType, bytes.
 //   active  the user made a request today. At most one per user per UTC day.
-export type ServerEventKind = 'search' | 'import' | 'upload' | 'upload_refused' | 'active';
+//   register  a new account. user_id is the new member.
+//   page_view  a page was opened, reported by PresenceBeacon through POST /api/presence.
+//           data: path, and referrer (a host) on the first page of a visit that came from
+//           another site.
+export type ServerEventKind =
+  | 'search'
+  | 'import'
+  | 'upload'
+  | 'upload_refused'
+  | 'active'
+  | 'register'
+  | 'page_view';
 
 export type EventKind = ClientEventKind | ServerEventKind;

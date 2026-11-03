@@ -7,6 +7,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { after } from 'next/server';
 import { safeNext } from '@/util/safeNext';
 import {
   checkPassword,
@@ -24,6 +25,8 @@ import {
   createInvitedUser,
   type InviteCheck,
 } from '@/db/queries/invites';
+import { recordEvent } from '@/db/queries/events';
+import { pushToAdmins } from '@/server/pushover';
 
 // What registration says about an access code that cannot be used. Null: it can.
 const INVITE_MESSAGES: Record<InviteCheck, string | null> = {
@@ -96,6 +99,21 @@ export async function register(prevState: any, formData: FormData) {
   }
 
   await startSession(user);
+
+  // After the redirect goes out, so the new member is not kept waiting on Pushover.
+  after(async () => {
+    await recordEvent({
+      kind: 'register',
+      userId: user.id,
+    });
+    const base = process.env.NEXT_PUBLIC_BASE_URL;
+    await pushToAdmins({
+      title: 'New MemeCache member',
+      message: `${user.username} signed up with the code ${accessCode}.`,
+      url: base ? `${base}/me/${encodeURIComponent(user.username)}` : undefined,
+      urlTitle: 'Open their profile',
+    });
+  });
 
   redirect('/');
 }

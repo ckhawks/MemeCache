@@ -116,3 +116,95 @@ export async function listFailedSearches(limit = 10): Promise<FailedSearch[]> {
     [limit]
   );
 }
+
+export interface ActivityRow {
+  id: number;
+  kind: EventKind;
+  // The member, or null for someone logged out (or a member since deleted).
+  username: string | null;
+  // The first eight characters of the visitor cookie, enough to tell visitors apart.
+  visitor: string | null;
+  memeSlug: string | null;
+  data: Record<string, unknown>;
+  createdAt: Date;
+}
+
+// The newest events for the feed on /admin/live, without the daily 'active' rows, which say
+// nothing a request did. Page views are left out unless asked for, since they would bury the
+// rest.
+export async function listRecentActivity(options: {
+  limit?: number;
+  pageViews?: boolean;
+}): Promise<ActivityRow[]> {
+  return db<ActivityRow>(
+    `SELECT e.id::int AS id,
+            e.kind,
+            u.username,
+            left(e.visitor_key::text, 8) AS visitor,
+            m.slug AS "memeSlug",
+            e.data,
+            e.created_at AS "createdAt"
+       FROM event e
+       LEFT JOIN app_user u ON u.id = e.user_id
+       LEFT JOIN meme m ON m.id = e.meme_id
+      WHERE e.kind <> 'active'
+        AND ($2 OR e.kind <> 'page_view')
+      ORDER BY e.created_at DESC, e.id DESC
+      LIMIT $1`,
+    [options.limit ?? 50, options.pageViews ?? false]
+  );
+}
+
+export interface TrafficNumbers {
+  viewsDay: number;
+  // Distinct people, members and visitors together.
+  visitorsDay: number;
+  membersDay: number;
+  visitorsWeek: number;
+  signupsWeek: number;
+  topPages: { path: string; views: number }[];
+  topReferrers: { host: string; visits: number }[];
+}
+
+// The traffic panel on /admin/live, from page_view events. Starts counting the day
+// PresenceBeacon shipped; there are no page views before that.
+export async function getTrafficNumbers(): Promise<TrafficNumbers> {
+  const [[totals], topPages, topReferrers] = await Promise.all([
+    db<Omit<TrafficNumbers, 'topPages' | 'topReferrers'>>(
+      `SELECT
+         count(*) FILTER (WHERE created_at > now() - interval '24 hours')::int AS "viewsDay",
+         count(DISTINCT COALESCE(user_id::text, visitor_key::text))
+           FILTER (WHERE created_at > now() - interval '24 hours')::int AS "visitorsDay",
+         count(DISTINCT user_id) FILTER (WHERE created_at > now() - interval '24 hours')::int AS "membersDay",
+         count(DISTINCT COALESCE(user_id::text, visitor_key::text))::int AS "visitorsWeek",
+         (SELECT count(*)::int FROM app_user WHERE created_at > now() - interval '7 days') AS "signupsWeek"
+         FROM event
+        WHERE kind = 'page_view'
+          AND created_at > now() - interval '7 days'`
+    ),
+    db<{ path: string; views: number }>(
+      `SELECT data->>'path' AS path, count(*)::int AS views
+         FROM event
+        WHERE kind = 'page_view'
+          AND created_at > now() - interval '24 hours'
+        GROUP BY 1
+        ORDER BY views DESC, path
+        LIMIT 10`
+    ),
+    db<{ host: string; visits: number }>(
+      `SELECT data->>'referrer' AS host, count(*)::int AS visits
+         FROM event
+        WHERE kind = 'page_view'
+          AND created_at > now() - interval '7 days'
+          AND data ? 'referrer'
+        GROUP BY 1
+        ORDER BY visits DESC, host
+        LIMIT 10`
+    ),
+  ]);
+  return {
+    ...totals,
+    topPages,
+    topReferrers,
+  };
+}

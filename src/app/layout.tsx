@@ -7,6 +7,7 @@ import './globals.scss';
 import { LightThemeProvider } from '@/contexts/LightThemeContext';
 import { getInitialLightTheme } from '@/contexts/getInitialLightTheme';
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
+import PresenceBeacon from '@/components/PresenceBeacon';
 import { WarningDisplayProvider } from '@/contexts/WarningDisplayContext';
 import { getUserFromAccessToken } from '@/auth/lib';
 import { getSettings } from '@/db/queries/settings';
@@ -60,6 +61,7 @@ export default async function RootLayout({
             {children}
           </WarningDisplayProvider>
           <ServiceWorkerRegister />
+          <PresenceBeacon />
         </LightThemeProvider>
       </body>
     </html>

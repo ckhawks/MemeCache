@@ -13,6 +13,11 @@ export const metadata = {
 
 const TOOLS = [
   {
+    href: '/admin/live',
+    title: 'Live',
+    description: 'Who has the site open right now, a running feed of what people do, and page views by hour.',
+  },
+  {
     href: '/admin/design',
     title: 'Design system',
     description: 'Every component, color and text style in one place, in light and dark.',
