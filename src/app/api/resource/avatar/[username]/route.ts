@@ -3,6 +3,8 @@ import { findRenamedUsername } from '@/db/queries/usernames';
 import getS3Client from '@/util/s3/GetS3Client';
 import { GetObjectCommand, GetObjectCommandInput } from '@aws-sdk/client-s3';
 import { NextResponse } from 'next/server';
+import { getSettings } from '@/db/queries/settings';
+import { identiconSvg } from '@/server/identicon';
 
 // TODO switch this to use like a short slug for resource id's instead of full uuid because its ugly
 
@@ -38,24 +40,18 @@ export async function GET(
     });
   }
 
-  if (user.avatarS3Key === undefined || user.avatarS3Key === null) {
-    // return new NextResponse('User does not have an avatar set.', {
-    //   status: 404,
-    // });
-    const s3Client = getS3Client();
-    // console.log('bucket: ', process.env.MC_AWS_S3_BUCKET);
-    const getObjectCommand = new GetObjectCommand({
-      Bucket: process.env.MC_AWS_S3_BUCKET,
-      Key: 'avatars/images (1).png', // temporary default
-    } as GetObjectCommandInput);
-
-    const data = await s3Client.send(getObjectCommand);
-
-    return new NextResponse(data.Body?.transformToWebStream(), {
+  if (!user.avatarS3Key) {
+    // No upload: their own pattern, in their profile color if they picked one. Not cached
+    // forever like an upload, since picking a profile color changes it under the same URL.
+    const settings = await getSettings(user.id);
+    return new NextResponse(identiconSvg(user.id, settings.profile_color), {
       status: 200,
       headers: {
-        'Content-Type': data.ContentType!,
-        'Cache-Control': avatarCache(request),
+        'Content-Type': 'image/svg+xml',
+        'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+        // Drawn here with nothing from the member in it, but an SVG opened on its own is a
+        // page, so it may run nothing.
+        'Content-Security-Policy': "default-src 'none'",
       },
     });
   } else {
