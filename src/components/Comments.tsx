@@ -8,6 +8,7 @@ import main from '../app/main.module.scss';
 import TranscriptionField from './TranscriptionField';
 import MemeRefCard from './MemeRefCard';
 import MemePicker from './MemePicker';
+import ReactionBar from './ReactionBar';
 import { api } from '@/util/api';
 import { avatarUrl } from '@/util/avatarUrl';
 import { displayUsername } from '@/auth/username';
@@ -15,6 +16,7 @@ import { timeAgo } from '@/util/datetimeFormat';
 import { parseMemeLink } from '@/util/memeLink';
 import { COMMENT_EDIT_MINUTES, COMMENT_MAX } from '@/constants/comments';
 import type { MemeComment, MemeRef } from '@/db/queries/comments';
+import type { ReactionSummary } from '@/db/queries/reactions';
 
 // Comments under a meme (migration 014): flat, oldest first. Dates arrive as strings when a
 // comment comes back from the API.
@@ -169,7 +171,10 @@ function editableUntil(comment: Comment) {
 // in place. A deleted comment keeps its place with a note instead of its text.
 export function CommentItem(props: {
   comment: Comment;
+  // Its emoji reactions (migration 023) as the page loaded them.
+  reactions: ReactionSummary[];
   viewerId: string;
+  viewerName: string | null;
   canModerate: boolean;
   onEdit: (body: string, ref: MemeRef | null) => Promise<void>;
   onDelete: () => Promise<void>;
@@ -284,6 +289,16 @@ export function CommentItem(props: {
             {comment.body && <p className={styles['body']}>{comment.body}</p>}
             {comment.ref && <MemeRefCard meme={comment.ref} />}
             {comment.refGone && <div className={styles['note']}>The meme replied with was deleted.</div>}
+            {(props.viewerName || props.reactions.length > 0) && (
+              <ReactionBar
+                compact
+                endpoint={`/api/meme/${comment.memeId}/comments/${comment.id}/reactions`}
+                initial={props.reactions}
+                viewerName={props.viewerName}
+                loginHref={'/login?next=' + encodeURIComponent(`/meme/${comment.memeId}#comments`)}
+                label="React to this comment"
+              />
+            )}
           </>
         )}
         {error && <div className={styles['error']}>{error}</div>}
@@ -297,7 +312,10 @@ export default function Comments(props: {
   memeId: string;
   memeSlug: string;
   initial: Comment[];
+  // Each comment's reactions, by comment id. A comment with none is absent.
+  initialReactions: Record<string, ReactionSummary[]>;
   viewerId: string;
+  viewerName: string | null;
   canModerate: boolean;
 }) {
   const [comments, setComments] = useState<Comment[]>(props.initial);
@@ -319,7 +337,9 @@ export default function Comments(props: {
             <CommentItem
               key={comment.id}
               comment={comment}
+              reactions={props.initialReactions[comment.id] ?? []}
               viewerId={props.viewerId}
+              viewerName={props.viewerName}
               canModerate={props.canModerate}
               onEdit={async (body, ref) => {
                 const result = await api<{ comment: Comment }>(`${base}/${comment.id}`, {

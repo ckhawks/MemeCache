@@ -14,6 +14,8 @@ import { STANDS, VERSION_COLUMNS } from './transcriptions';
 //   meme_like, meme_save        moved, except a live row when the original has a live one
 //                               from the same person. Likes by the original's uploader stay
 //                               behind: nobody likes their own meme.
+//   meme_reaction               moved, except a live reaction when the original has the same
+//                               emoji live from the same person (migration 023).
 //   meme_content_warning        moved, except a live warning the original already has.
 //   meme_tag, meme_tag_vote,    a tag only the duplicate has moves over whole: same adder,
 //   tag_vote_history            same votes, same history. For a tag both have, the original's
@@ -126,6 +128,17 @@ export async function mergeMemes(
           AND NOT (d.removed_at IS NULL AND EXISTS (
             SELECT 1 FROM meme_save o
              WHERE o.meme_id = $2 AND o.user_id = d.user_id AND o.removed_at IS NULL
+          ))`,
+      pair
+    );
+
+    moved.reactions = await countChanged(
+      query,
+      `UPDATE meme_reaction d SET meme_id = $2
+        WHERE d.meme_id = $1
+          AND NOT (d.removed_at IS NULL AND EXISTS (
+            SELECT 1 FROM meme_reaction o
+             WHERE o.meme_id = $2 AND o.user_id = d.user_id AND o.emoji = d.emoji AND o.removed_at IS NULL
           ))`,
       pair
     );

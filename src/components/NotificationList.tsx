@@ -76,11 +76,15 @@ function sentence(group: Group) {
       return <>{people(group)} replied with your meme in a comment</>;
     case 'follow':
       return <>{people(group)} followed you</>;
+    case 'meme_reaction':
+      return <>{people(group)} reacted to your meme</>;
+    case 'comment_reaction':
+      return <>{people(group)} reacted to your comment</>;
   }
 }
 
 // These open the meme page at its comments.
-const COMMENT_KINDS: NotificationGroup['kind'][] = ['comment', 'meme_quoted'];
+const COMMENT_KINDS: NotificationGroup['kind'][] = ['comment', 'meme_quoted', 'comment_reaction'];
 
 // Where a line goes: the meme, or for a follow (one line per follower) the follower's profile.
 function href(group: Group) {

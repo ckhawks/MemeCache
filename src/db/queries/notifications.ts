@@ -1,7 +1,7 @@
 import { db } from '@/db/db';
 import { CONFIRMATIONS_NEEDED } from '@/constants/queue';
 
-// Migrations 012, 014 and 020. Rows are written by the API routes after the action they describe has
+// Migrations 012, 014, 020 and 023. Rows are written by the API routes after the action they describe has
 // succeeded, and grouped when read.
 
 export type NotificationKind =
@@ -15,7 +15,9 @@ export type NotificationKind =
   | 'tag_removed'
   | 'comment'
   | 'meme_quoted'
-  | 'follow';
+  | 'follow'
+  | 'meme_reaction'
+  | 'comment_reaction';
 
 export interface NewNotification {
   // Who it is for. Nothing is written when this is the actor.
@@ -125,8 +127,8 @@ export interface NotificationGroup {
 }
 
 // What makes two rows one group, beyond kind and meme (alias n). Reviews group per version,
-// tag news per tag, follows per follower. Likes, tagging, transcribing and comments group per
-// meme.
+// tag news per tag, follows per follower, reactions to a comment per comment. Likes,
+// reactions to a meme, tagging, transcribing and comments group per meme.
 // Rows about a comment that was since deleted are left out (alias n).
 const COMMENT_STANDS = `
   NOT EXISTS (
@@ -142,6 +144,8 @@ const GROUP_DETAIL = `
       THEN lower(n.tag_name)
     WHEN n.kind = 'follow'
       THEN n.actor_id::text
+    WHEN n.kind = 'comment_reaction'
+      THEN n.comment_id::text
   END
 `;
 

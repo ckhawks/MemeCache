@@ -157,7 +157,7 @@ function CommentExamples(props: { memes: MemeCard[]; userId: string }) {
       {examples.map(([label, comment]) => (
         <Labeled key={comment.id} label={label}>
           <ul style={{ margin: 0, padding: 0, listStyle: 'none', width: '100%' }}>
-            <CommentItem comment={comment} viewerId={props.userId} canModerate={false} onEdit={fail} onDelete={fail} />
+            <CommentItem comment={comment} reactions={[]} viewerId={props.userId} viewerName={null} canModerate={false} onEdit={fail} onDelete={fail} />
           </ul>
         </Labeled>
       ))}

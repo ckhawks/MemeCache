@@ -10,6 +10,7 @@ import MemeTranscriptionEditor from '@/components/MemeTranscriptionEditor';
 import MemeTagsEditor from '@/components/MemeTagsEditor';
 import MemeWarningsEditor from '@/components/MemeWarningsEditor';
 import Comments from '@/components/Comments';
+import ReactionBar from '@/components/ReactionBar';
 import { getUserFromAccessToken } from '@/auth/lib';
 import { isAdmin, isModerator } from '@/auth/role';
 import { getMeme, listRelatedMemes } from '@/db/queries/memes';
@@ -19,6 +20,7 @@ import { getCurrentTranscription } from '@/db/queries/transcriptions';
 import { listTagsForMeme } from '@/db/queries/tags';
 import { listWarningsForMeme } from '@/db/queries/warnings';
 import { listComments } from '@/db/queries/comments';
+import { listReactions, listReactionsFor } from '@/db/queries/reactions';
 import { listMatchedMemes } from '@/db/queries/mediaHash';
 import { getMergedInto } from '@/db/queries/merge';
 import SameTemplate from './SameTemplate';
@@ -67,7 +69,7 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
 
   // Loaded with the page, so the panel is complete on first paint instead of showing
   // "Loading..." while the editors fetch their own data.
-  const [transcription, tags, warnings, karma, related, comments, sameTemplate] = await Promise.all([
+  const [transcription, tags, warnings, karma, related, comments, sameTemplate, memeReactions] = await Promise.all([
     getCurrentTranscription(meme.id),
     listTagsForMeme(meme.id, user?.id),
     listWarningsForMeme(meme.id, user?.id),
@@ -75,7 +77,14 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
     listRelatedMemes(meme, user?.id),
     listComments(meme.id),
     listMatchedMemes(meme.id),
+    listReactionsFor('meme', meme.id, user?.id),
   ]);
+  const commentReactions = await listReactions(
+    'comment',
+    comments.map((comment) => comment.id),
+    user?.id
+  );
+  const loginHref = '/login?next=' + encodeURIComponent(`/meme/${meme.slug}`);
 
   const initialTranscription = transcription && {
     text: transcription.text,
@@ -105,6 +114,15 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
                 canMerge={!!user && isModerator(user)}
                 mergeCandidates={sameTemplate}
               />
+              <div className={d.reactions}>
+                <ReactionBar
+                  endpoint={`/api/meme/${meme.id}/reactions`}
+                  initial={memeReactions}
+                  viewerName={user?.username ?? null}
+                  loginHref={loginHref}
+                  label="React to this meme"
+                />
+              </div>
             </div>
             <aside className={d.side}>
               <PostAuthor username={meme.username} avatarKey={meme.avatarKey} karma={karma} />
@@ -129,7 +147,9 @@ export default async function MemeDetails(props: { params: Promise<{ memeId: str
                 memeId={meme.id}
                 memeSlug={meme.slug}
                 initial={comments}
+                initialReactions={commentReactions}
                 viewerId={user?.id || ''}
+                viewerName={user?.username ?? null}
                 canModerate={!!user && isModerator(user)}
               />
             </div>

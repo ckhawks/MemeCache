@@ -12,7 +12,9 @@
   align-items: start;
 
   @media (max-width: 900px) {
-    grid-template-columns: 1fr;
+    // minmax(0, ...) rather than 1fr, whose floor is its widest content: one row of buttons
+    // that would not wrap used to widen the whole page past the screen.
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       'media'
       'actions'
@@ -25,6 +27,11 @@
 
 .actionsArea {
   grid-area: actions;
+  min-width: 0;
+}
+
+.reactions {
+  margin-top: 12px;
 }
 
 .commentsArea {
@@ -42,6 +49,7 @@
 // The details column: author, caption, tags, date. Stays in view beside a tall meme.
 .side {
   grid-area: side;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -142,11 +150,18 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+
+  // Each pill stays one line; the bar wraps between them instead.
+  > *,
+  .postDelete > * {
+    white-space: nowrap;
+  }
 }
 
-// Report and Delete, pushed to the end of the bar.
+// Report, Delete, Merge and Take down, pushed to the end of the bar, wrapping as a group.
 .postDelete {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-left: auto;
 }
