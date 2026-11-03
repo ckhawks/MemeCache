@@ -35,6 +35,9 @@ export function memeFilename(slug: string, contentType: string): string {
 export const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 export const MAX_VIDEO_BYTES = 30 * 1024 * 1024;
 
+// An avatar as chosen, before the server shrinks it. Room for a short animation.
+export const MAX_AVATAR_BYTES = 8 * 1024 * 1024;
+
 export function maxBytesForType(contentType: string): number | null {
   if (supportedImageTypes.includes(contentType)) {
     return MAX_IMAGE_BYTES;

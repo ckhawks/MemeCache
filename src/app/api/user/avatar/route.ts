@@ -2,13 +2,13 @@ import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
 import { revalidatePath } from 'next/cache';
 import getS3Client from '@/util/s3/GetS3Client';
-import { supportedImageTypes } from '@/constants/mimeTypes';
+import { MAX_AVATAR_BYTES, supportedImageTypes } from '@/constants/mimeTypes';
 import { getAvatarKey, setAvatarKey } from '@/db/queries/users';
 import { HttpError, route } from '@/server/route';
+import { AvatarImageError, makeAvatar } from '@/server/avatarImage';
 
-const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
-
-// POST multipart { file }: replaces the session user's avatar.
+// POST multipart { file }: replaces the session user's avatar with the picture cut to a
+// square and shrunk (makeAvatar), keeping an animation's frames.
 export const POST = route({
   auth: 'required',
   handler: async ({ user, request }) => {
@@ -24,7 +24,17 @@ export const POST = route({
     }
 
     if (file.size > MAX_AVATAR_BYTES) {
-      throw new HttpError(413, 'Avatar is too large. Limit is 2MB.');
+      throw new HttpError(413, 'That picture is too large for an avatar. The limit is 8 MB.');
+    }
+
+    let avatar: Buffer;
+    try {
+      avatar = await makeAvatar(Buffer.from(await file.arrayBuffer()));
+    } catch (error) {
+      if (error instanceof AvatarImageError) {
+        throw new HttpError(400, error.message);
+      }
+      throw error;
     }
 
     const s3 = getS3Client();
@@ -34,8 +44,8 @@ export const POST = route({
       new PutObjectCommand({
         Bucket: process.env.MC_AWS_S3_BUCKET,
         Key: newAvatarKey,
-        Body: Buffer.from(await file.arrayBuffer()),
-        ContentType: file.type,
+        Body: avatar,
+        ContentType: 'image/webp',
       })
     );
 
