@@ -38,6 +38,10 @@ export default function MemeTranscriptionEditor(props: {
   };
 
   const handleSave = async () => {
+    // Ctrl+Enter in the field gets here even while the Save button is disabled.
+    if (saving) {
+      return;
+    }
     setSaving(true);
     setError('');
     try {

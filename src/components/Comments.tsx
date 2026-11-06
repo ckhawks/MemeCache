@@ -182,6 +182,7 @@ export function CommentItem(props: {
   const { comment } = props;
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
   // Re-rendered every so often, so the time and the Edit button keep up.
   const [now, setNow] = useState(() => Date.now());
@@ -196,12 +197,19 @@ export function CommentItem(props: {
   const profile = '/me/' + encodeURIComponent(comment.username);
 
   const remove = async () => {
+    // A second click while the first delete is out would send it twice.
+    if (deleting) {
+      return;
+    }
+    setDeleting(true);
     setError('');
     try {
       await props.onDelete();
       setConfirming(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not delete the comment.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -242,10 +250,10 @@ export function CommentItem(props: {
               {confirming ? (
                 <>
                   <span>Delete this comment?</span>
-                  <button type="button" className={`${styles['action']} ${styles['danger']}`} onClick={remove}>
+                  <button type="button" className={`${styles['action']} ${styles['danger']}`} onClick={remove} disabled={deleting}>
                     Delete
                   </button>
-                  <button type="button" className={styles['action']} onClick={() => setConfirming(false)}>
+                  <button type="button" className={styles['action']} onClick={() => setConfirming(false)} disabled={deleting}>
                     Keep
                   </button>
                 </>

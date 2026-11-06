@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Check, Edit2, SkipForward, X } from 'react-feather';
 import globals from '../main.module.scss';
@@ -72,11 +72,20 @@ export default function QueueClient(props: {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
+  // The tab on screen, for an action that finishes after the tab changed.
+  const taskRef = useRef(task);
+  // Bumped by every load, so only the newest one's answer is used.
+  const loadSeq = useRef(0);
+
   // Fetches the next item and swaps it in whole, so the old meme stays up until the new one
   // is ready rather than flashing empty. Every state change happens after the await.
   const load = useCallback(async (next: QueueTask) => {
+    const seq = ++loadSeq.current;
     try {
       const fetched = await fetchNext(next);
+      if (seq !== loadSeq.current) {
+        return;
+      }
       setItem(fetched.item);
       setPair(fetched.pair);
       setCounts(fetched.counts);
@@ -85,6 +94,9 @@ export default function QueueClient(props: {
       setDraft('');
       setError('');
     } catch (err) {
+      if (seq !== loadSeq.current) {
+        return;
+      }
       setError(err instanceof Error ? err.message : 'Could not load the queue.');
     }
     setLoading(false);
@@ -101,6 +113,7 @@ export default function QueueClient(props: {
     setItem(null);
     setPair(null);
     setTask(next);
+    taskRef.current = next;
     load(next);
     // Keeps the tab in the URL so a reload or a shared link lands on it.
     window.history.replaceState(null, '', `/queue?task=${next}`);
@@ -115,8 +128,11 @@ export default function QueueClient(props: {
     setError('');
     try {
       const message = await action();
-      setNotice(message || '');
-      await load(task);
+      // Unless the tab changed meanwhile, which already loaded its own item.
+      if (taskRef.current === task) {
+        setNotice(message || '');
+        await load(task);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
     } finally {

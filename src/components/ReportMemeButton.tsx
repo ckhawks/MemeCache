@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Flag } from 'react-feather';
 import { Modal } from 'react-bootstrap';
 import localStyles from './LikeButton.module.scss';
@@ -20,19 +20,25 @@ export default function ReportMemeButton(props: { memeId: string }) {
   const [processing, setProcessing] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
+  // Bumped on each open and on any typing, so the earlier report only fills in a form that
+  // has not been touched since the open that asked for it.
+  const prefillSeq = useRef(0);
 
   const handleShow = async () => {
     setShow(true);
     setSent(false);
     setError('');
+    const seq = ++prefillSeq.current;
     try {
       const { report } = await api<{ report: { reason: ReportReason; details: string | null } | null }>(
         `/api/meme/${props.memeId}/report`
       );
       if (report) {
-        setReason(report.reason);
-        setDetails(report.details ?? '');
         setHasOpenReport(true);
+        if (seq === prefillSeq.current) {
+          setReason(report.reason);
+          setDetails(report.details ?? '');
+        }
       }
     } catch {
       // Only fills in an earlier report. The form works without it.
@@ -102,7 +108,10 @@ export default function ReportMemeButton(props: { memeId: string }) {
                     id="report-reason"
                     className={form.select}
                     value={reason}
-                    onChange={(e) => setReason(e.target.value as ReportReason)}
+                    onChange={(e) => {
+                      prefillSeq.current++;
+                      setReason(e.target.value as ReportReason);
+                    }}
                     required
                   >
                     <option value="" disabled>
@@ -125,7 +134,10 @@ export default function ReportMemeButton(props: { memeId: string }) {
                     rows={3}
                     maxLength={REPORT_DETAILS_MAX}
                     value={details}
-                    onChange={(e) => setDetails(e.target.value)}
+                    onChange={(e) => {
+                      prefillSeq.current++;
+                      setDetails(e.target.value);
+                    }}
                     placeholder="Anything that helps, like a link to the original"
                   />
                   <div className={form.hint}>

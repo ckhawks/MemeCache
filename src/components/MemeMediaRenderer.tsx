@@ -11,6 +11,7 @@ import WarningCover from './WarningCover';
 import MemeVideo from './MemeVideo';
 import { useState } from 'react';
 import { blursMeme } from '@/constants/contentWarnings';
+import { useWarningDisplay } from '@/contexts/WarningDisplayContext';
 
 export default function MemeMediaRenderer(props: {
   meme: {
@@ -24,7 +25,9 @@ export default function MemeMediaRenderer(props: {
 }) {
   // A GIF-like video stays still while it is blurred.
   const [revealed, setRevealed] = useState(false);
-  const blurred = (props.meme.warnings ?? []).some(blursMeme);
+  const display = useWarningDisplay();
+  // Matches WarningCover: with 'show' there is no cover, so nothing would ever reveal it.
+  const blurred = (props.meme.warnings ?? []).some(blursMeme) && display !== 'show';
 
   if (supportedImageTypes.indexOf(props.meme?.contentType) > -1) {
     return (

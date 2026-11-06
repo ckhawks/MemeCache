@@ -25,6 +25,10 @@ export default function MergeMemeButton(props: { memeId: string; candidates: Thu
   const into = link.trim() || picked;
 
   const close = () => {
+    // Kept open while the request is out, so its result is not lost on a hidden modal.
+    if (processing) {
+      return;
+    }
     setShow(false);
     setError('');
   };
@@ -112,6 +116,7 @@ export default function MergeMemeButton(props: { memeId: string; candidates: Thu
           <Button
             variant="secondary"
             onClick={close}
+            disabled={processing}
             className={`${styles['button']} ${styles['button-secondary']}`}
           >
             Cancel

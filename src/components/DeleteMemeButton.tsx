@@ -24,6 +24,10 @@ export default function DeleteMemeButton(props: {
 
   const handleClose = (event?: React.SyntheticEvent) => {
     event?.stopPropagation();
+    // Kept open while the request is out, so its result is not lost on a hidden modal.
+    if (processing) {
+      return;
+    }
     setShow(false);
     setError('');
   };
@@ -109,6 +113,7 @@ export default function DeleteMemeButton(props: {
             <Button
               variant="secondary"
               onClick={handleClose}
+              disabled={processing}
               className={`${styles['button']} ${styles['button-secondary']}`}
             >
               Cancel

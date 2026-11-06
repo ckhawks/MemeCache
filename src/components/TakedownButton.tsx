@@ -26,6 +26,10 @@ export default function TakedownButton(props: { memeId: string }) {
   const router = useRouter();
 
   const close = () => {
+    // Kept open while the request is out, so its result is not lost on a hidden modal.
+    if (processing) {
+      return;
+    }
     setShow(false);
     setError('');
   };
@@ -105,6 +109,7 @@ export default function TakedownButton(props: { memeId: string }) {
           <Button
             variant="secondary"
             onClick={close}
+            disabled={processing}
             className={`${styles['button']} ${styles['button-secondary']}`}
           >
             Cancel

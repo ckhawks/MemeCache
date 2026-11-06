@@ -53,6 +53,8 @@ export default function UploadComponent() {
   // Content warnings ticked for this file, sent with the upload.
   const [warnings, setWarnings] = useState<ContentWarning[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  // The file whose preview is being read, so a slower read of an earlier file is dropped.
+  const readingRef = useRef<File | null>(null);
   // Memes the picked file looks like (the duplicate check). Kept with the file it was for,
   // so a slow answer about a file since replaced is never shown.
   const [lookalikes, setLookalikes] = useState<{ file: File; memes: Lookalike[] } | null>(null);
@@ -65,26 +67,38 @@ export default function UploadComponent() {
   const isGif = file?.type === 'image/gif';
 
   const selectFile = (next: File) => {
-    setError('');
-    setNote('');
-    setUploadedId(null);
-    setSourceUrl(null);
-    setDuplicate(null);
+    // Checked before anything is cleared, so a wrong file leaves the current one (and the
+    // post it was imported from) as it was.
     if (!supportedTypes.includes(next.type)) {
       setError(
         `${next.type ? formatType(next.type) : 'That file'} isn't supported. Use PNG, JPG, GIF, WebP, MP4 or WebM.`
       );
       return;
     }
+    setError('');
+    setNote('');
+    setUploadedId(null);
+    setSourceUrl(null);
+    setDuplicate(null);
     setFile(next);
     setCrop(null);
     setWarnings([]);
+    // Cleared so the old preview (and its crop box) is never shown with the new file, and
+    // the crop editor remounts even when the same file is picked again.
+    setPreview(null);
+    readingRef.current = next;
     const reader = new FileReader();
-    reader.onloadend = () => setPreview(reader.result as string);
+    reader.onloadend = () => {
+      // A file picked after this one has taken over.
+      if (readingRef.current === next) {
+        setPreview(reader.result as string);
+      }
+    };
     reader.readAsDataURL(next);
   };
 
   const reset = () => {
+    readingRef.current = null;
     setFile(null);
     setPreview(null);
     setCrop(null);
@@ -145,6 +159,11 @@ export default function UploadComponent() {
       const pasted = [...(event.clipboardData?.files ?? [])][0];
       if (pasted) {
         event.preventDefault();
+        // The upload in flight is of the file on screen; one pasted now would be wiped when
+        // it ends. The picker and the drop zone are already off while uploading.
+        if (uploading) {
+          return;
+        }
         selectFile(pasted);
         return;
       }
